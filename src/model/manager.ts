@@ -12,6 +12,9 @@ class ModelManager {
   // 選択されたモデルID
   private selectedModelId: string | null = null;
   
+  // 選択されたモデル名
+  private selectedModelName: string | null = null;
+  
   // サポートするモデルファミリー
   private supportedFamilies = [
     'gpt-4o', 'gpt-4o-mini', 'o1', 'o1-mini', 'claude-3.5-sonnet'
@@ -79,11 +82,12 @@ class ModelManager {
         return undefined;
       }
       
-      // 選択されたモデルを保存
+      // 選択されたモデルのIDとモデル名を保存
       this.selectedModelId = selectedItem.model.id;
+      this.selectedModelName = selectedItem.model.name || selectedItem.model.id;
       
       // モデル情報をログ出力
-      console.log(`選択されたモデル: ${selectedItem.label} (${this.selectedModelId})`);
+      console.log(`選択されたモデル: ${this.selectedModelName} (${this.selectedModelId})`);
       
       return this.selectedModelId as string;
     } catch (error) {
@@ -102,11 +106,21 @@ class ModelManager {
   }
   
   /**
+   * 現在選択されているモデル名を取得
+   * @returns モデル名
+   */
+  public getSelectedModelName(): string | null {
+    return this.selectedModelName;
+  }
+  
+  /**
    * モデルIDを直接設定する
    * @param modelId 設定するモデルID
+   * @param modelName 設定するモデル名（省略時はモデルIDと同じ）
    */
-  public setSelectedModel(modelId: string): void {
+  public setSelectedModel(modelId: string, modelName?: string): void {
     this.selectedModelId = modelId;
+    this.selectedModelName = modelName || modelId;
   }
   
   /**

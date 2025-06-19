@@ -15,12 +15,12 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       const selectedModel = await modelManager.selectModel();
       
       if (selectedModel) {
+        const selectedModelName = modelManager.getSelectedModelName();
         context.globalState.update('selectedModel', selectedModel);
-        vscode.window.showInformationMessage(`モデルを選択しました: ${selectedModel}`);
+        context.globalState.update('selectedModelName', selectedModelName);
+        vscode.window.showInformationMessage(`モデルを選択しました: ${selectedModelName || selectedModel}`);
         // ステータスバーを更新
         statusBarManager.updateStatus(serverManager.isRunning());
-      } else {
-        vscode.window.showWarningMessage('モデルが選択されませんでした');
       }
     } catch (error) {
       vscode.window.showErrorMessage(`モデルの選択中にエラーが発生しました: ${(error as Error).message}`);
@@ -32,10 +32,11 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   
   // 前回選択されたモデルを復元
   const previouslySelectedModel = context.globalState.get<string>('selectedModel');
+  const previouslySelectedModelName = context.globalState.get<string>('selectedModelName');
   if (previouslySelectedModel) {
     // モデル選択状態を復元
-    modelManager.setSelectedModel(previouslySelectedModel);
-    console.log(`前回選択されたモデルを復元しました: ${previouslySelectedModel}`);
+    modelManager.setSelectedModel(previouslySelectedModel, previouslySelectedModelName || undefined);
+    console.log(`前回選択されたモデルを復元しました: ${previouslySelectedModelName || previouslySelectedModel}`);
     // ステータスバーも更新
     statusBarManager.updateStatus(serverManager.isRunning());
   }
