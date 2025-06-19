@@ -62,7 +62,7 @@ class ModelManager {
       const quickPickItems = allModels.map(model => ({
         label: model.name || model.id,
         description: `${model.id} - ${model.vendor || '不明なベンダー'}`,
-        detail: model.description || 'モデルの詳細情報はありません',
+        detail: `バージョン: ${model.version || '不明'}, 最大トークン: ${model.maxInputTokens || '不明'}`,
         model: model
       }));
       

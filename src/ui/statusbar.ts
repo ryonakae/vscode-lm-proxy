@@ -1,10 +1,11 @@
 // ステータスバーの管理
 import * as vscode from 'vscode';
 import { serverManager } from '../server/manager';
+import { modelManager } from '../model/manager';
 
 /**
  * ステータスバー管理クラス
- * サーバーの状態をVS Codeステータスバーに表示
+ * サーバーの状態とモデル情報をVS Codeステータスバーに表示
  */
 class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem | undefined;
@@ -49,22 +50,27 @@ class StatusBarManager {
       return;
     }
     
+    // 選択中のモデルを取得
+    const selectedModel = modelManager.getSelectedModel();
+    // モデル表示テキスト
+    const modelText = selectedModel ? ` (${selectedModel})` : '';
+    
     if (errorMessage) {
       // エラー状態
-      this.statusBarItem.text = '$(error) LM Proxy';
+      this.statusBarItem.text = `$(error) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
       this.statusBarItem.tooltip = `LM Proxy: エラー - ${errorMessage}`;
     } else if (isRunning) {
       // 実行中
-      this.statusBarItem.text = '$(check) LM Proxy';
+      this.statusBarItem.text = `$(check) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
-      this.statusBarItem.tooltip = `LM Proxy: 実行中 (${url})`;
+      this.statusBarItem.tooltip = `LM Proxy: 実行中 (${url})${selectedModel ? `\nモデル: ${selectedModel}` : ''}`;
     } else {
       // 停止中
-      this.statusBarItem.text = '$(circle-slash) LM Proxy';
+      this.statusBarItem.text = `$(circle-slash) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = 'LM Proxy: 停止中';
+      this.statusBarItem.tooltip = `LM Proxy: 停止中${selectedModel ? `\nモデル: ${selectedModel}` : ''}`;
     }
   }
   

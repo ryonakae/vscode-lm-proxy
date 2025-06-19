@@ -1,6 +1,8 @@
 // モデル選択コマンド
 import * as vscode from 'vscode';
 import { modelManager } from '../model/manager';
+import { statusBarManager } from '../ui/statusbar';
+import { serverManager } from '../server/manager';
 
 /**
  * モデル選択関連のコマンドを登録
@@ -15,6 +17,8 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       if (selectedModel) {
         context.globalState.update('selectedModel', selectedModel);
         vscode.window.showInformationMessage(`モデルを選択しました: ${selectedModel}`);
+        // ステータスバーを更新
+        statusBarManager.updateStatus(serverManager.isRunning());
       } else {
         vscode.window.showWarningMessage('モデルが選択されませんでした');
       }
@@ -32,5 +36,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
     // モデル選択状態を復元
     modelManager.setSelectedModel(previouslySelectedModel);
     console.log(`前回選択されたモデルを復元しました: ${previouslySelectedModel}`);
+    // ステータスバーも更新
+    statusBarManager.updateStatus(serverManager.isRunning());
   }
 }
