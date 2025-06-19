@@ -15,8 +15,33 @@ VSCode Language Model APIをOpenAI互換のREST APIとして公開する拡張�
 
 ## インストール
 
+### マーケットプレイスからインストール
 1. VSCode拡張機能マーケットプレイスからインストールする
 2. または、`.vsix`ファイルをダウンロードし、「VSCODEから拡張機能をインストール」機能を使ってインストール
+
+### ローカル開発版をテスト
+ソースコードからローカルで拡張機能を試すには、以下の手順に従ってください：
+
+1. リポジトリをクローン
+   ```bash
+   git clone https://github.com/user/vscode-litellm.git
+   cd vscode-litellm
+   ```
+
+2. 依存関係のインストール
+   ```bash
+   npm install
+   ```
+
+3. 拡張機能をビルド
+   ```bash
+   npm run compile
+   ```
+
+4. デバッグモードで実行
+   - VSCode内で`F5`キーを押す
+   - または「実行とデバッグ」パネルから「Run Extension」を選択
+   - 新しいVSCodeウィンドウが開き、拡張機能がデバッグモードで実行されます
 
 ## 使用方法
 
@@ -82,11 +107,32 @@ curl -X POST http://localhost:4000/chat/completions \
 
 - VSCodeを再起動してください
 - 別のアプリケーションがポート4000を使用していないか確認してください
+  ```bash
+  lsof -i :4000
+  ```
 
 ### モデル選択の問題
 
 - VSCodeのLanguage Model APIへのアクセス権があることを確認してください
 - インターネット接続を確認してください
+- GitHub Copilot拡張機能がインストールされ、正しく設定されていることを確認してください
+
+### ローカル開発時の問題
+
+- TypeScriptコンパイルエラー
+  ```bash
+  npm run watch
+  ```
+  でエラーを確認し、必要な型定義ファイルがすべて揃っているか確認してください
+
+- 拡張機能が読み込まれない場合
+  1. VSCodeのコンソール（ヘルプ > 開発者ツールの切り替え）でエラーを確認
+  2. `activationEvents` が正しく設定されているか確認
+  3. `package.json` の依存関係が正しくインストールされているか確認
+
+- 変更が反映されない場合
+  1. `npm run compile` を実行して最新の変更をビルド
+  2. VSCodeのリロード（開発者: ウィンドウのリロード）を実行
 
 ## Marketplace公開情報
 
