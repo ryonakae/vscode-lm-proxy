@@ -17,6 +17,11 @@ export interface OpenAIChatCompletionResponse {
       name?: string;
       context?: any;
       tool_call_id?: string;
+      refusal?: null | {
+        category: string;
+        explanation: string;
+      };
+      annotations?: any[];
     };
     index: number;
     finish_reason: string | null;
@@ -26,8 +31,19 @@ export interface OpenAIChatCompletionResponse {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
+    prompt_tokens_details?: {
+      cached_tokens: number;
+      audio_tokens: number;
+    };
+    completion_tokens_details?: {
+      reasoning_tokens: number;
+      audio_tokens: number;
+      accepted_prediction_tokens: number;
+      rejected_prediction_tokens: number;
+    };
   };
   system_fingerprint?: string;
+  service_tier?: string;
 }
 
 /**

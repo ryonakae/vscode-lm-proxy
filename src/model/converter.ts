@@ -48,7 +48,9 @@ export function convertToOpenAIFormat(
         {
           message: {
             role: 'assistant',
-            content: response.content || ''
+            content: response.content || '',
+            refusal: null,
+            annotations: []
           },
           index: 0,
           finish_reason: 'stop'
@@ -57,8 +59,19 @@ export function convertToOpenAIFormat(
       usage: {
         prompt_tokens: 0, // VSCode APIではトークン数が取得できないため0を返す
         completion_tokens: 0,
-        total_tokens: 0
-      }
+        total_tokens: 0,
+        prompt_tokens_details: {
+          cached_tokens: 0,
+          audio_tokens: 0
+        },
+        completion_tokens_details: {
+          reasoning_tokens: 0,
+          audio_tokens: 0,
+          accepted_prediction_tokens: 0,
+          rejected_prediction_tokens: 0
+        }
+      },
+      service_tier: 'default'
     } as OpenAIChatCompletionResponse;
   }
 }
@@ -114,7 +127,9 @@ export function convertVSCodeResponseToOpenAIResponse(
       {
         message: {
           role: vsCodeResponse.message.role,
-          content: vsCodeResponse.message.content
+          content: vsCodeResponse.message.content,
+          refusal: null,
+          annotations: []
         },
         index: 0,
         finish_reason: 'stop'
@@ -123,7 +138,18 @@ export function convertVSCodeResponseToOpenAIResponse(
     usage: {
       prompt_tokens: 0,
       completion_tokens: 0,
-      total_tokens: 0
-    }
+      total_tokens: 0,
+      prompt_tokens_details: {
+        cached_tokens: 0,
+        audio_tokens: 0
+      },
+      completion_tokens_details: {
+        reasoning_tokens: 0,
+        audio_tokens: 0,
+        accepted_prediction_tokens: 0,
+        rejected_prediction_tokens: 0
+      }
+    },
+    service_tier: 'default'
   } as OpenAIChatCompletionResponse;
 }
