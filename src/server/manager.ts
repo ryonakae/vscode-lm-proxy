@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { createServer } from './server';
 import * as http from 'http';
 import { statusBarManager } from '../ui/statusbar';
+import { logger } from '../utils/logger';
 
 /**
  * サーバーマネージャークラス
@@ -38,7 +39,7 @@ class ServerManager {
         this.server = app.listen(port, () => {
           this._isRunning = true;
           vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', true);
-          console.log(`VSCode LM Proxy server started on port ${port}`);
+          logger.info(`VSCode LM Proxy server started on port ${port}`);
           statusBarManager.updateStatus(true);
           resolve();
         });
@@ -46,6 +47,7 @@ class ServerManager {
         this.server.on('error', (err) => {
           this._isRunning = false;
           vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
+          logger.error(`Server startup error: ${(err as Error).message}`, err as Error);
           statusBarManager.updateStatus(false, `Server startup error: ${(err as Error).message}`);
           reject(new Error(`Server startup error: ${(err as Error).message}`));
         });
@@ -76,7 +78,7 @@ class ServerManager {
         this.server = null;
         this._isRunning = false;
         vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
-        console.log('VSCode LM Proxy server stopped');
+        logger.info('VSCode LM Proxy server stopped');
         statusBarManager.updateStatus(false);
         resolve();
       });

@@ -1,6 +1,7 @@
 // APIエンドポイントのハンドラー実装
 import express from 'express';
 import { modelManager } from '../model/manager';
+import { logger } from '../utils/logger';
 
 /**
  * OpenAI互換のChat Completions APIエンドポイントを設定
@@ -21,9 +22,17 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         
+        // ストリーミング開始をログに記録
+        logger.logStreamStart('/chat/completions');
+        
+        // チャンクのカウントを追跡
+        let chunkIndex = 0;
+        
         // モデルマネージャーを使用してストリーミングレスポンスを送信
         await modelManager.streamChatCompletion(messages, model, (chunk) => {
           const data = JSON.stringify(chunk);
+          // チャンクをログに記録
+          logger.logStreamChunk('/chat/completions', chunk, chunkIndex++);
           res.write(`data: ${data}\n\n`);
         });
         
@@ -36,7 +45,7 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
         res.json(completion);
       }
     } catch (error) {
-      console.error('Chat completions API error:', error);
+      logger.error(`Chat completions API error: ${(error as Error).message}`, error as Error);
       
       // エラーレスポンスの作成
       const apiError = error as any;

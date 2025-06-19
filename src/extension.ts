@@ -3,10 +3,18 @@ import * as vscode from 'vscode';
 import { registerCommands } from './commands';
 import { serverManager } from './server/manager';
 import { statusBarManager } from './ui/statusbar';
+import { logger } from './utils/logger';
 
 // 拡張機能が有効化された時に実行される関数
 export function activate(context: vscode.ExtensionContext) {
-  console.log('LM Proxy extension activated');
+  logger.info('LM Proxy extension activated');
+
+  // 設定に応じて出力パネルを表示
+  const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
+  const showOnStartup = config.get<boolean>('showOutputOnStartup', true);
+  if (showOnStartup) {
+    logger.show(true); // フォーカスは現在のエディタに保持
+  }
 
   // コンテキスト変数の初期化
   vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
@@ -45,7 +53,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 // 拡張機能が無効化された時に実行される関数
 export function deactivate(): Promise<void> | undefined {
-  console.log('LM Proxy extension deactivated');
+  logger.info('LM Proxy extension deactivated');
   
   // サーバーが実行中なら停止
   if (serverManager.isRunning()) {

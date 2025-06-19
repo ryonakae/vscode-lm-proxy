@@ -1,6 +1,7 @@
 // Express.jsサーバーの設定とAPIエンドポイントの実装
 import express from 'express';
 import { setupChatCompletionsEndpoint } from './handlers';
+import { logger } from '../utils/logger';
 
 /**
  * Express.jsサーバーのインスタンスを作成する
@@ -11,6 +12,54 @@ export function createServer(): express.Express {
   
   // JSONのパース設定
   app.use(express.json());
+  
+  // リクエスト・レスポンスのロギングミドルウェア
+  app.use((req, res, next) => {
+    const startTime = Date.now();
+    const path = req.originalUrl || req.url;
+    const method = req.method;
+    
+    // リクエストをログ出力
+    logger.logRequest(method, path, req.body);
+    
+    // レスポンスを捕捉するための元のメソッドを保持
+    const originalSend = res.send;
+    const originalJson = res.json;
+    const originalEnd = res.end;
+    
+    // カスタムのsendメソッド
+    res.send = function(body: any): express.Response {
+      const responseTime = Date.now() - startTime;
+      logger.logResponse(res.statusCode, path, body, responseTime);
+      return originalSend.apply(res, arguments as any);
+    };
+    
+    // カスタムのjsonメソッド
+    res.json = function(body: any): express.Response {
+      const responseTime = Date.now() - startTime;
+      logger.logResponse(res.statusCode, path, body, responseTime);
+      return originalJson.apply(res, arguments as any);
+    };
+    
+    // カスタムのendメソッド
+    res.end = function(chunk?: any): express.Response {
+      const responseTime = Date.now() - startTime;
+      if (chunk) {
+        // Content-Typeがevent-streamの場合はストリーミング終了として記録
+        if (res.getHeader('Content-Type') === 'text/event-stream') {
+          logger.logStreamEnd(path, responseTime);
+        } else {
+          logger.logResponse(res.statusCode, path, chunk, responseTime);
+        }
+      } else {
+        // チャンクがない場合
+        logger.logResponse(res.statusCode, path, null, responseTime);
+      }
+      return originalEnd.apply(res, arguments as any);
+    };
+    
+    next();
+  });
   
   // ルートエンドポイント
   app.get('/', (_req, res) => {
@@ -32,7 +81,7 @@ export function createServer(): express.Express {
   
   // エラーハンドラーの設定
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error('サーバーエラー:', err);
+    logger.error('サーバーエラー:', err);
     res.status(500).json({
       error: {
         message: `内部サーバーエラー: ${err.message}`,

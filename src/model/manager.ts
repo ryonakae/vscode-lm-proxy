@@ -3,6 +3,7 @@ import * as vscode from 'vscode';
 import { convertToOpenAIFormat } from './converter';
 import { OpenAIChatCompletionResponse } from './types';
 import { limitsManager } from './limits';
+import { logger } from '../utils/logger';
 
 /**
  * モデル管理クラス
@@ -87,11 +88,11 @@ class ModelManager {
       this.selectedModelName = selectedItem.model.name || selectedItem.model.id;
       
       // モデル情報をログ出力
-      console.log(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
+      logger.info(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
       
       return this.selectedModelId as string;
     } catch (error) {
-      console.error('モデル選択エラー:', error);
+      logger.error(`モデル選択エラー: ${(error as Error).message}`, error as Error);
       vscode.window.showErrorMessage(`Error selecting model: ${(error as Error).message}`);
       return undefined;
     }
@@ -198,7 +199,7 @@ class ModelManager {
       const responseText = await this.streamToString(response.text);
       return convertToOpenAIFormat({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
     } catch (error) {
-      console.error('Chat completion error:', error);
+      logger.error('Chat completion error:', error as Error);
       throw error;
     }
   }
@@ -313,7 +314,7 @@ class ModelManager {
       );
       callback(finishChunk);
     } catch (error) {
-      console.error('Streaming chat completion error:', error);
+      logger.error('Streaming chat completion error:', error as Error);
       throw error;
     }
   }
@@ -338,7 +339,7 @@ class ModelManager {
       
       return false;
     } catch (error) {
-      console.error('モデルチェックエラー:', error);
+      logger.error('モデルチェックエラー:', error as Error);
       return false;
     }
   }
