@@ -19,10 +19,10 @@ class ModelManager {
 
   /**
    * AsyncIterableなストリームを文字列に変換
-   * @param stream 文字列のAsyncIterableIterator
+   * @param stream 文字列のAsyncIterable
    * @returns 連結された文字列
    */
-  private async streamToString(stream: AsyncIterableIterator<string>): Promise<string> {
+  private async streamToString(stream: AsyncIterable<string>): Promise<string> {
     let result = '';
     for await (const chunk of stream) {
       result += chunk;
@@ -124,12 +124,12 @@ class ModelManager {
       // メッセージをVSCode LM API形式に変換
       const vscodeLmMessages = messages.map(msg => {
         if (msg.role === 'user') {
-          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+          return vscode.LanguageModelChatMessage.User(msg.content);
         } else if (msg.role === 'assistant') {
-          return vscode.lm.LanguageModelChatMessage.Assistant(msg.content);
+          return vscode.LanguageModelChatMessage.Assistant(msg.content);
         } else {
           // システムメッセージなどはユーザーメッセージとして扱う
-          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+          return vscode.LanguageModelChatMessage.User(msg.content);
         }
       });
       
@@ -194,12 +194,12 @@ class ModelManager {
       // メッセージをVSCode LM API形式に変換
       const vscodeLmMessages = messages.map(msg => {
         if (msg.role === 'user') {
-          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+          return vscode.LanguageModelChatMessage.User(msg.content);
         } else if (msg.role === 'assistant') {
-          return vscode.lm.LanguageModelChatMessage.Assistant(msg.content);
+          return vscode.LanguageModelChatMessage.Assistant(msg.content);
         } else {
           // システムメッセージなどはユーザーメッセージとして扱う
-          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+          return vscode.LanguageModelChatMessage.User(msg.content);
         }
       });
       
