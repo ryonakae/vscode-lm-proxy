@@ -68,6 +68,8 @@ curl -X POST http://localhost:4000/chat/completions \
   }'
 ```
 
+> **注意**: `model`パラメーターには常に`"vscode-lm-proxy"`を指定してください。実際のモデル選択はVSCode内のコマンドパレットから行います。
+
 ストリーミングモード：
 
 ```bash

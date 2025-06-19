@@ -142,13 +142,16 @@ class ModelManager {
     modelId: string
   ): Promise<OpenAIChatCompletionResponse> {
     try {
+      // vscode-lm-proxyの場合は選択されたモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      
       // モデルが選択されていない場合
-      if (!this.selectedModelId && modelId !== this.selectedModelId) {
+      if (!actualModelId) {
         throw new Error('モデルが選択されていません。先にモデルを選択してください。');
       }
       
       // レート制限チェック
-      const rateLimitError = limitsManager.checkRateLimit(modelId);
+      const rateLimitError = limitsManager.checkRateLimit(actualModelId);
       if (rateLimitError) {
         const error = new Error(rateLimitError.message);
         (error as any).statusCode = 429; // Too Many Requests
@@ -157,7 +160,7 @@ class ModelManager {
       }
       
       // トークン制限チェック
-      const tokenLimitError = limitsManager.validateTokenLimit(messages, modelId);
+      const tokenLimitError = limitsManager.validateTokenLimit(messages, actualModelId);
       if (tokenLimitError) {
         const error = new Error(tokenLimitError.message);
         (error as any).statusCode = 400; // Bad Request
@@ -179,9 +182,9 @@ class ModelManager {
       
       // VSCode LM APIを呼び出し
       // 最新のAPIではモデルを取得してからリクエストを送信
-      const [model] = await vscode.lm.selectChatModels({ id: modelId });
+      const [model] = await vscode.lm.selectChatModels({ id: actualModelId });
       if (!model) {
-        throw new Error(`モデル ${modelId} が見つかりません`);
+        throw new Error(`モデル ${actualModelId} が見つかりません`);
       }
       
       const response = await model.sendRequest(
@@ -212,13 +215,16 @@ class ModelManager {
     callback: (chunk: any) => void
   ): Promise<void> {
     try {
+      // vscode-lm-proxyの場合は選択されたモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      
       // モデルが選択されていない場合
-      if (!this.selectedModelId && modelId !== this.selectedModelId) {
+      if (!actualModelId) {
         throw new Error('モデルが選択されていません。先にモデルを選択してください。');
       }
       
       // レート制限チェック
-      const rateLimitError = limitsManager.checkRateLimit(modelId);
+      const rateLimitError = limitsManager.checkRateLimit(actualModelId);
       if (rateLimitError) {
         const error = new Error(rateLimitError.message);
         (error as any).statusCode = 429; // Too Many Requests
@@ -227,7 +233,7 @@ class ModelManager {
       }
       
       // トークン制限チェック
-      const tokenLimitError = limitsManager.validateTokenLimit(messages, modelId);
+      const tokenLimitError = limitsManager.validateTokenLimit(messages, actualModelId);
       if (tokenLimitError) {
         const error = new Error(tokenLimitError.message);
         (error as any).statusCode = 400; // Bad Request
@@ -249,9 +255,9 @@ class ModelManager {
       
       // VSCode LM APIを呼び出し（ストリーミングモード）
       // 最新のAPIではモデルを取得してからリクエストを送信
-      const [model] = await vscode.lm.selectChatModels({ id: modelId });
+      const [model] = await vscode.lm.selectChatModels({ id: actualModelId });
       if (!model) {
-        throw new Error(`モデル ${modelId} が見つかりません`);
+        throw new Error(`モデル ${actualModelId} が見つかりません`);
       }
       
       // 新しいAPIでの実装
