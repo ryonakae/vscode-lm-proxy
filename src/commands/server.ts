@@ -13,7 +13,8 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
       vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', true);
       // ステータスバーを更新
       statusBarManager.updateStatus(true);
-      vscode.window.showInformationMessage('Language Model Proxyサーバーを起動しました');
+      const serverUrl = serverManager.getServerUrl();
+      vscode.window.showInformationMessage(`Language Model Proxyサーバーを起動しました (エンドポイント: ${serverUrl})`);
     } catch (error) {
       vscode.window.showErrorMessage(`サーバーの起動に失敗しました: ${(error as Error).message}`);
     }

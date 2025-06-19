@@ -22,6 +22,10 @@ export function activate(context: vscode.ExtensionContext) {
   const wasServerRunning = context.globalState.get<boolean>('serverRunning', false);
   if (wasServerRunning) {
     serverManager.start()
+      .then(() => {
+        const serverUrl = serverManager.getServerUrl();
+        vscode.window.showInformationMessage(`Language Model Proxyサーバーを起動しました (エンドポイント: ${serverUrl})`);
+      })
       .catch(err => {
         vscode.window.showErrorMessage(`サーバーの自動起動に失敗しました: ${err.message}`);
       });
