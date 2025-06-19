@@ -37,33 +37,55 @@ class ModelManager {
   public async selectModel(): Promise<string | undefined> {
     try {
       // サポートされているモデルが見つかるまで順番に試す
-      let models = [];
+      let allModels: any[] = [];
       
       // まず、指定せずにすべてのモデルを取得してみる
-      models = await vscode.lm.selectChatModels({});
-      
-      // モデルが見つからなかった場合は、ファミリーごとに試行
-      if (!models || models.length === 0) {
+      const defaultModels = await vscode.lm.selectChatModels({});
+      if (defaultModels && defaultModels.length > 0) {
+        allModels = defaultModels;
+      } else {
+        // モデルが見つからなかった場合は、ファミリーごとに試行
         for (const family of this.supportedFamilies) {
-          models = await vscode.lm.selectChatModels({ family });
-          if (models && models.length > 0) {
-            break;
+          const familyModels = await vscode.lm.selectChatModels({ family });
+          if (familyModels && familyModels.length > 0) {
+            allModels = [...allModels, ...familyModels];
           }
         }
       }
       
-      if (!models || models.length === 0) {
+      if (allModels.length === 0) {
         vscode.window.showWarningMessage('利用可能なモデルがありません');
         return undefined;
       }
       
+      // モデル選択用のQuickPickアイテムを作成
+      const quickPickItems = allModels.map(model => ({
+        label: model.name || model.id,
+        description: `${model.id} - ${model.vendor || '不明なベンダー'}`,
+        detail: model.description || 'モデルの詳細情報はありません',
+        model: model
+      }));
+      
+      // QuickPickを使ってユーザーにモデルを選択させる
+      const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
+        placeHolder: '使用するモデルを選択してください',
+        canPickMany: false,
+        matchOnDescription: true,
+        matchOnDetail: true
+      });
+      
+      if (!selectedItem) {
+        // ユーザーが選択をキャンセルした場合
+        return undefined;
+      }
+      
       // 選択されたモデルを保存
-      this.selectedModelId = models[0].id;
+      this.selectedModelId = selectedItem.model.id;
       
       // モデル情報をログ出力
-      console.log(`選択されたモデル: ${models[0].name} (${models[0].id})`);
+      console.log(`選択されたモデル: ${selectedItem.label} (${this.selectedModelId})`);
       
-      return this.selectedModelId;
+      return this.selectedModelId as string;
     } catch (error) {
       console.error('モデル選択エラー:', error);
       vscode.window.showErrorMessage(`モデルの選択中にエラーが発生しました: ${(error as Error).message}`);
@@ -77,6 +99,14 @@ class ModelManager {
    */
   public getSelectedModel(): string | null {
     return this.selectedModelId;
+  }
+  
+  /**
+   * モデルIDを直接設定する
+   * @param modelId 設定するモデルID
+   */
+  public setSelectedModel(modelId: string): void {
+    this.selectedModelId = modelId;
   }
   
   /**

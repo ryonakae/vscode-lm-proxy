@@ -29,7 +29,8 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   // 前回選択されたモデルを復元
   const previouslySelectedModel = context.globalState.get<string>('selectedModel');
   if (previouslySelectedModel) {
-    // モデル選択状態を復元するロジックを実装（将来的に拡張）
-    console.log(`前回選択されたモデル: ${previouslySelectedModel}`);
+    // モデル選択状態を復元
+    modelManager.setSelectedModel(previouslySelectedModel);
+    console.log(`前回選択されたモデルを復元しました: ${previouslySelectedModel}`);
   }
 }
