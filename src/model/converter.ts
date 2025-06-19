@@ -29,10 +29,27 @@ export function convertToOpenAIFormat(
       choices: [
         {
           delta: response.isComplete || response.content === undefined
-            ? { content: response.content || '' }
-            : response.content === '' ? { role: 'assistant' } : { content: response.content },
+            ? { 
+                content: response.content || '',
+                function_call: undefined,
+                tool_calls: undefined,
+                name: undefined,
+                context: undefined,
+                tool_call_id: undefined
+              }
+            : response.content === '' 
+              ? { role: 'assistant' } 
+              : { 
+                  content: response.content,
+                  function_call: undefined,
+                  tool_calls: undefined,
+                  name: undefined,
+                  context: undefined,
+                  tool_call_id: undefined
+                },
           index: 0,
-          finish_reason: response.isComplete ? 'stop' : null
+          finish_reason: response.isComplete ? 'stop' : null,
+          logprobs: null
         }
       ]
     } as OpenAIChatCompletionChunk;
@@ -49,11 +66,17 @@ export function convertToOpenAIFormat(
           message: {
             role: 'assistant',
             content: response.content || '',
+            function_call: undefined,
+            tool_calls: undefined,
+            name: undefined,
+            context: undefined,
+            tool_call_id: undefined,
             refusal: null,
             annotations: []
           },
           index: 0,
-          finish_reason: 'stop'
+          finish_reason: 'stop',
+          logprobs: null
         }
       ],
       usage: {
