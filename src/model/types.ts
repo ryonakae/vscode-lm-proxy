@@ -22,10 +22,16 @@ export interface OpenAIChatCompletionResponse {
         explanation: string;
       };
       annotations?: any[];
+      logprobs?: any;
+      model?: string;
     };
     index: number;
     finish_reason: string | null;
     logprobs?: any;
+    logits?: any[];
+    top_logprobs?: any[];
+    tokens?: string[];
+    text_offset?: number[];
   }>;
   usage: {
     prompt_tokens: number;
@@ -68,10 +74,16 @@ export interface OpenAIChatCompletionChunk {
         explanation: string;
       };
       annotations?: any[];
+      logprobs?: any;
+      model?: string;
     };
     index: number;
     finish_reason: string | null;
     logprobs?: any;
+    logits?: any[];
+    top_logprobs?: any[];
+    tokens?: string[];
+    text_offset?: number[];
   }>;
   system_fingerprint?: string;
 }

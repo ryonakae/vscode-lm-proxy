@@ -38,10 +38,23 @@ export function convertToOpenAIFormat(
                 context: undefined,
                 tool_call_id: undefined,
                 refusal: null,
-                annotations: []
+                annotations: [],
+                logprobs: null,
+                model: modelId
               }
             : response.content === '' 
-              ? { role: 'assistant' } 
+              ? { 
+                  role: 'assistant',
+                  function_call: undefined,
+                  tool_calls: undefined,
+                  name: undefined,
+                  context: undefined,
+                  tool_call_id: undefined,
+                  refusal: null,
+                  annotations: [],
+                  logprobs: null,
+                  model: modelId
+                } 
               : { 
                   role: 'assistant',
                   content: response.content,
@@ -51,11 +64,17 @@ export function convertToOpenAIFormat(
                   context: undefined,
                   tool_call_id: undefined,
                   refusal: null,
-                  annotations: []
+                  annotations: [],
+                  logprobs: null,
+                  model: modelId
                 },
           index: 0,
           finish_reason: response.isComplete ? 'stop' : null,
-          logprobs: null
+          logprobs: null,
+          logits: [],
+          top_logprobs: [],
+          tokens: [],
+          text_offset: []
         }
       ]
     } as OpenAIChatCompletionChunk;
@@ -78,11 +97,17 @@ export function convertToOpenAIFormat(
             context: undefined,
             tool_call_id: undefined,
             refusal: null,
-            annotations: []
+            annotations: [],
+            logprobs: null,
+            model: modelId
           },
           index: 0,
           finish_reason: 'stop',
-          logprobs: null
+          logprobs: null,
+          logits: [],
+          top_logprobs: [],
+          tokens: [],
+          text_offset: []
         }
       ],
       usage: {
@@ -163,11 +188,17 @@ export function convertVSCodeResponseToOpenAIResponse(
           context: undefined,
           tool_call_id: undefined,
           refusal: null,
-          annotations: []
+          annotations: [],
+          logprobs: null,
+          model: modelId
         },
         index: 0,
         finish_reason: 'stop',
-        logprobs: null
+        logprobs: null,
+        logits: [],
+        top_logprobs: [],
+        tokens: [],
+        text_offset: []
       }
     ],
     usage: {
