@@ -13,7 +13,7 @@ export function createServer(): express.Express {
   app.use(express.json());
   
   // ルートエンドポイント
-  app.get('/', (req, res) => {
+  app.get('/', (_req, res) => {
     res.json({
       status: 'ok',
       message: 'VSCode LM API Proxy server is running',
@@ -31,7 +31,7 @@ export function createServer(): express.Express {
   setupChatCompletionsEndpoint(app);
   
   // エラーハンドラーの設定
-  app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
     console.error('サーバーエラー:', err);
     res.status(500).json({
       error: {

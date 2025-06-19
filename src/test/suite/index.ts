@@ -1,5 +1,6 @@
 import * as path from 'path';
-import * as Mocha from 'mocha';
+// Mochaの正しいインポート方法に変更
+import Mocha from 'mocha';
 import { glob } from 'glob';
 
 /**

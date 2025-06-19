@@ -10,7 +10,7 @@ import { OpenAIChatCompletionResponse, OpenAIChatCompletionChunk } from './types
  * @returns OpenAI API形式のレスポンス
  */
 export function convertToOpenAIFormat(
-  response: vscode.LanguageModelChatCompletionItem | vscode.LanguageModelChatCompletionItem,
+  response: { content: string; isComplete?: boolean },
   modelId: string,
   isStreaming: boolean = false
 ): OpenAIChatCompletionResponse | OpenAIChatCompletionChunk {

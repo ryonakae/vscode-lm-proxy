@@ -18,13 +18,26 @@ class ModelManager {
   ];
 
   /**
+   * AsyncIterableなストリームを文字列に変換
+   * @param stream 文字列のAsyncIterableIterator
+   * @returns 連結された文字列
+   */
+  private async streamToString(stream: AsyncIterableIterator<string>): Promise<string> {
+    let result = '';
+    for await (const chunk of stream) {
+      result += chunk;
+    }
+    return result;
+  }
+
+  /**
    * 利用可能なモデルからモデルを選択する
    * @returns 選択したモデルのID
    */
   public async selectModel(): Promise<string | undefined> {
     try {
       const models = await vscode.lm.selectChatModels({
-        includeFamily: this.supportedFamilies
+        family: this.supportedFamilies.join('|')
       });
       
       if (!models || models.length === 0) {
@@ -98,20 +111,33 @@ class ModelManager {
       
       // メッセージをVSCode LM API形式に変換
       const vscodeLmMessages = messages.map(msg => {
-        return new vscode.LanguageModelChatMessage(
-          msg.role, 
-          msg.content
-        );
+        if (msg.role === 'user') {
+          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+        } else if (msg.role === 'assistant') {
+          return vscode.lm.LanguageModelChatMessage.Assistant(msg.content);
+        } else {
+          // システムメッセージなどはユーザーメッセージとして扱う
+          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+        }
       });
       
       // VSCode LM APIを呼び出し
-      const response = await vscode.lm.sendChatRequest(
-        { id: modelId }, 
-        vscodeLmMessages
+      // 最新のAPIではモデルを取得してからリクエストを送信
+      const [model] = await vscode.lm.selectChatModels({ id: modelId });
+      if (!model) {
+        throw new Error(`モデル ${modelId} が見つかりません`);
+      }
+      
+      const response = await model.sendRequest(
+        vscodeLmMessages,
+        {},
+        new vscode.CancellationTokenSource().token
       );
       
       // レスポンスをOpenAI API形式に変換
-      return convertToOpenAIFormat(response, modelId);
+      // 新しいAPIは直接テキストを返さないため、ストリーミング処理として扱う
+      const responseText = await this.streamToString(response.text);
+      return convertToOpenAIFormat({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
     } catch (error) {
       console.error('Chat completion error:', error);
       throw error;
@@ -155,22 +181,37 @@ class ModelManager {
       
       // メッセージをVSCode LM API形式に変換
       const vscodeLmMessages = messages.map(msg => {
-        return new vscode.LanguageModelChatMessage(
-          msg.role, 
-          msg.content
-        );
+        if (msg.role === 'user') {
+          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+        } else if (msg.role === 'assistant') {
+          return vscode.lm.LanguageModelChatMessage.Assistant(msg.content);
+        } else {
+          // システムメッセージなどはユーザーメッセージとして扱う
+          return vscode.lm.LanguageModelChatMessage.User(msg.content);
+        }
       });
       
       // VSCode LM APIを呼び出し（ストリーミングモード）
-      const stream = await vscode.lm.sendChatRequestStream(
-        { id: modelId }, 
-        vscodeLmMessages
+      // 最新のAPIではモデルを取得してからリクエストを送信
+      const [model] = await vscode.lm.selectChatModels({ id: modelId });
+      if (!model) {
+        throw new Error(`モデル ${modelId} が見つかりません`);
+      }
+      
+      // 新しいAPIでの実装
+      const response = await model.sendRequest(
+        vscodeLmMessages,
+        {},
+        new vscode.CancellationTokenSource().token
       );
+      
+      // 応答のストリームを取得
+      const stream = response.text;
       
       // ストリームを処理
       for await (const chunk of stream) {
         // チャンクをOpenAI API形式に変換してコールバックに渡す
-        const openAIChunk = convertToOpenAIFormat(chunk, modelId, true);
+        const openAIChunk = convertToOpenAIFormat({ content: chunk, isComplete: false }, modelId, true);
         callback(openAIChunk);
       }
     } catch (error) {
@@ -187,7 +228,7 @@ class ModelManager {
   public async hasSupportedModels(families: string[]): Promise<boolean> {
     try {
       const models = await vscode.lm.selectChatModels({
-        includeFamily: families
+        family: families.join('|')
       });
       
       return models && models.length > 0;
