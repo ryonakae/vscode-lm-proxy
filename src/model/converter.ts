@@ -15,20 +15,22 @@ export function convertToOpenAIFormat(
   isStreaming: boolean = false
 ): OpenAIChatCompletionResponse | OpenAIChatCompletionChunk {
   const now = Math.floor(Date.now() / 1000);
+  const randomId = `chatcmpl-${generateRandomId()}`;
+  const systemFingerprint = `fp_${generateRandomId()}`;
   
   if (isStreaming) {
     // ストリーミング用のチャンクフォーマット
     return {
-      id: `chatcmpl-${generateRandomId()}`,
+      id: randomId,
       object: 'chat.completion.chunk',
       created: now,
       model: modelId,
+      system_fingerprint: systemFingerprint,
       choices: [
         {
-          delta: {
-            role: 'assistant',
-            content: response.content || ''
-          },
+          delta: response.isComplete || response.content === undefined
+            ? { content: response.content || '' }
+            : response.content === '' ? { role: 'assistant' } : { content: response.content },
           index: 0,
           finish_reason: response.isComplete ? 'stop' : null
         }
@@ -37,10 +39,11 @@ export function convertToOpenAIFormat(
   } else {
     // 通常のレスポンスフォーマット
     return {
-      id: `chatcmpl-${generateRandomId()}`,
+      id: randomId,
       object: 'chat.completion',
       created: now,
       model: modelId,
+      system_fingerprint: systemFingerprint,
       choices: [
         {
           message: {
@@ -98,12 +101,15 @@ export function convertVSCodeResponseToOpenAIResponse(
   vsCodeResponse: any
 ): OpenAIChatCompletionResponse {
   const now = Math.floor(Date.now() / 1000);
+  const randomId = `chatcmpl-${generateRandomId()}`;
+  const systemFingerprint = `fp_${generateRandomId()}`;
   
   return {
-    id: `chatcmpl-${generateRandomId()}`,
+    id: randomId,
     object: 'chat.completion',
     created: now,
     model: modelId,
+    system_fingerprint: systemFingerprint,
     choices: [
       {
         message: {
