@@ -1,6 +1,6 @@
-# VSCode LiteLLM API リファレンス
+# LM Proxy API リファレンス
 
-このドキュメントではVSCode LiteLLMが提供するAPI機能について説明します。
+このドキュメントではLM Proxyが提供するAPI機能について説明します。
 
 ## ベースURL
 

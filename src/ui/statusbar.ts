@@ -21,7 +21,7 @@ class StatusBarManager {
     );
     
     this.statusBarItem.command = 'vscode-lm-proxy.showStatusMenu';
-    this.statusBarItem.tooltip = 'VSCode Language Model Proxy';
+    this.statusBarItem.tooltip = 'Language Model Proxy';
     
     // 初期状態を設定
     this.updateStatus(false);
@@ -53,18 +53,18 @@ class StatusBarManager {
       // エラー状態
       this.statusBarItem.text = '$(error) LM Proxy';
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
-      this.statusBarItem.tooltip = `VSCode LM Proxy: エラー - ${errorMessage}`;
+      this.statusBarItem.tooltip = `LM Proxy: エラー - ${errorMessage}`;
     } else if (isRunning) {
       // 実行中
       this.statusBarItem.text = '$(check) LM Proxy';
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
-      this.statusBarItem.tooltip = `VSCode LM Proxy: 実行中 (${url})`;
+      this.statusBarItem.tooltip = `LM Proxy: 実行中 (${url})`;
     } else {
       // 停止中
       this.statusBarItem.text = '$(circle-slash) LM Proxy';
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = 'VSCode LM Proxy: 停止中';
+      this.statusBarItem.tooltip = 'LM Proxy: 停止中';
     }
   }
   

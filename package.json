@@ -1,20 +1,20 @@
 {
-  "name": "vscode-litellm",
-  "displayName": "VSCode LiteLLM",
+  "name": "vscode-lm-proxy",
+  "displayName": "LM Proxy",
   "description": "VSCode Language Model API Proxy with OpenAI API compatibility",
   "version": "0.0.1",
-  "publisher": "vscode-litellm",
+  "publisher": "vscode-lm-proxy",
   "author": {
-    "name": "VSCode LiteLLM Team"
+    "name": "Ryo Nakae"
   },
   "license": "MIT",
-  "homepage": "https://github.com/user/vscode-litellm",
+  "homepage": "https://github.com/user/vscode-lm-proxy",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/vscode-litellm.git"
+    "url": "https://github.com/user/vscode-lm-proxy.git"
   },
   "bugs": {
-    "url": "https://github.com/user/vscode-litellm/issues"
+    "url": "https://github.com/user/vscode-lm-proxy/issues"
   },
   "icon": "images/icon.png",
   "galleryBanner": {

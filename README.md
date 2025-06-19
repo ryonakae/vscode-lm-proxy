@@ -1,4 +1,4 @@
-# VSCode LiteLLM
+# LM Proxy
 
 VSCode Language Model APIをOpenAI互換のREST APIとして公開する拡張機能です。
 この拡張機能を使用すると、VSCodeのLanguage Model APIを外部アプリケーションから簡単に利用できます。
@@ -24,8 +24,8 @@ VSCode Language Model APIをOpenAI互換のREST APIとして公開する拡張�
 
 1. リポジトリをクローン
    ```bash
-   git clone https://github.com/user/vscode-litellm.git
-   cd vscode-litellm
+   git clone https://github.com/user/vscode-lm-proxy.git
+   cd vscode-lm-proxy
    ```
 
 2. 依存関係のインストール
@@ -48,8 +48,8 @@ VSCode Language Model APIをOpenAI互換のREST APIとして公開する拡張�
 ### 拡張機能の起動
 
 1. コマンドパレットを開く（`Ctrl+Shift+P` または `Cmd+Shift+P`）
-2. `VSCode LiteLLM: Select Language Model`を選択し、使用するモデルを選択
-3. `VSCode LiteLLM: Start LM Proxy Server`を選択してサーバーを起動
+2. `LM Proxy: Select Language Model`を選択し、使用するモデルを選択
+3. `LM Proxy: Start LM Proxy Server`を選択してサーバーを起動
 4. ステータスバーにサーバーの状態が表示されます
 
 ### APIの使用
@@ -85,9 +85,9 @@ curl -X POST http://localhost:4000/chat/completions \
 
 ## コマンド
 
-- `VSCode LiteLLM: Start LM Proxy Server` - プロキシサーバーを起動します
-- `VSCode LiteLLM: Stop LM Proxy Server` - 実行中のプロキシサーバーを停止します
-- `VSCode LiteLLM: Select Language Model` - 使用する言語モデルを選択します
+- `LM Proxy: Start LM Proxy Server` - プロキシサーバーを起動します
+- `LM Proxy: Stop LM Proxy Server` - 実行中のプロキシサーバーを停止します
+- `LM Proxy: Select Language Model` - 使用する言語モデルを選択します
 
 ## キーボードショートカット
 

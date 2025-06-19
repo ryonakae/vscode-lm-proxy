@@ -6,7 +6,7 @@ import { statusBarManager } from './ui/statusbar';
 
 // 拡張機能が有効化された時に実行される関数
 export function activate(context: vscode.ExtensionContext) {
-  console.log('VSCode LiteLLM拡張機能が有効化されました');
+  console.log('LM Proxy拡張機能が有効化されました');
 
   // コンテキスト変数の初期化
   vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
@@ -30,7 +30,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 // 拡張機能が無効化された時に実行される関数
 export function deactivate(): Promise<void> | undefined {
-  console.log('VSCode LiteLLM拡張機能が無効化されました');
+  console.log('LM Proxy拡張機能が無効化されました');
   
   // サーバーが実行中なら停止
   if (serverManager.isRunning()) {
