@@ -36,9 +36,21 @@ class ModelManager {
    */
   public async selectModel(): Promise<string | undefined> {
     try {
-      const models = await vscode.lm.selectChatModels({
-        family: this.supportedFamilies.join('|')
-      });
+      // サポートされているモデルが見つかるまで順番に試す
+      let models = [];
+      
+      // まず、指定せずにすべてのモデルを取得してみる
+      models = await vscode.lm.selectChatModels({});
+      
+      // モデルが見つからなかった場合は、ファミリーごとに試行
+      if (!models || models.length === 0) {
+        for (const family of this.supportedFamilies) {
+          models = await vscode.lm.selectChatModels({ family });
+          if (models && models.length > 0) {
+            break;
+          }
+        }
+      }
       
       if (!models || models.length === 0) {
         vscode.window.showWarningMessage('利用可能なモデルがありません');
@@ -227,11 +239,18 @@ class ModelManager {
    */
   public async hasSupportedModels(families: string[]): Promise<boolean> {
     try {
-      const models = await vscode.lm.selectChatModels({
-        family: families.join('|')
-      });
+      // 各ファミリーごとに個別に確認する
+      for (const family of families) {
+        const models = await vscode.lm.selectChatModels({
+          family: family
+        });
+        
+        if (models && models.length > 0) {
+          return true;
+        }
+      }
       
-      return models && models.length > 0;
+      return false;
     } catch (error) {
       console.error('モデルチェックエラー:', error);
       return false;
