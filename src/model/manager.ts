@@ -147,7 +147,7 @@ class ModelManager {
       
       // モデルが選択されていない場合
       if (!actualModelId) {
-        throw new Error('モデルが選択されていません。先にモデルを選択してください。');
+        throw new Error('No model selected. Please select a model first.');
       }
       
       // レート制限チェック
@@ -220,7 +220,7 @@ class ModelManager {
       
       // モデルが選択されていない場合
       if (!actualModelId) {
-        throw new Error('モデルが選択されていません。先にモデルを選択してください。');
+        throw new Error('No model selected. Please select a model first.');
       }
       
       // レート制限チェック

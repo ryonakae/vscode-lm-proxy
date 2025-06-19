@@ -142,7 +142,7 @@ export class LimitsManager {
     // トークン数が上限を超えている場合
     if (estimatedTokens > tokenLimit) {
       return new Error(
-        `トークン制限超過: 推定 ${estimatedTokens} トークン、上限 ${tokenLimit} トークン`
+        `Token limit exceeded: estimated ${estimatedTokens} tokens, limit ${tokenLimit} tokens`
       );
     }
     

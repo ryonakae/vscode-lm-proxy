@@ -14,9 +14,9 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
       // ステータスバーを更新
       statusBarManager.updateStatus(true);
       const serverUrl = serverManager.getServerUrl();
-      vscode.window.showInformationMessage(`Language Model Proxyサーバーを起動しました (エンドポイント: ${serverUrl})`);
+      vscode.window.showInformationMessage(`Language Model Proxy server started (endpoint: ${serverUrl})`);
     } catch (error) {
-      vscode.window.showErrorMessage(`サーバーの起動に失敗しました: ${(error as Error).message}`);
+      vscode.window.showErrorMessage(`Failed to start server: ${(error as Error).message}`);
     }
   });
 
@@ -28,9 +28,9 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
       vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
       // ステータスバーを更新
       statusBarManager.updateStatus(false);
-      vscode.window.showInformationMessage('Language Model Proxyサーバーを停止しました');
+      vscode.window.showInformationMessage('Language Model Proxy server stopped');
     } catch (error) {
-      vscode.window.showErrorMessage(`サーバーの停止に失敗しました: ${(error as Error).message}`);
+      vscode.window.showErrorMessage(`Failed to stop server: ${(error as Error).message}`);
     }
   });
 

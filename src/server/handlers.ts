@@ -43,7 +43,7 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
       const statusCode = apiError.statusCode || 500;
       const errorResponse = {
         error: {
-          message: apiError.message || '不明なエラーが発生しました',
+          message: apiError.message || 'An unknown error has occurred',
           type: apiError.type || 'api_error',
           code: apiError.code || 'internal_error'
         }
@@ -66,7 +66,7 @@ function validateChatCompletionRequest(body: any): {
 } {
   // 必須フィールドのチェック
   if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
-    const error: any = new Error('messagesフィールドが必要です');
+    const error: any = new Error('The messages field is required');
     error.statusCode = 400;
     error.type = 'invalid_request_error';
     throw error;
@@ -77,7 +77,7 @@ function validateChatCompletionRequest(body: any): {
   
   // モデルが'vscode-lm-proxy'の場合、選択されたモデルがあるか確認
   if (model === 'vscode-lm-proxy' && !modelManager.getSelectedModel()) {
-    const error: any = new Error('有効なモデルが選択されていません。先にモデルを選択してください。');
+    const error: any = new Error('No valid model selected. Please select a model first.');
     error.statusCode = 400;
     error.type = 'invalid_request_error';
     throw error;

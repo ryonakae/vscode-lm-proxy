@@ -6,7 +6,7 @@ import { statusBarManager } from './ui/statusbar';
 
 // 拡張機能が有効化された時に実行される関数
 export function activate(context: vscode.ExtensionContext) {
-  console.log('LM Proxy拡張機能が有効化されました');
+  console.log('LM Proxy extension activated');
 
   // コンテキスト変数の初期化
   vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
@@ -24,17 +24,17 @@ export function activate(context: vscode.ExtensionContext) {
     serverManager.start()
       .then(() => {
         const serverUrl = serverManager.getServerUrl();
-        vscode.window.showInformationMessage(`Language Model Proxyサーバーを起動しました (エンドポイント: ${serverUrl})`);
+        vscode.window.showInformationMessage(`Language Model Proxy server started (endpoint: ${serverUrl})`);
       })
       .catch(err => {
-        vscode.window.showErrorMessage(`サーバーの自動起動に失敗しました: ${err.message}`);
+        vscode.window.showErrorMessage(`Failed to auto-start server: ${err.message}`);
       });
   }
 }
 
 // 拡張機能が無効化された時に実行される関数
 export function deactivate(): Promise<void> | undefined {
-  console.log('LM Proxy拡張機能が無効化されました');
+  console.log('LM Proxy extension deactivated');
   
   // サーバーが実行中なら停止
   if (serverManager.isRunning()) {

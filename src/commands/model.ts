@@ -18,12 +18,12 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
         const selectedModelName = modelManager.getSelectedModelName();
         context.globalState.update('selectedModel', selectedModel);
         context.globalState.update('selectedModelName', selectedModelName);
-        vscode.window.showInformationMessage(`モデルを選択しました: ${selectedModelName || selectedModel}`);
+        vscode.window.showInformationMessage(`Model selected: ${selectedModelName || selectedModel}`);
         // ステータスバーを更新
         statusBarManager.updateStatus(serverManager.isRunning());
       }
     } catch (error) {
-      vscode.window.showErrorMessage(`モデルの選択中にエラーが発生しました: ${(error as Error).message}`);
+      vscode.window.showErrorMessage(`Error selecting model: ${(error as Error).message}`);
     }
   });
 

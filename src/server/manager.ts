@@ -37,8 +37,8 @@ class ServerManager {
         this.server.on('error', (err) => {
           this._isRunning = false;
           vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
-          statusBarManager.updateStatus(false, `サーバー起動エラー: ${(err as Error).message}`);
-          reject(new Error(`サーバー起動エラー: ${(err as Error).message}`));
+          statusBarManager.updateStatus(false, `Server startup error: ${(err as Error).message}`);
+          reject(new Error(`Server startup error: ${(err as Error).message}`));
         });
       });
     } catch (error) {
@@ -60,14 +60,14 @@ class ServerManager {
     return new Promise<void>((resolve, reject) => {
       this.server?.close((err) => {
         if (err) {
-          reject(new Error(`サーバー停止エラー: ${err.message}`));
+          reject(new Error(`Server stop error: ${err.message}`));
           return;
         }
         
         this.server = null;
         this._isRunning = false;
         vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
-        console.log('VSCode LM Proxyサーバーが停止しました');
+        console.log('VSCode LM Proxy server stopped');
         statusBarManager.updateStatus(false);
         resolve();
       });

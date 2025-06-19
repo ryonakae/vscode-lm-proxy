@@ -59,18 +59,18 @@ class StatusBarManager {
       // エラー状態
       this.statusBarItem.text = `$(error) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
-      this.statusBarItem.tooltip = `サーバ: エラー - ${errorMessage}`;
+      this.statusBarItem.tooltip = `Server: Error - ${errorMessage}`;
     } else if (isRunning) {
       // 実行中
       this.statusBarItem.text = `$(check) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
-      this.statusBarItem.tooltip = `サーバ: 実行中 (${url})${selectedModelName ? `\nモデル: ${selectedModelName}` : ''}`;
+      this.statusBarItem.tooltip = `Server: Running (${url})${selectedModelName ? `\nModel: ${selectedModelName}` : ''}`;
     } else {
       // 停止中
       this.statusBarItem.text = `$(circle-slash) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = `サーバ: 停止中${selectedModelName ? `\nモデル: ${selectedModelName}` : ''}`;
+      this.statusBarItem.tooltip = `Server: Stopped${selectedModelName ? `\nModel: ${selectedModelName}` : ''}`;
     }
   }
   
@@ -85,28 +85,28 @@ class StatusBarManager {
     
     if (isRunning) {
       items.push({
-        label: '$(circle-slash) サーバーを停止',
-        description: 'LM Proxyサーバーを停止',
+        label: '$(circle-slash) Stop Server',
+        description: 'Stop the LM Proxy server',
         command: 'vscode-lm-proxy.stopServer'
       });
     } else {
       items.push({
-        label: '$(play) サーバーを起動',
-        description: 'LM Proxyサーバーを起動',
+        label: '$(play) Start Server',
+        description: 'Start the LM Proxy server',
         command: 'vscode-lm-proxy.startServer'
       });
     }
     
     // モデル選択メニュー項目を追加
     items.push({
-      label: '$(gear) モデルを選択',
-      description: 'LM Proxyで使用するモデルを選択',
+      label: '$(gear) Select Model',
+      description: 'Select a model for LM Proxy',
       command: 'vscode-lm-proxy.selectModel'
     });
     
     // メニューを表示
     const selected = await vscode.window.showQuickPick(items, {
-      placeHolder: 'LM Proxy操作を選択'
+      placeHolder: 'Select LM Proxy Operation'
     });
     
     // 選択されたコマンドを実行
