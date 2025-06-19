@@ -270,12 +270,48 @@ class ModelManager {
       // 応答のストリームを取得
       const stream = response.text;
       
+      // 最初のチャンクで役割を送信
+      let firstChunk = true;
+      let lastContent = '';
+      
       // ストリームを処理
       for await (const chunk of stream) {
+        lastContent = chunk; // 最後のコンテンツを記録
+        
         // チャンクをOpenAI API形式に変換してコールバックに渡す
-        const openAIChunk = convertToOpenAIFormat({ content: chunk, isComplete: false }, modelId, true);
-        callback(openAIChunk);
+        const openAIChunk = convertToOpenAIFormat(
+          { 
+            content: firstChunk ? '' : chunk, 
+            isComplete: false 
+          }, 
+          modelId, 
+          true
+        );
+        
+        // 最初のチャンクのフラグをリセット
+        if (firstChunk) {
+          firstChunk = false;
+          // 最初の空のチャンクを送信（role: "assistant"を含む）
+          callback(openAIChunk);
+          
+          // 続いて実際のコンテンツを含むチャンクを送信
+          if (chunk) {
+            const contentChunk = convertToOpenAIFormat({ content: chunk, isComplete: false }, modelId, true);
+            callback(contentChunk);
+            continue;
+          }
+        } else {
+          callback(openAIChunk);
+        }
       }
+      
+      // 完了チャンクを送信
+      const finishChunk = convertToOpenAIFormat(
+        { content: '', isComplete: true },
+        modelId,
+        true
+      );
+      callback(finishChunk);
     } catch (error) {
       console.error('Streaming chat completion error:', error);
       throw error;

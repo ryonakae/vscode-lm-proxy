@@ -30,22 +30,28 @@ export function convertToOpenAIFormat(
         {
           delta: response.isComplete || response.content === undefined
             ? { 
+                role: 'assistant',
                 content: response.content || '',
                 function_call: undefined,
                 tool_calls: undefined,
                 name: undefined,
                 context: undefined,
-                tool_call_id: undefined
+                tool_call_id: undefined,
+                refusal: null,
+                annotations: []
               }
             : response.content === '' 
               ? { role: 'assistant' } 
               : { 
+                  role: 'assistant',
                   content: response.content,
                   function_call: undefined,
                   tool_calls: undefined,
                   name: undefined,
                   context: undefined,
-                  tool_call_id: undefined
+                  tool_call_id: undefined,
+                  refusal: null,
+                  annotations: []
                 },
           index: 0,
           finish_reason: response.isComplete ? 'stop' : null,
@@ -151,11 +157,17 @@ export function convertVSCodeResponseToOpenAIResponse(
         message: {
           role: vsCodeResponse.message.role,
           content: vsCodeResponse.message.content,
+          function_call: undefined,
+          tool_calls: undefined,
+          name: undefined,
+          context: undefined,
+          tool_call_id: undefined,
           refusal: null,
           annotations: []
         },
         index: 0,
-        finish_reason: 'stop'
+        finish_reason: 'stop',
+        logprobs: null
       }
     ],
     usage: {

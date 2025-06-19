@@ -63,6 +63,11 @@ export interface OpenAIChatCompletionChunk {
       name?: string;
       context?: any;
       tool_call_id?: string;
+      refusal?: null | {
+        category: string;
+        explanation: string;
+      };
+      annotations?: any[];
     };
     index: number;
     finish_reason: string | null;
