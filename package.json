@@ -41,6 +41,18 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "LM Proxy",
+      "properties": {
+        "vscode-lm-proxy.port": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "LM Proxyサーバーが使用するポート番号"
+        }
+      }
+    },
     "commands": [
       {
         "command": "vscode-lm-proxy.startServer",

@@ -10,8 +10,16 @@ import { statusBarManager } from '../ui/statusbar';
  */
 class ServerManager {
   private server: http.Server | null = null;
-  private port: number = 4000;
   private _isRunning: boolean = false;
+  
+  /**
+   * 設定からポート番号を取得
+   * @returns 設定されたポート番号（デフォルト: 4000）
+   */
+  private getPort(): number {
+    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
+    return config.get<number>('port', 4000);
+  }
 
   /**
    * サーバーを起動する
@@ -24,12 +32,13 @@ class ServerManager {
 
     try {
       const app = createServer();
+      const port = this.getPort();
       
       return new Promise<void>((resolve, reject) => {
-        this.server = app.listen(this.port, () => {
+        this.server = app.listen(port, () => {
           this._isRunning = true;
           vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', true);
-          console.log(`VSCode LM Proxyサーバーがポート${this.port}で起動しました`);
+          console.log(`VSCode LM Proxyサーバーがポート${port}で起動しました`);
           statusBarManager.updateStatus(true);
           resolve();
         });
@@ -90,7 +99,7 @@ class ServerManager {
     if (!this._isRunning) {
       return null;
     }
-    return `http://localhost:${this.port}`;
+    return `http://localhost:${this.getPort()}`;
   }
 }
 

@@ -16,6 +16,17 @@ export function activate(context: vscode.ExtensionContext) {
 
   // コマンドの登録
   registerCommands(context);
+  
+  // 設定変更の監視
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration(e => {
+      if (e.affectsConfiguration('vscode-lm-proxy.port') && serverManager.isRunning()) {
+        vscode.window.showInformationMessage(
+          'ポート番号の設定が変更されました。変更を反映するにはサーバーを再起動してください。'
+        );
+      }
+    })
+  );
 
   // 状態復元
   // 以前サーバーが実行中だった場合は自動的に再起動
