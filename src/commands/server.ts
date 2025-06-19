@@ -9,6 +9,7 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
     try {
       await serverManager.start();
       context.globalState.update('serverRunning', true);
+      vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', true);
       vscode.window.showInformationMessage('Language Model Proxyサーバーを起動しました');
     } catch (error) {
       vscode.window.showErrorMessage(`サーバーの起動に失敗しました: ${(error as Error).message}`);
@@ -20,6 +21,7 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
     try {
       await serverManager.stop();
       context.globalState.update('serverRunning', false);
+      vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
       vscode.window.showInformationMessage('Language Model Proxyサーバーを停止しました');
     } catch (error) {
       vscode.window.showErrorMessage(`サーバーの停止に失敗しました: ${(error as Error).message}`);

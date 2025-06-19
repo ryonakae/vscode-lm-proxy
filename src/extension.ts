@@ -8,6 +8,9 @@ import { statusBarManager } from './ui/statusbar';
 export function activate(context: vscode.ExtensionContext) {
   console.log('VSCode LiteLLM拡張機能が有効化されました');
 
+  // コンテキスト変数の初期化
+  vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
+  
   // ステータスバーの初期化
   statusBarManager.initialize(context);
 
@@ -26,11 +29,13 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 // 拡張機能が無効化された時に実行される関数
-export function deactivate() {
+export function deactivate(): Promise<void> | undefined {
   console.log('VSCode LiteLLM拡張機能が無効化されました');
   
   // サーバーが実行中なら停止
   if (serverManager.isRunning()) {
     return serverManager.stop();
   }
+  
+  return undefined;
 }

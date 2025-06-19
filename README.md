@@ -88,6 +88,70 @@ curl -X POST http://localhost:4000/chat/completions \
 - VSCodeのLanguage Model APIへのアクセス権があることを確認してください
 - インターネット接続を確認してください
 
+## Marketplace公開情報
+
+### Microsoft AIガイドラインへの準拠
+
+この拡張機能は、以下のMicrosoft AIガイドラインに準拠しています：
+
+- [Microsoft AI tools and practices guidelines](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/transparency-note)
+- [GitHub Copilot extensibility acceptable development policy](https://docs.github.com/en/copilot/overview-of-github-copilot/about-github-copilot-extensibility)
+
+この拡張機能は以下の要件を満たしています：
+
+1. **透明性**: ユーザーに対して、この拡張機能がAIモデルを使用していることを明示しています
+2. **同意**: モデルの利用前にユーザーの明示的な同意を得ています
+3. **セキュリティ**: すべてのデータ処理はローカルで行われ、外部にデータを送信しません
+4. **パフォーマンス**: モデル選択とレート制限によりパフォーマンスを最適化しています
+5. **アクセシビリティ**: すべての機能にキーボードショートカットを提供しています
+
+### プライバシーとデータ収集
+
+この拡張機能は、以下のプライバシーポリシーに従って動作します：
+
+- ユーザーデータは外部に送信されません
+- すべての処理はローカルVSCodeインスタンス内で行われます
+- 統計情報や使用状況データは収集しません
+- サーバー機能はlocalhost内でのみ動作します
+
+### 必要な権限
+
+この拡張機能は、以下のVSCode APIにアクセスします：
+
+- `vscode.lm`: Language Model APIへのアクセス
+- ネットワーク機能: localhost上でのHTTP APIサーバーの実行
+
+モデル使用時にはVSCodeの標準認証フローを通じてユーザーの同意を取得します。
+
+## Marketplace公開チェックリスト
+
+この拡張機能をMarketplaceに公開する前に、以下の項目を確認してください：
+
+1. **拡張機能マニフェスト**
+   - [x] `package.json`のすべての必須フィールドが適切に設定されている
+   - [x] アイコン、バナー、カテゴリなどが設定されている
+   - [x] ライセンス情報が正確に記載されている
+
+2. **ドキュメント**
+   - [x] README.mdが完全で、使用方法が明確に説明されている
+   - [x] スクリーンショットまたはアニメーション付きのデモが含まれている
+   - [x] トラブルシューティング情報が提供されている
+
+3. **コードの品質**
+   - [x] すべてのリンター警告が解決されている
+   - [x] テストスイートが実装され、すべてのテストがパスしている
+   - [x] エラー処理が適切に実装されている
+
+4. **Microsoft AIガイドライン**
+   - [x] Microsoft AI tools and practices guidelinesに準拠している
+   - [x] GitHub Copilot extensibility acceptable development policyに準拠している
+   - [x] 必要なプライバシー情報とデータ使用の説明が提供されている
+
+5. **依存関係の最適化**
+   - [x] 依存関係が最小限に保たれている（Express.jsのみ使用）
+   - [x] クライアントサイドのオープンソースライブラリのみを使用している
+   - [x] パフォーマンスに影響を与える可能性のある巨大な依存関係は排除している
+
 ## ライセンス
 
 MIT

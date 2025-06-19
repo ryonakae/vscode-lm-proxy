@@ -178,6 +178,24 @@ class ModelManager {
       throw error;
     }
   }
+
+  /**
+   * 特定のモデルファミリーをサポートしているかどうかをチェック
+   * @param families モデルファミリーの配列
+   * @returns サポートされている場合true
+   */
+  public async hasSupportedModels(families: string[]): Promise<boolean> {
+    try {
+      const models = await vscode.lm.selectChatModels({
+        includeFamily: families
+      });
+      
+      return models && models.length > 0;
+    } catch (error) {
+      console.error('モデルチェックエラー:', error);
+      return false;
+    }
+  }
 }
 
 // シングルトンインスタンスをエクスポート

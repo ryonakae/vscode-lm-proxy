@@ -67,3 +67,57 @@ export function convertToOpenAIFormat(
 function generateRandomId(): string {
   return Math.random().toString(36).substring(2, 12);
 }
+
+/**
+ * OpenAI API形式のリクエストをVSCode LM API形式に変換
+ * @param openaiRequest OpenAI形式のリクエスト
+ * @returns VSCode LM API形式のリクエスト
+ */
+export function convertOpenAIRequestToVSCodeRequest(openaiRequest: any): {
+  messages: vscode.LanguageModelChatMessage[]
+} {
+  // メッセージの変換
+  const messages = openaiRequest.messages.map((msg: any) => {
+    return new vscode.LanguageModelChatMessage(
+      msg.role,
+      msg.content
+    );
+  });
+  
+  return { messages };
+}
+
+/**
+ * VSCode LM API形式のレスポンスをOpenAI API形式に変換
+ * @param modelId モデルID
+ * @param vsCodeResponse VSCode形式のレスポンス
+ * @returns OpenAI API形式のレスポンス
+ */
+export function convertVSCodeResponseToOpenAIResponse(
+  modelId: string,
+  vsCodeResponse: any
+): OpenAIChatCompletionResponse {
+  const now = Math.floor(Date.now() / 1000);
+  
+  return {
+    id: `chatcmpl-${generateRandomId()}`,
+    object: 'chat.completion',
+    created: now,
+    model: modelId,
+    choices: [
+      {
+        message: {
+          role: vsCodeResponse.message.role,
+          content: vsCodeResponse.message.content
+        },
+        index: 0,
+        finish_reason: 'stop'
+      }
+    ],
+    usage: {
+      prompt_tokens: 0,
+      completion_tokens: 0,
+      total_tokens: 0
+    }
+  } as OpenAIChatCompletionResponse;
+}
