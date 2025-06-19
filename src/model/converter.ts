@@ -31,50 +31,17 @@ export function convertToOpenAIFormat(
           delta: response.isComplete || response.content === undefined
             ? { 
                 role: 'assistant',
-                content: response.content || '',
-                function_call: undefined,
-                tool_calls: undefined,
-                name: undefined,
-                context: undefined,
-                tool_call_id: undefined,
-                refusal: null,
-                annotations: [],
-                logprobs: null,
-                model: modelId
+                content: response.content || ''
               }
             : response.content === '' 
               ? { 
-                  role: 'assistant',
-                  function_call: undefined,
-                  tool_calls: undefined,
-                  name: undefined,
-                  context: undefined,
-                  tool_call_id: undefined,
-                  refusal: null,
-                  annotations: [],
-                  logprobs: null,
-                  model: modelId
+                  role: 'assistant'
                 } 
               : { 
-                  role: 'assistant',
-                  content: response.content,
-                  function_call: undefined,
-                  tool_calls: undefined,
-                  name: undefined,
-                  context: undefined,
-                  tool_call_id: undefined,
-                  refusal: null,
-                  annotations: [],
-                  logprobs: null,
-                  model: modelId
+                  content: response.content
                 },
           index: 0,
-          finish_reason: response.isComplete ? 'stop' : null,
-          logprobs: null,
-          logits: [],
-          top_logprobs: [],
-          tokens: [],
-          text_offset: []
+          finish_reason: response.isComplete ? 'stop' : null
         }
       ]
     } as OpenAIChatCompletionChunk;
@@ -90,24 +57,10 @@ export function convertToOpenAIFormat(
         {
           message: {
             role: 'assistant',
-            content: response.content || '',
-            function_call: undefined,
-            tool_calls: undefined,
-            name: undefined,
-            context: undefined,
-            tool_call_id: undefined,
-            refusal: null,
-            annotations: [],
-            logprobs: null,
-            model: modelId
+            content: response.content || ''
           },
           index: 0,
-          finish_reason: 'stop',
-          logprobs: null,
-          logits: [],
-          top_logprobs: [],
-          tokens: [],
-          text_offset: []
+          finish_reason: 'stop'
         }
       ],
       usage: {
@@ -179,26 +132,11 @@ export function convertVSCodeResponseToOpenAIResponse(
     system_fingerprint: systemFingerprint,
     choices: [
       {
-        message: {
-          role: vsCodeResponse.message.role,
-          content: vsCodeResponse.message.content,
-          function_call: undefined,
-          tool_calls: undefined,
-          name: undefined,
-          context: undefined,
-          tool_call_id: undefined,
-          refusal: null,
-          annotations: [],
-          logprobs: null,
-          model: modelId
+        message: {            role: vsCodeResponse.message.role,
+            content: vsCodeResponse.message.content
         },
         index: 0,
-        finish_reason: 'stop',
-        logprobs: null,
-        logits: [],
-        top_logprobs: [],
-        tokens: [],
-        text_offset: []
+        finish_reason: 'stop'
       }
     ],
     usage: {
