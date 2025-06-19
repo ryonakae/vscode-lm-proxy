@@ -72,8 +72,11 @@ function validateChatCompletionRequest(body: any): {
     throw error;
   }
   
-  // モデルの指定がない場合はデフォルトモデルを使用
-  const model = body.model || modelManager.getDefaultModel();
+  // モデルの指定がない場合またはvscode-lm-proxyが指定された場合はデフォルトモデルを使用
+  let model = body.model;
+  if (!model || model === 'vscode-lm-proxy') {
+    model = modelManager.getDefaultModel();
+  }
   
   if (!model) {
     const error: any = new Error('有効なモデルが選択されていません。先にモデルを選択してください。');

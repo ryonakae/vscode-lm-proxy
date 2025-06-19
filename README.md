@@ -60,7 +60,7 @@ VSCode Language Model APIをOpenAI互換のREST APIとして公開する拡張�
 curl -X POST http://localhost:4000/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "モデルID",
+    "model": "vscode-lm-proxy",
     "messages": [
       {"role": "system", "content": "あなたは優秀なAIアシスタントです。"},
       {"role": "user", "content": "こんにちは！"}
@@ -74,7 +74,7 @@ curl -X POST http://localhost:4000/chat/completions \
 curl -X POST http://localhost:4000/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "モデルID",
+    "model": "vscode-lm-proxy",
     "messages": [
       {"role": "system", "content": "あなたは優秀なAIアシスタントです。"},
       {"role": "user", "content": "こんにちは！"}
