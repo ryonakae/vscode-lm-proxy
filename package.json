@@ -1,0 +1,100 @@
+{
+  "name": "vscode-litellm",
+  "displayName": "VSCode LiteLLM",
+  "description": "VSCode Language Model API Proxy with OpenAI API compatibility",
+  "version": "0.0.1",
+  "publisher": "vscode-litellm",
+  "author": {
+    "name": "VSCode LiteLLM Team"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/user/vscode-litellm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/user/vscode-litellm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/user/vscode-litellm/issues"
+  },
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#1E1E1E",
+    "theme": "dark"
+  },
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Snippets"
+  ],
+  "keywords": [
+    "language model",
+    "ai",
+    "llm",
+    "openai",
+    "proxy"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-lm-proxy.startServer",
+        "title": "Start LM Proxy Server"
+      },
+      {
+        "command": "vscode-lm-proxy.stopServer",
+        "title": "Stop LM Proxy Server"
+      },
+      {
+        "command": "vscode-lm-proxy.selectModel",
+        "title": "Select Language Model"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "vscode-lm-proxy.startServer",
+        "key": "ctrl+shift+l s",
+        "mac": "cmd+shift+l s",
+        "when": "!vscode-lm-proxy.serverRunning"
+      },
+      {
+        "command": "vscode-lm-proxy.stopServer",
+        "key": "ctrl+shift+l x",
+        "mac": "cmd+shift+l x",
+        "when": "vscode-lm-proxy.serverRunning"
+      },
+      {
+        "command": "vscode-lm-proxy.selectModel",
+        "key": "ctrl+shift+l m",
+        "mac": "cmd+shift+l m"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.93.0",
+    "@typescript-eslint/eslint-plugin": "^7.7.0",
+    "@typescript-eslint/parser": "^7.7.0",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0",
+    "eslint": "^8.57.1",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "express": "^4.18.3"
+  }
+}

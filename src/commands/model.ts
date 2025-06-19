@@ -1,0 +1,35 @@
+// モデル選択コマンド
+import * as vscode from 'vscode';
+import { modelManager } from '../model/manager';
+
+/**
+ * モデル選択関連のコマンドを登録
+ * @param context 拡張機能のコンテキスト
+ */
+export function registerModelCommands(context: vscode.ExtensionContext): void {
+  // モデル選択コマンド
+  const selectModelCommand = vscode.commands.registerCommand('vscode-lm-proxy.selectModel', async () => {
+    try {
+      const selectedModel = await modelManager.selectModel();
+      
+      if (selectedModel) {
+        context.globalState.update('selectedModel', selectedModel);
+        vscode.window.showInformationMessage(`モデルを選択しました: ${selectedModel}`);
+      } else {
+        vscode.window.showWarningMessage('モデルが選択されませんでした');
+      }
+    } catch (error) {
+      vscode.window.showErrorMessage(`モデルの選択中にエラーが発生しました: ${(error as Error).message}`);
+    }
+  });
+
+  // コンテキストにコマンドを登録
+  context.subscriptions.push(selectModelCommand);
+  
+  // 前回選択されたモデルを復元
+  const previouslySelectedModel = context.globalState.get<string>('selectedModel');
+  if (previouslySelectedModel) {
+    // モデル選択状態を復元するロジックを実装（将来的に拡張）
+    console.log(`前回選択されたモデル: ${previouslySelectedModel}`);
+  }
+}

@@ -1,0 +1,90 @@
+// APIエンドポイントのハンドラー実装
+import express from 'express';
+import { modelManager } from '../model/manager';
+
+/**
+ * OpenAI互換のChat Completions APIエンドポイントを設定
+ * @param app Express.jsアプリケーション
+ */
+export function setupChatCompletionsEndpoint(app: express.Express): void {
+  app.post('/chat/completions', async (req: express.Request, res: express.Response) => {
+    try {
+      // リクエストの検証
+      const { messages, model, stream } = validateChatCompletionRequest(req.body);
+      
+      // ストリーミングモードのチェック
+      const isStreaming = stream === true;
+      
+      if (isStreaming) {
+        // ストリーミングレスポンスの設定
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        
+        // モデルマネージャーを使用してストリーミングレスポンスを送信
+        await modelManager.streamChatCompletion(messages, model, (chunk) => {
+          const data = JSON.stringify(chunk);
+          res.write(`data: ${data}\n\n`);
+        });
+        
+        // ストリーミング終了
+        res.write('data: [DONE]\n\n');
+        res.end();
+      } else {
+        // 非ストリーミングモードでレスポンスを取得
+        const completion = await modelManager.getChatCompletion(messages, model);
+        res.json(completion);
+      }
+    } catch (error) {
+      console.error('Chat completions APIエラー:', error);
+      
+      // エラーレスポンスの作成
+      const apiError = error as any;
+      const statusCode = apiError.statusCode || 500;
+      const errorResponse = {
+        error: {
+          message: apiError.message || '不明なエラーが発生しました',
+          type: apiError.type || 'api_error',
+          code: apiError.code || 'internal_error'
+        }
+      };
+      
+      res.status(statusCode).json(errorResponse);
+    }
+  });
+}
+
+/**
+ * リクエストのバリデーション
+ * @param body リクエストボディ
+ * @returns 検証済みのリクエストパラメータ
+ */
+function validateChatCompletionRequest(body: any): {
+  messages: any[];
+  model: string;
+  stream?: boolean;
+} {
+  // 必須フィールドのチェック
+  if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+    const error: any = new Error('messagesフィールドが必要です');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  // モデルの指定がない場合はデフォルトモデルを使用
+  const model = body.model || modelManager.getDefaultModel();
+  
+  if (!model) {
+    const error: any = new Error('有効なモデルが選択されていません。先にモデルを選択してください。');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  return {
+    messages: body.messages,
+    model,
+    stream: body.stream
+  };
+}
