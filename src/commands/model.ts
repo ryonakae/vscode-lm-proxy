@@ -36,7 +36,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   if (previouslySelectedModel) {
     // モデル選択状態を復元
     modelManager.setSelectedModel(previouslySelectedModel, previouslySelectedModelName || undefined);
-    console.log(`前回選択されたモデルを復元しました: ${previouslySelectedModelName || previouslySelectedModel}`);
+    console.log(`Restored previously selected model: ${previouslySelectedModelName || previouslySelectedModel}`);
     // ステータスバーも更新
     statusBarManager.updateStatus(serverManager.isRunning());
   }

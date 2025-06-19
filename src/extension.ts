@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('vscode-lm-proxy.port') && serverManager.isRunning()) {
         vscode.window.showInformationMessage(
-          'ポート番号の設定が変更されました。変更を反映するにはサーバーを再起動してください。'
+          'Port number setting has been changed. Please restart the server to apply the change.'
         );
       }
     })
@@ -35,7 +35,7 @@ export function activate(context: vscode.ExtensionContext) {
     serverManager.start()
       .then(() => {
         const serverUrl = serverManager.getServerUrl();
-        vscode.window.showInformationMessage(`Language Model Proxy server started (endpoint: ${serverUrl})`);
+        vscode.window.showInformationMessage(`Language Model Proxy server started (${serverUrl})`);
       })
       .catch(err => {
         vscode.window.showErrorMessage(`Failed to auto-start server: ${err.message}`);

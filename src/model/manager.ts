@@ -57,21 +57,21 @@ class ModelManager {
       }
       
       if (allModels.length === 0) {
-        vscode.window.showWarningMessage('利用可能なモデルがありません');
+        vscode.window.showWarningMessage('No available models found');
         return undefined;
       }
       
       // モデル選択用のQuickPickアイテムを作成
       const quickPickItems = allModels.map(model => ({
         label: model.name || model.id,
-        description: `${model.id} - ${model.vendor || '不明なベンダー'}`,
-        detail: `バージョン: ${model.version || '不明'}, 最大トークン: ${model.maxInputTokens || '不明'}`,
+        description: `${model.id} - ${model.vendor || 'Unknown vendor'}`,
+        detail: `Version: ${model.version || 'Unknown'}, Max tokens: ${model.maxInputTokens || 'Unknown'}`,
         model: model
       }));
       
       // QuickPickを使ってユーザーにモデルを選択させる
       const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder: '使用するモデルを選択してください',
+        placeHolder: 'Select a model to use',
         canPickMany: false,
         matchOnDescription: true,
         matchOnDetail: true
@@ -87,12 +87,12 @@ class ModelManager {
       this.selectedModelName = selectedItem.model.name || selectedItem.model.id;
       
       // モデル情報をログ出力
-      console.log(`選択されたモデル: ${this.selectedModelName} (${this.selectedModelId})`);
+      console.log(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
       
       return this.selectedModelId as string;
     } catch (error) {
       console.error('モデル選択エラー:', error);
-      vscode.window.showErrorMessage(`モデルの選択中にエラーが発生しました: ${(error as Error).message}`);
+      vscode.window.showErrorMessage(`Error selecting model: ${(error as Error).message}`);
       return undefined;
     }
   }
@@ -184,7 +184,7 @@ class ModelManager {
       // 最新のAPIではモデルを取得してからリクエストを送信
       const [model] = await vscode.lm.selectChatModels({ id: actualModelId });
       if (!model) {
-        throw new Error(`モデル ${actualModelId} が見つかりません`);
+        throw new Error(`Model ${actualModelId} not found`);
       }
       
       const response = await model.sendRequest(
@@ -257,7 +257,7 @@ class ModelManager {
       // 最新のAPIではモデルを取得してからリクエストを送信
       const [model] = await vscode.lm.selectChatModels({ id: actualModelId });
       if (!model) {
-        throw new Error(`モデル ${actualModelId} が見つかりません`);
+        throw new Error(`Model ${actualModelId} not found`);
       }
       
       // 新しいAPIでの実装

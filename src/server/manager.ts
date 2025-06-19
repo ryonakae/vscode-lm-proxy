@@ -38,7 +38,7 @@ class ServerManager {
         this.server = app.listen(port, () => {
           this._isRunning = true;
           vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', true);
-          console.log(`VSCode LM Proxyサーバーがポート${port}で起動しました`);
+          console.log(`VSCode LM Proxy server started on port ${port}`);
           statusBarManager.updateStatus(true);
           resolve();
         });

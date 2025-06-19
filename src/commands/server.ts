@@ -14,7 +14,7 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
       // ステータスバーを更新
       statusBarManager.updateStatus(true);
       const serverUrl = serverManager.getServerUrl();
-      vscode.window.showInformationMessage(`Language Model Proxy server started (endpoint: ${serverUrl})`);
+      vscode.window.showInformationMessage(`Language Model Proxy server started (${serverUrl})`);
     } catch (error) {
       vscode.window.showErrorMessage(`Failed to start server: ${(error as Error).message}`);
     }

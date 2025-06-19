@@ -36,7 +36,7 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
         res.json(completion);
       }
     } catch (error) {
-      console.error('Chat completions APIエラー:', error);
+      console.error('Chat completions API error:', error);
       
       // エラーレスポンスの作成
       const apiError = error as any;

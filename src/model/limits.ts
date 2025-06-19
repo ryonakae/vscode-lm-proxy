@@ -187,7 +187,7 @@ export class LimitsManager {
       const secondsToReset = Math.ceil((resetTime - now) / 1000);
       
       return new Error(
-        `レート制限に達しました。${secondsToReset}秒後に再試行してください。`
+        `Rate limit reached. Please try again in ${secondsToReset} seconds.`
       );
     }
     
