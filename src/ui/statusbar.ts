@@ -62,13 +62,13 @@ class StatusBarManager {
       this.statusBarItem.tooltip = `Server: Error - ${errorMessage}`;
     } else if (isRunning) {
       // 実行中
-      this.statusBarItem.text = `$(stop-circle) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(server) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
       this.statusBarItem.tooltip = `Server: Running (${url})${selectedModelName ? `\nModel: ${selectedModelName}` : ''}`;
     } else {
       // 停止中
-      this.statusBarItem.text = `$(play-circle) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(stop) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
       this.statusBarItem.tooltip = `Server: Stopped${selectedModelName ? `\nModel: ${selectedModelName}` : ''}`;
     }
@@ -85,13 +85,13 @@ class StatusBarManager {
     
     if (isRunning) {
       items.push({
-        label: '$(stop-circle) Stop Server',
+        label: '$(debug-stop) Stop Server',
         description: 'Stop the LM Proxy server',
         command: 'vscode-lm-proxy.stopServer'
       });
     } else {
       items.push({
-        label: '$(play-circle) Start Server',
+        label: '$(play) Start Server',
         description: 'Start the LM Proxy server',
         command: 'vscode-lm-proxy.startServer'
       });
