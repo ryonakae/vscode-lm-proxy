@@ -305,9 +305,16 @@ class ModelManager {
       let firstChunk = true;
       let lastContent = '';
       
+      // ストリーミング全体の内容を累積するための変数
+      let accumulatedContent = '';
+      
+      // ストリーミング開始のログ出力を無効化
+      // logger.info(`[STREAM] Started streaming response for ${modelId}`);
+      
       // ストリームを処理
       for await (const chunk of stream) {
         lastContent = chunk; // 最後のコンテンツを記録
+        accumulatedContent += chunk; // 累積コンテンツに追加
         
         // チャンクをOpenAI API形式に変換してコールバックに渡す
         const openAIChunk = convertToOpenAIFormat(
@@ -334,6 +341,9 @@ class ModelManager {
         } else {
           callback(openAIChunk);
         }
+        
+        // 細かいチャンクのログ出力を無効化（全体の応答のみログに出力）
+        // logger.info(`[STREAM_CONTENT] ${JSON.stringify(chunk)}`); // 以前はここでチャンクごとのログを出力
       }
       
       // プロンプトのトークン数を計算 - 各メッセージを個別に計算して合計
@@ -371,6 +381,9 @@ class ModelManager {
       };
       
       callback(finishChunk);
+      
+      // ストリーミング完了後、累積した全体の内容をフォーマットしてログに出力
+      logger.info(`[STREAM_RESPONSE_COMPLETE] ============= Full Response =============\n${accumulatedContent}\n============= End of Response =============`);
     } catch (error) {
       logger.error('Streaming chat completion error:', error as Error);
       throw error;
