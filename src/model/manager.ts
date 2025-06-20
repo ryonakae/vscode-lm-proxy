@@ -187,6 +187,12 @@ class ModelManager {
       if (!model) {
         throw new Error(`Model ${actualModelId} not found`);
       }
+
+      // プロンプトのトークン数を計算 - 各メッセージを個別に計算して合計
+      let promptTokens = 0;
+      for (const message of vscodeLmMessages) {
+        promptTokens += await model.countTokens(message);
+      }
       
       const response = await model.sendRequest(
         vscodeLmMessages,
@@ -197,7 +203,31 @@ class ModelManager {
       // レスポンスをOpenAI API形式に変換
       // 新しいAPIは直接テキストを返さないため、ストリーミング処理として扱う
       const responseText = await this.streamToString(response.text);
-      return convertToOpenAIFormat({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
+      
+      // レスポンスのトークン数を計算
+      const responseMessage = vscode.LanguageModelChatMessage.Assistant(responseText);
+      const completionTokens = await model.countTokens(responseMessage);
+      
+      const openAIResponse = convertToOpenAIFormat({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
+      
+      // トークン数情報を更新
+      openAIResponse.usage = {
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: promptTokens + completionTokens,
+        prompt_tokens_details: {
+          cached_tokens: 0,
+          audio_tokens: 0
+        },
+        completion_tokens_details: {
+          reasoning_tokens: completionTokens,
+          audio_tokens: 0,
+          accepted_prediction_tokens: 0,
+          rejected_prediction_tokens: 0
+        }
+      };
+      
+      return openAIResponse;
     } catch (error) {
       logger.error('Chat completion error:', error as Error);
       throw error;
@@ -306,12 +336,40 @@ class ModelManager {
         }
       }
       
-      // 完了チャンクを送信
+      // プロンプトのトークン数を計算 - 各メッセージを個別に計算して合計
+      let promptTokens = 0;
+      for (const message of vscodeLmMessages) {
+        promptTokens += await model.countTokens(message);
+      }
+      
+      // レスポンスのトークン数を計算
+      const responseMessage = vscode.LanguageModelChatMessage.Assistant(lastContent);
+      const completionTokens = await model.countTokens(responseMessage);
+      
+      // 完了チャンクを送信 - トークン数情報を含める
       const finishChunk = convertToOpenAIFormat(
         { content: '', isComplete: true },
         modelId,
         true
-      );
+      ) as OpenAIChatCompletionResponse;
+      
+      // トークン数情報を更新
+      finishChunk.usage = {
+        prompt_tokens: promptTokens,
+        completion_tokens: completionTokens,
+        total_tokens: promptTokens + completionTokens,
+        prompt_tokens_details: {
+          cached_tokens: 0,
+          audio_tokens: 0
+        },
+        completion_tokens_details: {
+          reasoning_tokens: completionTokens,
+          audio_tokens: 0,
+          accepted_prediction_tokens: 0,
+          rejected_prediction_tokens: 0
+        }
+      };
+      
       callback(finishChunk);
     } catch (error) {
       logger.error('Streaming chat completion error:', error as Error);
