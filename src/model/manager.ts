@@ -64,33 +64,61 @@ class ModelManager {
       
       // モデル選択用のQuickPickアイテムを作成
       const quickPickItems = allModels.map(model => ({
-        label: model.name || model.id,
-        description: `${model.version} by ${model.vendor || 'Unknown vendor'}`,
-        detail: `Max input tokens: ${model.maxInputTokens || 'Unknown'}`,
-        model: model
+        label: model.name,
+        description: `${model.id} by ${model.vendor || 'Unknown vendor'}`,
+        detail: `Max input tokens: ${model.maxInputTokens || 'Unknown'}, Version: ${model.version}`,
+        model: model,
+        // 右端に「Copy ID」テキストを追加
+        buttons: [{ 
+          iconPath: new vscode.ThemeIcon('copy'),
+          tooltip: 'Copy model ID to clipboard' 
+        }]
       }));
       
       // QuickPickを使ってユーザーにモデルを選択させる
-      const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
-        placeHolder: 'Select a model to use',
-        canPickMany: false,
-        matchOnDescription: true,
-        matchOnDetail: true
+      const quickPick = vscode.window.createQuickPick();
+      quickPick.items = quickPickItems;
+      quickPick.placeholder = 'Select a model to use';
+      quickPick.matchOnDescription = true;
+      quickPick.matchOnDetail = true;
+      
+      // ボタンクリックのイベントハンドラを設定
+      quickPick.onDidTriggerItemButton(event => {
+        const modelId = (event.item as any).model.id;
+        vscode.env.clipboard.writeText(modelId);
+        vscode.window.showInformationMessage(`Model ID "${modelId}" copied to clipboard`);
       });
+
+      // QuickPickを表示
+      quickPick.show();
       
-      if (!selectedItem) {
-        // ユーザーが選択をキャンセルした場合
-        return undefined;
-      }
-      
-      // 選択されたモデルのIDとモデル名を保存
-      this.selectedModelId = selectedItem.model.id;
-      this.selectedModelName = selectedItem.model.name || selectedItem.model.id;
-      
-      // モデル情報をログ出力
-      logger.info(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
-      
-      return this.selectedModelId as string;
+      // Promise化して結果を返す
+      return new Promise<string | undefined>((resolve) => {
+        // モデル選択時の処理
+        quickPick.onDidAccept(() => {
+          const selectedItem = quickPick.selectedItems[0] as any;
+          if (selectedItem) {
+            // 選択されたモデルのIDとモデル名を保存
+            this.selectedModelId = selectedItem.model.id;
+            this.selectedModelName = selectedItem.model.name || selectedItem.model.id;
+            
+            // モデル情報をログ出力
+            logger.info(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
+            
+            quickPick.dispose();
+            resolve(this.selectedModelId as string);
+          } else {
+            quickPick.dispose();
+            resolve(undefined);
+          }
+        });
+        
+        // QuickPickがキャンセルされた場合の処理
+        quickPick.onDidHide(() => {
+          quickPick.dispose();
+          resolve(undefined);
+        });
+      });
     } catch (error) {
       logger.error(`モデル選択エラー: ${(error as Error).message}`, error as Error);
       vscode.window.showErrorMessage(`Error selecting model: ${(error as Error).message}`);
