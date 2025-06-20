@@ -41,7 +41,7 @@ class ModelManager {
   public async selectModel(): Promise<string | undefined> {
     try {
       // サポートされているモデルが見つかるまで順番に試す
-      let allModels: any[] = [];
+      let allModels: vscode.LanguageModelChat[] = [];
       
       // まず、指定せずにすべてのモデルを取得してみる
       const defaultModels = await vscode.lm.selectChatModels({});
@@ -65,8 +65,8 @@ class ModelManager {
       // モデル選択用のQuickPickアイテムを作成
       const quickPickItems = allModels.map(model => ({
         label: model.name || model.id,
-        description: `${model.id} - ${model.vendor || 'Unknown vendor'}`,
-        detail: `Version: ${model.version || 'Unknown'}, Max tokens: ${model.maxInputTokens || 'Unknown'}`,
+        description: `${model.version} by ${model.vendor || 'Unknown vendor'}`,
+        detail: `Max input tokens: ${model.maxInputTokens || 'Unknown'}`,
         model: model
       }));
       
