@@ -15,12 +15,26 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       const selectedModel = await modelManager.selectModel();
       
       if (selectedModel) {
+        const wasRunning = serverManager.isRunning();
         const selectedModelName = modelManager.getSelectedModelName();
         context.globalState.update('selectedModel', selectedModel);
         context.globalState.update('selectedModelName', selectedModelName);
         vscode.window.showInformationMessage(`Model selected: ${selectedModelName || selectedModel}`);
-        // ステータスバーを更新
-        statusBarManager.updateStatus(serverManager.isRunning());
+
+        // ステータスバーを更新 (新しいモデル名で、サーバーは元の状態)
+        statusBarManager.updateStatus(wasRunning);
+
+        // サーバーが実行中だった場合は再起動
+        if (wasRunning) {
+          vscode.window.showInformationMessage('Restarting server with new model...');
+          await serverManager.stop();
+          // ステータスバーを停止状態に更新
+          statusBarManager.updateStatus(false);
+          await serverManager.start();
+          // ステータスバーを実行状態に更新
+          statusBarManager.updateStatus(true);
+          vscode.window.showInformationMessage('Server restarted successfully.');
+        }
       }
     } catch (error) {
       vscode.window.showErrorMessage(`Error selecting model: ${(error as Error).message}`);
