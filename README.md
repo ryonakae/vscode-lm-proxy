@@ -133,7 +133,7 @@ Sends a chat completion request. This is an OpenAI Chat Completions API compatib
 
 | Parameter | Type | Required | Description |
 |-----------|------|---------|-------------|
-| model | string | No | The ID of the model to use. If not specified, the currently selected model will be used |
+| model | string | No | The ID of the model to use. If omitted or set to "vscode-lm-proxy", the model selected via the VSCode command palette will be used. If a specific model ID is provided, that model will be used. |
 | messages | array | Yes | An array of chat messages |
 | stream | boolean | No | Whether to enable streaming mode (default: false) |
 
