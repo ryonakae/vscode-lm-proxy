@@ -1,60 +1,60 @@
 # LM Proxy
 
-VSCode Language Model APIをOpenAI互換のREST APIとして公開する拡張機能です。
-この拡張機能を使用すると、VSCodeのLanguage Model APIを外部アプリケーションから簡単に利用できます。
+An extension that exposes the VSCode Language Model API as an OpenAI-compatible REST API.
+This extension allows external applications to easily utilize the VSCode Language Model API.
 
-## 機能
+## Features
 
-- VSCodeのLM APIをOpenAI互換のREST APIとして公開
-- 複数のモデルファミリーに対応 (gpt-4o, gpt-4o-mini, o1, o1-mini, claude-3.5-sonnet)
-- ステータスバーからのサーバー管理
-- サーバーの起動/停止/モデル選択のためのコマンドパレットコマンド
-- ストリーミングレスポンス対応
-- トークン制限とレート制限の管理
-- エラーハンドリング
+- Exposes VSCode's LM API as an OpenAI-compatible REST API
+- Supports multiple model families (gpt-4o, gpt-4o-mini, o1, o1-mini, claude-3.5-sonnet)
+- Server management from the status bar
+- Command palette commands for starting/stopping the server and selecting models
+- Streaming response support
+- Token limit and rate limit management
+- Error handling
 
-## インストール
+## Installation
 
-### マーケットプレイスからインストール
-1. VSCode拡張機能マーケットプレイスからインストールする
-2. または、`.vsix`ファイルをダウンロードし、「VSCODEから拡張機能をインストール」機能を使ってインストール
+### Install from Marketplace
+1. Install from the VSCode Extension Marketplace
+2. Alternatively, download the `.vsix` file and install using the "Install Extension from VSIX" feature in VSCode
 
-### ローカル開発版をテスト
-ソースコードからローカルで拡張機能を試すには、以下の手順に従ってください：
+### Test Local Development Version
+To try the extension locally from the source code, follow these steps:
 
-1. リポジトリをクローン
+1. Clone the repository
    ```bash
    git clone https://github.com/user/vscode-lm-proxy.git
    cd vscode-lm-proxy
    ```
 
-2. 依存関係のインストール
+2. Install dependencies
    ```bash
    npm install
    ```
 
-3. 拡張機能をビルド
+3. Build the extension
    ```bash
    npm run compile
    ```
 
-4. デバッグモードで実行
-   - VSCode内で`F5`キーを押す
-   - または「実行とデバッグ」パネルから「Run Extension」を選択
-   - 新しいVSCodeウィンドウが開き、拡張機能がデバッグモードで実行されます
+4. Run in Debug Mode
+   - Press `F5` in VSCode
+   - Or select "Run Extension" from the "Run and Debug" panel
+   - A new VSCode window will open with the extension running in debug mode
 
-## 使用方法
+## Usage
 
-### 拡張機能の起動
+### Starting the Extension
 
-1. コマンドパレットを開く（`Ctrl+Shift+P` または `Cmd+Shift+P`）
-2. `LM Proxy: Select Language Model`を選択し、使用するモデルを選択
-3. `LM Proxy: Start LM Proxy Server`を選択してサーバーを起動
-4. ステータスバーにサーバーの状態が表示されます
+1. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`)
+2. Select `LM Proxy: Select Language Model` and choose the model to use
+3. Select `LM Proxy: Start LM Proxy Server` to start the server
+4. The server status will be displayed in the status bar
 
-### APIの使用
+### Using the API
 
-サーバーが起動したら、`http://localhost:4000/chat/completions`エンドポイントにOpenAI Chat Completions APIと同じ形式でリクエストを送信できます:
+Once the server is running, you can send requests to the `http://localhost:4000/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
 
 ```bash
 curl -X POST http://localhost:4000/chat/completions \
@@ -62,15 +62,15 @@ curl -X POST http://localhost:4000/chat/completions \
   -d '{
     "model": "vscode-lm-proxy",
     "messages": [
-      {"role": "system", "content": "あなたは優秀なAIアシスタントです。"},
-      {"role": "user", "content": "こんにちは！"}
+      {"role": "system", "content": "You are an excellent AI assistant."},
+      {"role": "user", "content": "Hello!"}
     ]
   }'
 ```
 
-> **注意**: `model`パラメーターには常に`"vscode-lm-proxy"`を指定してください。実際のモデル選択はVSCode内のコマンドパレットから行います。
+> **Note**: Always specify `"vscode-lm-proxy"` for the `model` parameter. The actual model selection is done via the command palette within VSCode.
 
-ストリーミングモード：
+Streaming mode:
 
 ```bash
 curl -X POST http://localhost:4000/chat/completions \
@@ -78,38 +78,38 @@ curl -X POST http://localhost:4000/chat/completions \
   -d '{
     "model": "vscode-lm-proxy",
     "messages": [
-      {"role": "system", "content": "あなたは優秀なAIアシスタントです。"},
-      {"role": "user", "content": "こんにちは！"}
+      {"role": "system", "content": "You are an excellent AI assistant."},
+      {"role": "user", "content": "Hello!"}
     ],
     "stream": true
   }' --no-buffer
 ```
 
-## API リファレンス
+## API Reference
 
-このセクションではLM Proxyが提供するAPI機能について詳細に説明します。
+This section provides detailed information about the API features offered by LM Proxy.
 
-### ベースURL
+### Base URL
 
 ```
 http://localhost:4000
 ```
 
-> **注意**: ポート番号は設定で変更可能です。
+> **Note**: The port number can be changed in the settings.
 
-### エンドポイント
+### Endpoints
 
 #### GET /
 
-サーバーのステータス情報を返します。
+Returns server status information.
 
-##### リクエスト
+##### Request
 
 ```bash
 curl http://localhost:4000/
 ```
 
-##### レスポンス
+##### Response
 
 ```json
 {
@@ -119,7 +119,7 @@ curl http://localhost:4000/
   "endpoints": {
     "chat/completions": {
       "method": "POST",
-      "description": "OpenAI互換のChat Completions API"
+      "description": "OpenAI-compatible Chat Completions API"
     }
   }
 }
@@ -127,36 +127,36 @@ curl http://localhost:4000/
 
 #### POST /chat/completions
 
-チャット完了リクエストを送信します。OpenAI Chat Completions API互換のインターフェースです。
+Sends a chat completion request. This is an OpenAI Chat Completions API compatible interface.
 
-##### リクエストパラメータ
+##### Request Parameters
 
-| パラメータ | 型 | 必須 | 説明 |
+| Parameter | Type | Required | Description |
 |-----------|------|---------|-------------|
-| model | string | いいえ | 使用するモデルのID。指定しない場合は選択済みのモデルが使用されます |
-| messages | array | はい | チャットメッセージの配列 |
-| stream | boolean | いいえ | ストリーミングモードを有効にするか（デフォルト: false） |
+| model | string | No | The ID of the model to use. If not specified, the currently selected model will be used |
+| messages | array | Yes | An array of chat messages |
+| stream | boolean | No | Whether to enable streaming mode (default: false) |
 
-##### メッセージフォーマット
+##### Message Format
 
-| フィールド | 型 | 必須 | 説明 |
+| Field | Type | Required | Description |
 |-----------|------|---------|-------------|
-| role | string | はい | メッセージの役割（"system", "user", "assistant"） |
-| content | string | はい | メッセージの内容 |
+| role | string | Yes | The role of the message ("system", "user", "assistant") |
+| content | string | Yes | The content of the message |
 
-##### レスポンス
+##### Response
 
 ```json
 {
   "id": "chatcmpl-abc123",
   "object": "chat.completion",
   "created": 1686901302,
-  "model": "モデルID",
+  "model": "Model ID",
   "choices": [
     {
       "message": {
         "role": "assistant",
-        "content": "こんにちは！お手伝いできることがあればお知らせください。"
+        "content": "Hello! Please let me know if there is anything I can help you with."
       },
       "index": 0,
       "finish_reason": "stop"
@@ -170,287 +170,288 @@ curl http://localhost:4000/
 }
 ```
 
-##### ストリーミングモード
+##### Streaming Mode
 
-`stream: true`を指定すると、サーバーは次のような形式でストリーミングレスポンスを返します：
+If `stream: true` is specified, the server will return streaming responses in the following format:
 
 ```
-data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"モデルID","choices":[{"delta":{"role":"assistant","content":"こん"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"Model ID","choices":[{"delta":{"role":"assistant","content":"Hell"},"index":0,"finish_reason":null}]}
 
-data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"モデルID","choices":[{"delta":{"content":"にちは！"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"Model ID","choices":[{"delta":{"content":"o!"},"index":0,"finish_reason":null}]}
 
-data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"モデルID","choices":[{"delta":{"content":"お手伝いでき"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"Model ID","choices":[{"delta":{"content":" Please let me"},"index":0,"finish_reason":null}]}
 
-data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"モデルID","choices":[{"delta":{"content":"ることがあれば"},"index":0,"finish_reason":null}]}
+data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"Model ID","choices":[{"delta":{"content":" know if there is"},"index":0,"finish_reason":null}]}
 
-data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"モデルID","choices":[{"delta":{"content":"お知らせください。"},"index":0,"finish_reason":"stop"}]}
+data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901302,"model":"Model ID","choices":[{"delta":{"content":" anything I can help you with."},"index":0,"finish_reason":"stop"}]}
 
 data: [DONE]
 ```
 
-### エラーレスポンス
+### Error Responses
 
-エラーが発生した場合、サーバーは適切なHTTPステータスコードと次のような形式のJSONレスポンスを返します：
+If an error occurs, the server will return an appropriate HTTP status code and a JSON response in the following format:
 
 ```json
 {
   "error": {
-    "message": "エラーメッセージ",
-    "type": "エラータイプ",
-    "code": "エラーコード"
+    "message": "Error message",
+    "type": "Error type",
+    "code": "Error code"
   }
 }
 ```
 
-#### 一般的なエラータイプ
+#### Common Error Types
 
-- `invalid_request_error` - リクエストパラメータが無効な場合
-- `token_limit_error` - トークン制限を超えた場合
-- `rate_limit_error` - レート制限に達した場合
-- `api_error` - APIの内部エラー
-- `server_error` - サーバーの内部エラー
+- `invalid_request_error` - Invalid request parameters
+- `token_limit_error` - Token limit exceeded
+- `rate_limit_error` - Rate limit reached
+- `api_error` - Internal API error
+- `server_error` - Internal server error
 
-### 制限事項
+### Limitations
 
-- レート制限: 1分あたり10リクエスト
-- トークン制限（モデルによる）:
-  - gpt-4o: 128,000トークン
-  - gpt-4o-mini: 32,000トークン
-  - o1: 128,000トークン
-  - o1-mini: 32,000トークン
-  - claude-3.5-sonnet: 200,000トークン
+- Rate Limit: 10 requests per minute
+- Token Limit (per model):
+  - gpt-4o: 128,000 tokens
+  - gpt-4o-mini: 32,000 tokens
+  - o1: 128,000 tokens
+  - o1-mini: 32,000 tokens
+  - claude-3.5-sonnet: 200,000 tokens
 
-## コマンド
+## Commands
 
-- `LM Proxy: Start LM Proxy Server` - プロキシサーバーを起動します
-- `LM Proxy: Stop LM Proxy Server` - 実行中のプロキシサーバーを停止します
-- `LM Proxy: Select Language Model` - 使用する言語モデルを選択します
+- `LM Proxy: Start LM Proxy Server` - Starts the proxy server
+- `LM Proxy: Stop LM Proxy Server` - Stops the running proxy server
+- `LM Proxy: Select Language Model` - Selects the language model to use
 
-## キーボードショートカット
+## Keyboard Shortcuts
 
-- サーバー起動: `Ctrl+Shift+L S`（Macでは`Cmd+Shift+L S`）
-- サーバー停止: `Ctrl+Shift+L X`（Macでは`Cmd+Shift+L X`）
-- モデル選択: `Ctrl+Shift+L M`（Macでは`Cmd+Shift+L M`）
+- Start Server: `Ctrl+Shift+L S` (or `Cmd+Shift+L S` on Mac)
+- Stop Server: `Ctrl+Shift+L X` (or `Cmd+Shift+L X` on Mac)
+- Select Model: `Ctrl+Shift+L M` (or `Cmd+Shift+L M` on Mac)
 
-## 制限事項
+## Limitations
 
-- トークン制限はモデルファミリーに基づく近似値です
-- VSCode LM APIの制限に準拠します
-- モデルの利用には適切な認証と同意が必要です
+- Token limits are approximate based on model families
+- Subject to VSCode LM API limitations
+- Model usage requires appropriate authentication and consent
 
-# トラブルシューティングガイド
+# Troubleshooting Guide
 
-このガイドでは、VSCode LM Proxy拡張機能を使用する際に発生する可能性がある一般的な問題とその解決策について説明します。
+This guide describes common issues you might encounter when using the VSCode LM Proxy extension and their solutions.
 
-## インストールに関する問題
+## Installation Issues
 
-### 拡張機能をインストールできない
+### Cannot Install Extension
 
-**症状**: 拡張機能のインストールが失敗する。
+**Symptom**: Extension installation fails.
 
-**解決策**:
-1. VSCodeを最新バージョン（1.93.0以降）に更新しているか確認してください。
-2. インターネット接続を確認してください。
-3. VSCodeを再起動し、再度インストールを試してください。
-4. VSCodeの開発者ツールコンソールを確認し、エラーメッセージの詳細を確認してください。
+**Solution**:
+1. Ensure VSCode is updated to the latest version (1.93.0 or later).
+2. Check your internet connection.
+3. Restart VSCode and try installing again.
+4. Check the VSCode Developer Tools Console for detailed error messages.
 
-## サーバー関連の問題
+## Server Related Issues
 
-### サーバーが起動しない
+### Server Does Not Start
 
-**症状**: 「サーバー起動エラー」というメッセージが表示される。
+**Symptom**: "Server startup error" message is displayed.
 
-**解決策**:
-1. VSCodeを再起動してください
-2. 他のアプリケーションがポート4000を使用していないか確認してください。
+**Solution**:
+1. Restart VSCode.
+2. Check if another application is using port 4000.
    ```bash
    lsof -i :4000
    ```
-3. 使用中の場合は、そのプロセスを終了するか、拡張機能の設定からポート番号を変更してください。
-4. VSCodeを管理者権限で実行してみてください。
+3. If in use, terminate the process or change the port number in the extension settings.
+4. Try running VSCode with administrator privileges.
 
-### サーバーが突然停止する
+### Server Stops Unexpectedly
 
-**症状**: サーバーが動作していたが、突然停止した。
+**Symptom**: The server was running but stopped suddenly.
 
-**解決策**:
-1. VSCodeの出力パネルでログを確認してください。
-2. メモリ不足や他のシステムリソースの問題がないか確認してください。
-3. 拡張機能を無効にして再度有効化してみてください。
+**Solution**:
+1. Check the logs in the VSCode Output panel.
+2. Check for memory shortage or other system resource issues.
+3. Try disabling and re-enabling the extension.
 
-## モデル選択の問題
+## Model Selection Issues
 
-### モデルが選択できない
+### Cannot Select Model
 
-**症状**: モデル選択コマンドを実行しても何も表示されない、またはエラーが表示される。
+**Symptom**: Running the model selection command shows nothing or displays an error.
 
-**解決策**:
-1. VSCodeのLanguage Model APIへのアクセス権があることを確認してください
-2. インターネット接続を確認してください
-3. GitHub Copilot拡張機能がインストールされ、正しく設定されていることを確認してください
-4. VSCodeを再起動してみてください。
+**Solution**:
+1. Ensure you have access to the VSCode Language Model API.
+2. Check your internet connection.
+3. Ensure the GitHub Copilot extension is installed and correctly configured.
+4. Try restarting VSCode.
 
-### 選択したモデルが記憶されない
+### Selected Model is Not Remembered
 
-**症状**: モデルを選択しても、拡張機能を再起動するとリセットされる。
+**Symptom**: The selected model resets after restarting the extension.
 
-**解決策**:
-1. VSCodeのワークスペースまたはユーザー設定が書き込み可能であることを確認してください。
-2. 拡張機能を無効にして再度有効化してみてください。
+**Solution**:
+1. Ensure your VSCode workspace or user settings are writable.
+2. Try disabling and re-enabling the extension.
 
-## API使用時の問題
+## API Usage Issues
 
-### リクエストがタイムアウトする
+### Request Times Out
 
-**症状**: APIリクエストが長時間応答を返さずにタイムアウトする。
+**Symptom**: API requests take a long time to respond and time out.
 
-**解決策**:
-1. ネットワーク接続を確認してください。
-2. リクエストが複雑すぎないか確認してください。
-3. サーバーが実行中であることを確認してください。
-4. VSCodeのメモリ使用量が高すぎないか確認してください。
+**Solution**:
+1. Check your network connection.
+2. Ensure the request is not too complex.
+3. Verify that the server is running.
+4. Check if VSCode's memory usage is too high.
 
-### トークン制限エラーが発生する
+### Token Limit Error Occurs
 
-**症状**: 「トークン制限超過」というエラーが返される。
+**Symptom**: "Token limit exceeded" error is returned.
 
-**解決策**:
-1. リクエストのメッセージを短くしてください。
-2. 複数の小さなリクエストに分割してください。
-3. より大きなコンテキストウィンドウを持つモデルに切り替えてください。
+**Solution**:
+1. Shorten the message in your request.
+2. Split the request into multiple smaller requests.
+3. Switch to a model with a larger context window.
 
-### レート制限エラーが発生する
+### Rate Limit Error Occurs
 
-**症状**: 「レート制限に達しました」というエラーが返される。
+**Symptom**: "Rate limit reached" error is returned.
 
-**解決策**:
-1. リクエストの頻度を下げてください（デフォルトは1分あたり10リクエスト）。
-2. しばらく待ってから再試行してください。
-3. 複数のリクエストを1つにまとめることを検討してください。
+**Solution**:
+1. Reduce the frequency of your requests (default is 10 requests per minute).
+2. Wait for a while and try again.
+3. Consider combining multiple requests into one.
 
-## その他の問題
+## Other Issues
 
-### ステータスバーの表示が更新されない
+### Status Bar Display Not Updating
 
-**症状**: サーバーの状態が変わってもステータスバーが更新されない。
+**Symptom**: The status bar does not update even when the server status changes.
 
-**解決策**:
-1. コマンドパレットから「リロードウィンドウ」を実行してVSCodeを再読み込みしてください。
-2. 拡張機能を無効にして再度有効化してみてください。
+**Solution**:
+1. Reload VSCode by running "Developer: Reload Window" from the Command Palette.
+2. Try disabling and re-enabling the extension.
 
-### キーバインディングが機能しない
+### Keybindings Not Working
 
-**症状**: 設定されたキーバインディングでコマンドが実行されない。
+**Symptom**: Commands are not executed with the configured keybindings.
 
-**解決策**:
-1. キーボードショートカットの設定で、キーバインディングが他のコマンドと競合していないか確認してください。
-2. VSCodeの「キーボードショートカット」設定で、バインディングを手動で再設定してみてください。
+**Solution**:
+1. Check your keyboard shortcut settings to ensure keybindings do not conflict with other commands.
+2. Try manually reconfiguring the keybinding in VSCode's "Keyboard Shortcuts" settings.
 
-## ローカル開発時の問題
+## Local Development Issues
 
-### TypeScriptコンパイルエラー
+### TypeScript Compile Errors
 
-**症状**: ビルド時にTypescriptエラーが発生する。
+**Symptom**: Typescript errors occur during the build.
 
-**解決策**:
+**Solution**:
+Check for errors using
 ```bash
 npm run watch
 ```
-でエラーを確認し、必要な型定義ファイルがすべて揃っているか確認してください
+and ensure all necessary type definition files are present.
 
-### 拡張機能が読み込まれない場合
+### Extension Not Loading
 
-**症状**: 拡張機能が有効にならない。
+**Symptom**: The extension is not enabled.
 
-**解決策**:
-1. VSCodeのコンソール（ヘルプ > 開発者ツールの切り替え）でエラーを確認
-2. `activationEvents` が正しく設定されているか確認
-3. `package.json` の依存関係が正しくインストールされているか確認
+**Solution**:
+1. Check for errors in the VSCode Console (Help > Toggle Developer Tools).
+2. Ensure `activationEvents` are correctly configured.
+3. Ensure dependencies in `package.json` are correctly installed.
 
-### 変更が反映されない場合
+### Changes Not Reflected
 
-**症状**: コード変更後も動作が変わらない。
+**Symptom**: Behavior does not change after code modifications.
 
-**解決策**:
-1. `npm run compile` を実行して最新の変更をビルド
-2. VSCodeのリロード（開発者: ウィンドウのリロード）を実行
+**Solution**:
+1. Run `npm run compile` to build the latest changes.
+2. Reload VSCode (Developer: Reload Window).
 
-## 問題が解決しない場合
+## If the Problem Persists
 
-上記の対処法で問題が解決しない場合は、以下の情報を含むIssueを作成してください：
+If the above solutions do not resolve the issue, please create an Issue including the following information:
 
-1. VSCodeのバージョン
-2. 拡張機能のバージョン
-3. オペレーティングシステムの情報
-4. 詳細なエラーメッセージとスタックトレース（可能な場合）
-5. 問題を再現する手順
+1. VSCode version
+2. Extension version
+3. Operating system information
+4. Detailed error message and stack trace (if possible)
+5. Steps to reproduce the problem
 
-また、VSCodeの開発者ツール（ヘルプ > 開発者ツールの切り替え）を開いてコンソールログを確認すると、より詳細な診断情報が得られる場合があります。
+Additionally, checking the console logs by opening the VSCode Developer Tools (Help > Toggle Developer Tools) may provide more detailed diagnostic information.
 
-## Marketplace公開情報
+## Marketplace Publishing Information
 
-### Microsoft AIガイドラインへの準拠
+### Compliance with Microsoft AI Guidelines
 
-この拡張機能は、以下のMicrosoft AIガイドラインに準拠しています：
+This extension complies with the following Microsoft AI guidelines:
 
 - [Microsoft AI tools and practices guidelines](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/transparency-note)
 - [GitHub Copilot extensibility acceptable development policy](https://docs.github.com/en/copilot/overview-of-github-copilot/about-github-copilot-extensibility)
 
-この拡張機能は以下の要件を満たしています：
+This extension meets the following requirements:
 
-1. **透明性**: ユーザーに対して、この拡張機能がAIモデルを使用していることを明示しています
-2. **同意**: モデルの利用前にユーザーの明示的な同意を得ています
-3. **セキュリティ**: すべてのデータ処理はローカルで行われ、外部にデータを送信しません
-4. **パフォーマンス**: モデル選択とレート制限によりパフォーマンスを最適化しています
-5. **アクセシビリティ**: すべての機能にキーボードショートカットを提供しています
+1. **Transparency**: Clearly informs the user that this extension uses AI models.
+2. **Consent**: Obtains explicit user consent before using models.
+3. **Security**: All data processing is done locally and no data is sent externally.
+4. **Performance**: Optimizes performance through model selection and rate limiting.
+5. **Accessibility**: Provides keyboard shortcuts for all features.
 
-### プライバシーとデータ収集
+### Privacy and Data Collection
 
-この拡張機能は、以下のプライバシーポリシーに従って動作します：
+This extension operates according to the following privacy policy:
 
-- ユーザーデータは外部に送信されません
-- すべての処理はローカルVSCodeインスタンス内で行われます
-- 統計情報や使用状況データは収集しません
-- サーバー機能はlocalhost内でのみ動作します
+- User data is not sent externally.
+- All processing is done within the local VSCode instance.
+- Statistical information or usage data is not collected.
+- Server functionality operates only within localhost.
 
-### 必要な権限
+### Required Permissions
 
-この拡張機能は、以下のVSCode APIにアクセスします：
+This extension accesses the following VSCode APIs:
 
-- `vscode.lm`: Language Model APIへのアクセス
-- ネットワーク機能: localhost上でのHTTP APIサーバーの実行
+- `vscode.lm`: Access to the Language Model API
+- Network features: Running an HTTP API server on localhost
 
-モデル使用時にはVSCodeの標準認証フローを通じてユーザーの同意を取得します。
+User consent is obtained through the standard VSCode authentication flow when using models.
 
-## Marketplace公開チェックリスト
+## Marketplace Publishing Checklist
 
-この拡張機能をMarketplaceに公開する前に、以下の項目を確認してください：
+Before publishing this extension to the Marketplace, please check the following items:
 
-1. **拡張機能マニフェスト**
-   - [x] `package.json`のすべての必須フィールドが適切に設定されている
-   - [x] アイコン、バナー、カテゴリなどが設定されている
-   - [x] ライセンス情報が正確に記載されている
+1. **Extension Manifest**
+   - [x] All required fields in `package.json` are properly set.
+   - [x] Icon, banner, categories, etc., are configured.
+   - [x] License information is accurately stated.
 
-2. **ドキュメント**
-   - [x] README.mdが完全で、使用方法が明確に説明されている
-   - [x] スクリーンショットまたはアニメーション付きのデモが含まれている
-   - [x] トラブルシューティング情報が提供されている
+2. **Documentation**
+   - [x] README.md is complete and clearly explains usage.
+   - [x] Includes screenshots or animated demos.
+   - [x] Troubleshooting information is provided.
 
-3. **コードの品質**
-   - [x] すべてのリンター警告が解決されている
-   - [x] テストスイートが実装され、すべてのテストがパスしている
-   - [x] エラー処理が適切に実装されている
+3. **Code Quality**
+   - [x] All linter warnings are resolved.
+   - [x] A test suite is implemented, and all tests pass.
+   - [x] Error handling is properly implemented.
 
-4. **Microsoft AIガイドライン**
-   - [x] Microsoft AI tools and practices guidelinesに準拠している
-   - [x] GitHub Copilot extensibility acceptable development policyに準拠している
-   - [x] 必要なプライバシー情報とデータ使用の説明が提供されている
+4. **Microsoft AI Guidelines**
+   - [x] Complies with Microsoft AI tools and practices guidelines.
+   - [x] Complies with GitHub Copilot extensibility acceptable development policy.
+   - [x] Required privacy information and data usage explanations are provided.
 
-5. **依存関係の最適化**
-   - [x] 依存関係が最小限に保たれている（Express.jsのみ使用）
-   - [x] クライアントサイドのオープンソースライブラリのみを使用している
-   - [x] パフォーマンスに影響を与える可能性のある巨大な依存関係は排除している
+5. **Dependency Optimization**
+   - [x] Dependencies are kept to a minimum (only Express.js used).
+   - [x] Only client-side open-source libraries are used.
+   - [x] Large dependencies that could impact performance are excluded.
 
-## ライセンス
+## License
 
 MIT
