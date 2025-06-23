@@ -15,33 +15,9 @@ This extension allows external applications to easily utilize the VSCode Languag
 
 ## Installation
 
-### Install from Marketplace
+### Installation Steps
 1. Install from the VSCode Extension Marketplace
 2. Alternatively, download the `.vsix` file and install using the "Install Extension from VSIX" feature in VSCode
-
-### Test Local Development Version
-To try the extension locally from the source code, follow these steps:
-
-1. Clone the repository
-   ```bash
-   git clone https://github.com/user/vscode-lm-proxy.git
-   cd vscode-lm-proxy
-   ```
-
-2. Install dependencies
-   ```bash
-   npm install
-   ```
-
-3. Build the extension
-   ```bash
-   npm run compile
-   ```
-
-4. Run in Debug Mode
-   - Press `F5` in VSCode
-   - Or select "Run Extension" from the "Run and Debug" panel
-   - A new VSCode window will open with the extension running in debug mode
 
 ## Usage
 
@@ -249,7 +225,7 @@ This guide describes common issues you might encounter when using the VSCode LM 
 **Symptom**: Extension installation fails.
 
 **Solution**:
-1. Ensure VSCode is updated to the latest version (1.93.0 or later).
+1. Ensure VSCode is updated to the latest version.
 2. Check your internet connection.
 3. Restart VSCode and try installing again.
 4. Check the VSCode Developer Tools Console for detailed error messages.
@@ -346,36 +322,6 @@ This guide describes common issues you might encounter when using the VSCode LM 
 1. Check your keyboard shortcut settings to ensure keybindings do not conflict with other commands.
 2. Try manually reconfiguring the keybinding in VSCode's "Keyboard Shortcuts" settings.
 
-## Local Development Issues
-
-### TypeScript Compile Errors
-
-**Symptom**: Typescript errors occur during the build.
-
-**Solution**:
-Check for errors using
-```bash
-npm run watch
-```
-and ensure all necessary type definition files are present.
-
-### Extension Not Loading
-
-**Symptom**: The extension is not enabled.
-
-**Solution**:
-1. Check for errors in the VSCode Console (Help > Toggle Developer Tools).
-2. Ensure `activationEvents` are correctly configured.
-3. Ensure dependencies in `package.json` are correctly installed.
-
-### Changes Not Reflected
-
-**Symptom**: Behavior does not change after code modifications.
-
-**Solution**:
-1. Run `npm run compile` to build the latest changes.
-2. Reload VSCode (Developer: Reload Window).
-
 ## If the Problem Persists
 
 If the above solutions do not resolve the issue, please create an Issue including the following information:
@@ -388,7 +334,7 @@ If the above solutions do not resolve the issue, please create an Issue includin
 
 Additionally, checking the console logs by opening the VSCode Developer Tools (Help > Toggle Developer Tools) may provide more detailed diagnostic information.
 
-## Marketplace Publishing Information
+## Compliance and Privacy
 
 ### Compliance with Microsoft AI Guidelines
 
@@ -422,35 +368,6 @@ This extension accesses the following VSCode APIs:
 - Network features: Running an HTTP API server on localhost
 
 User consent is obtained through the standard VSCode authentication flow when using models.
-
-## Marketplace Publishing Checklist
-
-Before publishing this extension to the Marketplace, please check the following items:
-
-1. **Extension Manifest**
-   - [x] All required fields in `package.json` are properly set.
-   - [x] Icon, banner, categories, etc., are configured.
-   - [x] License information is accurately stated.
-
-2. **Documentation**
-   - [x] README.md is complete and clearly explains usage.
-   - [x] Includes screenshots or animated demos.
-   - [x] Troubleshooting information is provided.
-
-3. **Code Quality**
-   - [x] All linter warnings are resolved.
-   - [x] A test suite is implemented, and all tests pass.
-   - [x] Error handling is properly implemented.
-
-4. **Microsoft AI Guidelines**
-   - [x] Complies with Microsoft AI tools and practices guidelines.
-   - [x] Complies with GitHub Copilot extensibility acceptable development policy.
-   - [x] Required privacy information and data usage explanations are provided.
-
-5. **Dependency Optimization**
-   - [x] Dependencies are kept to a minimum (only Express.js used).
-   - [x] Only client-side open-source libraries are used.
-   - [x] Large dependencies that could impact performance are excluded.
 
 ## License
 

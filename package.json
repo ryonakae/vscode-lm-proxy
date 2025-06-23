@@ -3,20 +3,20 @@
   "displayName": "LM Proxy",
   "description": "VSCode Language Model API Proxy with OpenAI API compatibility",
   "version": "0.0.1",
-  "publisher": "vscode-lm-proxy",
+  "publisher": "ryonakae",
   "author": {
     "name": "Ryo Nakae"
   },
   "license": "MIT",
-  "homepage": "https://github.com/user/vscode-lm-proxy",
+  "homepage": "https://github.com/ryo-nakae/vscode-lm-proxy",
   "repository": {
     "type": "git",
-    "url": "https://github.com/user/vscode-lm-proxy.git"
+    "url": "https://github.com/ryo-nakae/vscode-lm-proxy.git"
   },
   "bugs": {
-    "url": "https://github.com/user/vscode-lm-proxy/issues"
+    "url": "https://github.com/ryo-nakae/vscode-lm-proxy/issues"
   },
-  "icon": "images/icon.png",
+  "icon": "icon.png",
   "galleryBanner": {
     "color": "#1E1E1E",
     "theme": "dark"
@@ -49,24 +49,24 @@
           "default": 4000,
           "minimum": 1024,
           "maximum": 65535,
-          "description": "LM Proxyサーバーが使用するポート番号"
+          "description": "Port number used by the LM Proxy server"
         },
         "vscode-lm-proxy.logLevel": {
           "type": "number",
           "enum": [0, 1, 2, 3],
           "enumDescriptions": [
-            "DEBUG: すべてのログを出力（詳細情報を含む）（デフォルト）",
-            "INFO: 情報、警告、エラーのみを出力",
-            "WARN: 警告とエラーのみを出力",
-            "ERROR: エラーのみを出力"
+            "DEBUG: Output all logs including detailed information (default)",
+            "INFO: Output information, warnings, and errors only",
+            "WARN: Output warnings and errors only",
+            "ERROR: Output errors only"
           ],
           "default": 0,
-          "description": "ログレベル（0:DEBUG、1:INFO、2:WARN、3:ERROR）"
+          "description": "Log level (0:DEBUG, 1:INFO, 2:WARN, 3:ERROR)"
         },
         "vscode-lm-proxy.showOutputOnStartup": {
           "type": "boolean",
           "default": true,
-          "description": "拡張機能の起動時に出力パネルを表示するかどうか"
+          "description": "Whether to display the output panel when the extension starts"
         }
       }
     },
@@ -190,11 +190,11 @@
   "capabilities": {
     "virtualWorkspaces": {
       "supported": false,
-      "description": "この拡張機能はVSCodeのLanguage Model APIを利用するため、ローカル環境が必要です"
+      "description": "This extension requires a local environment as it uses VSCode's Language Model API"
     },
     "untrustedWorkspaces": {
       "supported": false,
-      "description": "この拡張機能はVSCodeのLanguage Model APIを利用するため、信頼されたワークスペースが必要です"
+      "description": "This extension requires a trusted workspace as it uses VSCode's Language Model API"
     }
   }
 }
