@@ -130,29 +130,13 @@ This section provides detailed information about the API features offered by LM 
 http://localhost:4000
 ```
 
-For OpenAI API endpoints:
+OpenAI API endpoints:
+- `http://localhost:4000/openai` - Standard endpoint
+- `http://localhost:4000/openai/v1` - Full compatibility with OpenAI API client libraries
 
-```
-http://localhost:4000/openai
-```
-
-Or, for full compatibility with OpenAI API client libraries:
-
-```
-http://localhost:4000/openai/v1
-```
-
-For Anthropic API endpoints:
-
-```
-http://localhost:4000/anthropic
-```
-
-Or, for full compatibility with Anthropic API client libraries:
-
-```
-http://localhost:4000/anthropic/v1
-```
+Anthropic API endpoints:
+- `http://localhost:4000/anthropic` - Standard endpoint
+- `http://localhost:4000/anthropic/v1` - Full compatibility with Anthropic API client libraries
 
 > **Note**: The port number can be changed in the settings.
 
@@ -184,72 +168,45 @@ curl http://localhost:4000/
       "method": "POST",
       "description": "OpenAI-compatible Chat Completions API"
     },
-    "/openai/v1/chat/completions": {
-      "method": "POST",
-      "description": "OpenAI-compatible Chat Completions API (with `/v1/` prefix)"
-    },
     "/openai/models": {
       "method": "GET",
       "description": "OpenAI-compatible Models API - List available models"
-    },
-    "/openai/v1/models": {
-      "method": "GET",
-      "description": "OpenAI-compatible Models API - List available models (with `/v1/` prefix)"
     },
     "/openai/models/:model": {
       "method": "GET",
       "description": "OpenAI-compatible Models API - Get specific model info"
     },
-    "/openai/v1/models/:model": {
-      "method": "GET",
-      "description": "OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)"
-    },
     "/anthropic/messages": {
       "method": "POST",
       "description": "Anthropic-compatible Messages API"
-    },
-    "/anthropic/v1/messages": {
-      "method": "POST",
-      "description": "Anthropic-compatible Messages API (with `/v1/` prefix)"
     },
     "/anthropic/messages/count_tokens": {
       "method": "POST",
       "description": "Anthropic-compatible Count Message Tokens API"
     },
-    "/anthropic/v1/messages/count_tokens": {
-      "method": "POST",
-      "description": "Anthropic-compatible Count Message Tokens API (with `/v1/` prefix)"
-    },
     "/anthropic/models": {
       "method": "GET",
       "description": "Anthropic-compatible Models API - List available models"
     },
-    "/anthropic/v1/models": {
-      "method": "GET",
-      "description": "Anthropic-compatible Models API - List available models (with `/v1/` prefix)"
-    },
     "/anthropic/models/:model": {
       "method": "GET",
       "description": "Anthropic-compatible Models API - Get specific model info"
-    },
-    "/anthropic/v1/models/:model": {
-      "method": "GET",
-      "description": "Anthropic-compatible Models API - Get specific model info (with `/v1/` prefix)"
     }
   }
 }
 ```
 
-#### GET /openai or GET /openai/v1 or GET /openai/v1/
+> **Note**: All endpoints are also available with the `/v1/` prefix for compatibility with API client libraries (e.g., `/openai/v1/chat/completions`, `/anthropic/v1/messages`, etc.)
+```
 
-Returns OpenAI API information.
+#### GET /openai
+
+Returns OpenAI API information. Also available at `/openai/v1/`.
 
 ##### Request
 
 ```bash
 curl http://localhost:4000/openai/
-# or
-curl http://localhost:4000/openai/v1/
 ```
 
 ##### Response
@@ -276,9 +233,9 @@ curl http://localhost:4000/openai/v1/
 }
 ```
 
-#### POST /openai/chat/completions or POST /openai/v1/chat/completions
+#### POST /openai/chat/completions
 
-Sends a chat completion request. This is an OpenAI Chat Completions API compatible interface.
+Sends a chat completion request. This is an OpenAI Chat Completions API compatible interface. Also available at `/openai/v1/chat/completions`.
 
 ##### Request Parameters
 
@@ -339,16 +296,14 @@ data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901
 data: [DONE]
 ```
 
-#### GET /openai/models or GET /openai/v1/models
+#### GET /openai/models
 
-Returns a list of available models. This is an OpenAI Models API compatible interface.
+Returns a list of available models. This is an OpenAI Models API compatible interface. Also available at `/openai/v1/models`.
 
 ##### Request
 
 ```bash
 curl http://localhost:4000/openai/models
-# or
-curl http://localhost:4000/openai/v1/models
 ```
 
 ##### Response
@@ -379,16 +334,14 @@ curl http://localhost:4000/openai/v1/models
 }
 ```
 
-#### GET /openai/models/:model or GET /openai/v1/models/:model
+#### GET /openai/models/:model
 
-Returns information about a specific model. This is an OpenAI Models API compatible interface.
+Returns information about a specific model. This is an OpenAI Models API compatible interface. Also available at `/openai/v1/models/:model`.
 
 ##### Request
 
 ```bash
 curl http://localhost:4000/openai/models/gpt-4o
-# or
-curl http://localhost:4000/openai/v1/models/vscode-lm-proxy
 ```
 
 ##### Response
@@ -402,16 +355,14 @@ curl http://localhost:4000/openai/v1/models/vscode-lm-proxy
 }
 ```
 
-#### GET /anthropic or GET /anthropic/v1 or GET /anthropic/v1/
+#### GET /anthropic
 
-Returns Anthropic API information.
+Returns Anthropic API information. Also available at `/anthropic/v1/`.
 
 ##### Request
 
 ```bash
 curl http://localhost:4000/anthropic/
-# or
-curl http://localhost:4000/anthropic/v1/
 ```
 
 ##### Response
@@ -422,19 +373,19 @@ curl http://localhost:4000/anthropic/v1/
   "message": "Anthropic API compatible endpoints",
   "version": "0.0.1",
   "endpoints": {
-    "v1/messages": {
+    "messages": {
       "method": "POST",
       "description": "Messages API"
     },
-    "v1/messages/count_tokens": {
+    "messages/count_tokens": {
       "method": "POST",
       "description": "Count Message Tokens API"
     },
-    "v1/models": {
+    "models": {
       "method": "GET",
       "description": "List available models"
     },
-    "v1/models/:model": {
+    "models/:model": {
       "method": "GET",
       "description": "Get model information"
     }
@@ -442,9 +393,9 @@ curl http://localhost:4000/anthropic/v1/
 }
 ```
 
-#### POST /anthropic/messages or POST /anthropic/v1/messages
+#### POST /anthropic/messages
 
-Sends a message request. This is an Anthropic Messages API compatible interface.
+Sends a message request. This is an Anthropic Messages API compatible interface. Also available at `/anthropic/v1/messages`.
 
 ##### Request Parameters
 
@@ -500,9 +451,9 @@ data: {"id":"msg_abc123","type":"message","role":"assistant","content":[{"type":
 data: [DONE]
 ```
 
-#### POST /anthropic/messages/count_tokens or POST /anthropic/v1/messages/count_tokens
+#### POST /anthropic/messages/count_tokens
 
-Counts tokens for a message request. This is an Anthropic Count Tokens API compatible interface.
+Counts tokens for a message request. This is an Anthropic Count Tokens API compatible interface. Also available at `/anthropic/v1/messages/count_tokens`.
 
 ##### Request Parameters
 
@@ -520,16 +471,14 @@ Counts tokens for a message request. This is an Anthropic Count Tokens API compa
 }
 ```
 
-#### GET /anthropic/models or GET /anthropic/v1/models
+#### GET /anthropic/models
 
-Returns a list of available Anthropic models. This is an Anthropic Models API compatible interface.
+Returns a list of available Anthropic models. This is an Anthropic Models API compatible interface. Also available at `/anthropic/v1/models`.
 
 ##### Request
 
 ```bash
 curl http://localhost:4000/anthropic/models
-# or
-curl http://localhost:4000/anthropic/v1/models
 ```
 
 ##### Response
@@ -556,16 +505,14 @@ curl http://localhost:4000/anthropic/v1/models
 }
 ```
 
-#### GET /anthropic/models/:model or GET /anthropic/v1/models/:model
+#### GET /anthropic/models/:model
 
-Returns information about a specific Anthropic model. This is an Anthropic Models API compatible interface.
+Returns information about a specific Anthropic model. This is an Anthropic Models API compatible interface. Also available at `/anthropic/v1/models/:model`.
 
 ##### Request
 
 ```bash
 curl http://localhost:4000/anthropic/models/claude-3-5-sonnet-20240620
-# or
-curl http://localhost:4000/anthropic/v1/models/claude-3-7-sonnet-20250219
 ```
 
 ##### Response
