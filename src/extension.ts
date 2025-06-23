@@ -24,15 +24,9 @@ export function activate(context: vscode.ExtensionContext) {
   // モデル管理クラスのインポートと初期化（グローバル変数に格納）
   modelManager = require('./model/manager').modelManager;
   
-  // 保存されたモデル情報の復元
-  const savedModelId = context.globalState.get<string>('selectedModelId');
-  const savedModelName = context.globalState.get<string>('selectedModelName');
-  
-  // モデル情報が保存されていれば復元
-  if (savedModelId && savedModelName) {
-    modelManager.setSelectedModel(savedModelId, savedModelName);
-    logger.info(`Restored model: ${savedModelName} (${savedModelId})`);
-  }
+  // モデルマネージャーにExtensionContextを設定
+  // これにより内部で保存されたモデル情報が復元される
+  modelManager.setExtensionContext(context);
   
   // 選択中のモデルとサーバー状態をログに出力
   const selectedModel = modelManager.getSelectedModelName() || 'Not selected';

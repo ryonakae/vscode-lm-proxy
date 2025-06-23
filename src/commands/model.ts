@@ -17,7 +17,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       if (selectedModel) {
         const wasRunning = serverManager.isRunning();
         const selectedModelName = modelManager.getSelectedModelName();
-        context.globalState.update('selectedModel', selectedModel);
+        context.globalState.update('selectedModelId', selectedModel);
         context.globalState.update('selectedModelName', selectedModelName);
         vscode.window.showInformationMessage(`Model selected: ${selectedModelName || selectedModel}`);
 
@@ -52,7 +52,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   context.subscriptions.push(selectModelCommand);
   
   // 前回選択されたモデルを復元
-  const previouslySelectedModel = context.globalState.get<string>('selectedModel');
+  const previouslySelectedModel = context.globalState.get<string>('selectedModelId');
   const previouslySelectedModelName = context.globalState.get<string>('selectedModelName');
   if (previouslySelectedModel) {
     // モデル選択状態を復元
