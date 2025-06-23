@@ -441,27 +441,108 @@ class ModelManager {
   }
 
   /**
-   * 特定のモデルファミリーをサポートしているかどうかをチェック
-   * @param families モデルファミリーの配列
-   * @returns サポートされている場合true
+   * 利用可能なすべてのモデルを取得する
+   * @returns OpenAI API形式のモデル一覧
    */
-  public async hasSupportedModels(families: string[]): Promise<boolean> {
+  public async getAvailableModels(): Promise<{
+    object: string;
+    data: Array<{
+      id: string;
+      object: string;
+      created: number;
+      owned_by: string;
+    }>;
+  }> {
     try {
-      // 各ファミリーごとに個別に確認する
-      for (const family of families) {
-        const models = await vscode.lm.selectChatModels({
-          family: family
-        });
-        
-        if (models && models.length > 0) {
-          return true;
+      // サポートされているモデルを取得
+      let allModels: vscode.LanguageModelChat[] = [];
+      
+      // まず、指定せずにすべてのモデルを取得
+      const defaultModels = await vscode.lm.selectChatModels({});
+      if (defaultModels && defaultModels.length > 0) {
+        allModels = defaultModels;
+      } else {
+        // モデルが見つからなかった場合は、ファミリーごとに試行
+        for (const family of this.supportedFamilies) {
+          const familyModels = await vscode.lm.selectChatModels({ family });
+          if (familyModels && familyModels.length > 0) {
+            allModels = [...allModels, ...familyModels];
+          }
         }
       }
       
-      return false;
+      // OpenAI API形式に変換
+      const now = Math.floor(Date.now() / 1000);
+      const modelsData = allModels.map(model => ({
+        id: model.id,
+        object: 'model',
+        created: now,
+        owned_by: model.vendor || 'vscode'
+      }));
+      
+      // プロキシモデルIDも追加
+      modelsData.push({
+        id: 'vscode-lm-proxy',
+        object: 'model',
+        created: now,
+        owned_by: 'vscode-lm-proxy'
+      });
+      
+      return {
+        object: 'list',
+        data: modelsData
+      };
     } catch (error) {
-      logger.error('Model check error:', error as Error);
-      return false;
+      logger.error(`Get models error: ${(error as Error).message}`, error as Error);
+      throw error;
+    }
+  }
+  
+  /**
+   * 特定のモデル情報を取得する
+   * @param modelId モデルID
+   * @returns OpenAI API形式のモデル情報
+   */
+  public async getModelInfo(modelId: string): Promise<{
+    id: string;
+    object: string;
+    created: number;
+    owned_by: string;
+  }> {
+    try {
+      // vscode-lm-proxyの場合は特別扱い
+      if (modelId === 'vscode-lm-proxy') {
+        return {
+          id: 'vscode-lm-proxy',
+          object: 'model',
+          created: Math.floor(Date.now() / 1000),
+          owned_by: 'vscode-lm-proxy'
+        };
+      }
+      
+      // 指定されたIDのモデルを取得
+      const [model] = await vscode.lm.selectChatModels({ id: modelId });
+      
+      if (!model) {
+        const error: any = new Error(`Model ${modelId} not found`);
+        error.statusCode = 404;
+        error.type = 'model_not_found_error';
+        throw error;
+      }
+      
+      return {
+        id: model.id,
+        object: 'model',
+        created: Math.floor(Date.now() / 1000),
+        owned_by: model.vendor || 'vscode'
+      };
+    } catch (error) {
+      if ((error as any).statusCode === 404) {
+        throw error;
+      }
+      
+      logger.error(`Get model info error: ${(error as Error).message}`, error as Error);
+      throw error;
     }
   }
 }

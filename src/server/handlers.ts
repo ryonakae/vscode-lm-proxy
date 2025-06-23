@@ -14,6 +14,73 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
 }
 
 /**
+ * Sets up OpenAI-compatible Models API endpoints
+ * @param app Express.js application
+ */
+export function setupModelsEndpoints(app: express.Express): void {
+  // モデル一覧エンドポイント
+  app.get('/openai/models', handleModels);
+  app.get('/openai/v1/models', handleModels);
+  
+  // 特定モデル情報エンドポイント
+  app.get('/openai/models/:model', handleModelInfo);
+  app.get('/openai/v1/models/:model', handleModelInfo);
+}
+
+/**
+ * Models list request handler
+ */
+async function handleModels(_req: express.Request, res: express.Response) {
+  try {
+    const models = await modelManager.getAvailableModels();
+    res.json(models);
+  } catch (error) {
+    logger.error(`Models API error: ${(error as Error).message}`, error as Error);
+    
+    // エラーレスポンスの作成
+    const apiError = error as any;
+    const statusCode = apiError.statusCode || 500;
+    const errorResponse = {
+      error: {
+        message: apiError.message || 'An unknown error has occurred',
+        type: apiError.type || 'api_error',
+        code: apiError.code || 'internal_error'
+      }
+    };
+    
+    res.status(statusCode).json(errorResponse);
+  }
+}
+
+/**
+ * Single model info request handler
+ */
+async function handleModelInfo(req: express.Request, res: express.Response) {
+  try {
+    const modelId = req.params.model;
+    
+    // モデル情報の取得
+    const modelInfo = await modelManager.getModelInfo(modelId);
+    res.json(modelInfo);
+  } catch (error) {
+    logger.error(`Model info API error: ${(error as Error).message}`, error as Error);
+    
+    // エラーレスポンスの作成
+    const apiError = error as any;
+    const statusCode = apiError.statusCode || 500;
+    const errorResponse = {
+      error: {
+        message: apiError.message || 'An unknown error has occurred',
+        type: apiError.type || 'api_error',
+        code: apiError.code || 'internal_error'
+      }
+    };
+    
+    res.status(statusCode).json(errorResponse);
+  }
+}
+
+/**
  * Chat Completions request handler
  */
 async function handleChatCompletions(req: express.Request, res: express.Response) {
@@ -141,6 +208,22 @@ function handleServerStatus(_req: express.Request, res: express.Response) {
       '/openai/v1/chat/completions': {
         method: 'POST',
         description: 'OpenAI-compatible Chat Completions API (with `/v1/` prefix)'
+      },
+      '/openai/models': {
+        method: 'GET',
+        description: 'OpenAI-compatible Models API - List available models'
+      },
+      '/openai/v1/models': {
+        method: 'GET',
+        description: 'OpenAI-compatible Models API - List available models (with `/v1/` prefix)'
+      },
+      '/openai/models/:model': {
+        method: 'GET',
+        description: 'OpenAI-compatible Models API - Get specific model info'
+      },
+      '/openai/v1/models/:model': {
+        method: 'GET',
+        description: 'OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)'
       }
     }
   });

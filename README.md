@@ -128,6 +128,22 @@ curl http://localhost:4000/
     "/openai/v1/chat/completions": {
       "method": "POST",
       "description": "OpenAI-compatible Chat Completions API (with `/v1/` prefix)"
+    },
+    "/openai/models": {
+      "method": "GET",
+      "description": "OpenAI-compatible Models API - List available models"
+    },
+    "/openai/v1/models": {
+      "method": "GET",
+      "description": "OpenAI-compatible Models API - List available models (with `/v1/` prefix)"
+    },
+    "/openai/models/:model": {
+      "method": "GET",
+      "description": "OpenAI-compatible Models API - Get specific model info"
+    },
+    "/openai/v1/models/:model": {
+      "method": "GET",
+      "description": "OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)"
     }
   }
 }
@@ -156,6 +172,14 @@ curl http://localhost:4000/openai/v1/
     "chat/completions": {
       "method": "POST",
       "description": "Chat Completions API"
+    },
+    "models": {
+      "method": "GET",
+      "description": "List available models"
+    },
+    "models/:model": {
+      "method": "GET",
+      "description": "Get model information"
     }
   }
 }
@@ -224,6 +248,69 @@ data: {"id":"chatcmpl-abc123","object":"chat.completion.chunk","created":1686901
 data: [DONE]
 ```
 
+#### GET /openai/models or GET /openai/v1/models
+
+Returns a list of available models. This is an OpenAI Models API compatible interface.
+
+##### Request
+
+```bash
+curl http://localhost:4000/openai/models
+# or
+curl http://localhost:4000/openai/v1/models
+```
+
+##### Response
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-4o",
+      "object": "model",
+      "created": 1686935002,
+      "owned_by": "vscode"
+    },
+    {
+      "id": "claude-3.5-sonnet",
+      "object": "model",
+      "created": 1686935002,
+      "owned_by": "vscode"
+    },
+    {
+      "id": "vscode-lm-proxy",
+      "object": "model",
+      "created": 1686935002,
+      "owned_by": "vscode-lm-proxy"
+    }
+  ]
+}
+```
+
+#### GET /openai/models/:model or GET /openai/v1/models/:model
+
+Returns information about a specific model. This is an OpenAI Models API compatible interface.
+
+##### Request
+
+```bash
+curl http://localhost:4000/openai/models/gpt-4o
+# or
+curl http://localhost:4000/openai/v1/models/vscode-lm-proxy
+```
+
+##### Response
+
+```json
+{
+  "id": "gpt-4o",
+  "object": "model",
+  "created": 1686935002,
+  "owned_by": "vscode"
+}
+```
+
 ### Error Responses
 
 If an error occurs, the server will return an appropriate HTTP status code and a JSON response in the following format:
@@ -243,6 +330,7 @@ If an error occurs, the server will return an appropriate HTTP status code and a
 - `invalid_request_error` - Invalid request parameters
 - `token_limit_error` - Token limit exceeded
 - `rate_limit_error` - Rate limit reached
+- `model_not_found_error` - Requested model not found
 - `api_error` - Internal API error
 - `server_error` - Internal server error
 
