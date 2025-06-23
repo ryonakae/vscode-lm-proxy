@@ -60,25 +60,41 @@ class StatusBarManager {
     
     // 選択中のモデル名を取得（強制的に最新の状態を反映）
     const selectedModelName = modelManager.getSelectedModelName();
-    // モデル表示テキスト
-    const modelText = selectedModelName ? ` (${selectedModelName})` : ' (Model not selected)';
+    // 設定から各モデル情報を取得
+    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
+    const openaiModel = config.get<string>('openaiModel') || 'vscode-lm-proxy';
+    const anthropicModel = config.get<string>('anthropicModel') || 'vscode-lm-proxy';
+    const claudeBackgroundModel = config.get<string>('claudeBackgroundModel') || 'vscode-lm-proxy';
+    const claudeThinkModel = config.get<string>('claudeThinkModel') || 'vscode-lm-proxy';
     
     if (errorMessage) {
       // エラー状態
-      this.statusBarItem.text = `$(error) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(error) LM Proxy`;
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
       this.statusBarItem.tooltip = `Server: Error - ${errorMessage}`;
     } else if (isRunning) {
       // 実行中
-      this.statusBarItem.text = `$(server) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(server) LM Proxy`;
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
-      this.statusBarItem.tooltip = `Server: Running (${url})${selectedModelName ? `\nModel: ${selectedModelName}` : '\nModel: Not selected'}`;
+      this.statusBarItem.tooltip = 
+        `Server: Running (${url})\n` +
+        `Selected Model: ${selectedModelName || 'Not selected'}\n` +
+        `OpenAI API Model: ${openaiModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : openaiModel}\n` +
+        `Anthropic API Model: ${anthropicModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : anthropicModel}\n` +
+        `Claude Code Background Model: ${claudeBackgroundModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeBackgroundModel}\n` +
+        `Claude Code Think Model: ${claudeThinkModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeThinkModel}`;
     } else {
       // 停止中
-      this.statusBarItem.text = `$(stop) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(stop) LM Proxy`;
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = `Server: Stopped${selectedModelName ? `\nModel: ${selectedModelName}` : '\nModel: Not selected'}`;
+      this.statusBarItem.tooltip = 
+        `Server: Stopped\n` +
+        `Selected Model: ${selectedModelName || 'Not selected'}\n` +
+        `OpenAI API Model: ${openaiModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : openaiModel}\n` +
+        `Anthropic API Model: ${anthropicModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : anthropicModel}\n` +
+        `Claude Code Background Model: ${claudeBackgroundModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeBackgroundModel}\n` +
+        `Claude Code Think Model: ${claudeThinkModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeThinkModel}`;
     }
   }
   
@@ -105,11 +121,32 @@ class StatusBarManager {
       });
     }
     
-    // モデル選択メニュー項目を追加
+    // モデル関連のメニュー項目を追加
     items.push({
       label: '$(gear) Select Model',
-      description: 'Select a model for LM Proxy',
+      description: 'Select a primary model for LM Proxy',
       command: 'vscode-lm-proxy.selectModel'
+    });
+    
+    // OpenAI API用モデル設定
+    items.push({
+      label: '$(settings-gear) Configure OpenAI API Model',
+      description: 'Set a specific model for OpenAI API endpoints',
+      command: 'vscode-lm-proxy.configureOpenaiModel'
+    });
+    
+    // Anthropic API用モデル設定
+    items.push({
+      label: '$(settings-gear) Configure Anthropic API Model',
+      description: 'Set a specific model for Anthropic API endpoints',
+      command: 'vscode-lm-proxy.configureAnthropicModel'
+    });
+    
+    // Claude Code用モデル設定
+    items.push({
+      label: '$(settings-gear) Configure Claude Code Models',
+      description: 'Set specific models for Claude Code features',
+      command: 'vscode-lm-proxy.configureClaudeCodeModels'
     });
     
     // メニューを表示

@@ -28,6 +28,9 @@ export function setupAnthropicEndpoints(app: express.Express): void {
   
   // モデル関連のエンドポイント
   setupAnthropicModelsEndpoints(app);
+
+  // Claude Code専用エンドポイント
+  setupClaudeCodeEndpoints(app);
 }
 
 /**
@@ -103,7 +106,10 @@ function sendAnthropicRootResponse(_req: express.Request, res: express.Response)
 async function handleAnthropicMessages(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { vscodeLmMessages, model, stream, originalMessages, tools, toolChoice } = validateAndConvertAnthropicRequest(req.body);
+    const { vscodeLmMessages, model: requestedModel, stream, originalMessages, tools, toolChoice } = validateAndConvertAnthropicRequest(req.body);
+    
+    // 標準のAnthropicエンドポイント用のモデルを使用
+    const model = modelManager.getAnthropicModel();
     
     // トークン制限チェック（元のメッセージに対して実行）
     const tokenLimitError = await limitsManager.validateTokenLimit(originalMessages, model);
@@ -132,11 +138,11 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
       // 共通ハンドラーを使用してストリーミングレスポンスを送信
       await LmApiHandler.streamChatCompletionFromLmApi(
         vscodeLmMessages, 
-        model, 
-        modelManager.getSelectedModel(),
+        model,
+        null, // モデルはgetAnthropicModelで既に解決済み
         (chunk) => {
           // Anthropic形式に変換してレスポンス
-          const anthropicChunk = convertToAnthropicFormat(chunk, model, true);
+          const anthropicChunk = convertToAnthropicFormat(chunk, requestedModel, true); // 元のモデル名を使用
           const data = JSON.stringify(anthropicChunk);
           // チャンクをログに記録
           logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
@@ -151,8 +157,8 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
       // 非ストリーミングモードでレスポンスを取得
       const result = await LmApiHandler.getChatCompletionFromLmApi(
         vscodeLmMessages, 
-        model, 
-        modelManager.getSelectedModel()
+        model,
+        null // モデルはgetAnthropicModelで既に解決済み
       );
       
       // ツール呼び出し情報を検出（もしあれば）
@@ -302,6 +308,151 @@ async function handleAnthropicModelInfo(req: express.Request, res: express.Respo
     };
     
     res.status(statusCode).json(errorResponse);
+  }
+}
+
+/**
+ * Sets up Claude Code specific endpoints
+ * @param app Express.js application
+ */
+function setupClaudeCodeEndpoints(app: express.Express): void {
+  // Claude Code専用メッセージ API
+  app.post('/anthropic/claude/v1/messages', handleClaudeCodeMessages);
+  app.post('/anthropic/claude/messages', handleClaudeCodeMessages);
+  
+  // Claude Code専用トークン数 API
+  app.post('/anthropic/claude/v1/messages/count_tokens', handleAnthropicCountTokens);
+  app.post('/anthropic/claude/messages/count_tokens', handleAnthropicCountTokens);
+  
+  // Claude Code専用モデル API
+  app.get('/anthropic/claude/v1/models', handleAnthropicModels);
+  app.get('/anthropic/claude/models', handleAnthropicModels);
+  
+  // Claude Code専用モデル情報 API
+  app.get('/anthropic/claude/v1/models/:model', handleAnthropicModelInfo);
+  app.get('/anthropic/claude/models/:model', handleAnthropicModelInfo);
+}
+
+/**
+ * Claude Code専用 Messages API request handler
+ */
+async function handleClaudeCodeMessages(req: express.Request, res: express.Response) {
+  try {
+    // リクエストの検証
+    const { vscodeLmMessages, model: requestedModel, stream, originalMessages, tools, toolChoice } = 
+      validateAndConvertAnthropicRequest(req.body);
+    
+    // Claude Codeのリクエストに基づいて適切なモデルを選択
+    const model = modelManager.mapClaudeCodeModel(requestedModel);
+    
+    // トークン制限チェック（元のメッセージに対して実行）
+    const tokenLimitError = await limitsManager.validateTokenLimit(originalMessages, model);
+    if (tokenLimitError) {
+      const error = new Error(tokenLimitError.message);
+      (error as any).statusCode = 400; // Bad Request
+      (error as any).type = 'token_limit_error';
+      throw error;
+    }
+    
+    // ストリーミングモードのチェック
+    const isStreaming = stream === true;
+    
+    if (isStreaming) {
+      // ストリーミングレスポンスの設定
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      
+      // ストリーミング開始をログに記録
+      logger.logStreamStart(req.originalUrl || req.url);
+      
+      // チャンクのカウントを追跡
+      let chunkIndex = 0;
+      
+      // 共通ハンドラーを使用してストリーミングレスポンスを送信
+      await LmApiHandler.streamChatCompletionFromLmApi(
+        vscodeLmMessages, 
+        model, 
+        null, // モデルはmapClaudeCodeModelで既に解決済み
+        (chunk) => {
+          // Anthropic形式に変換してレスポンス
+          const anthropicChunk = convertToAnthropicFormat(chunk, requestedModel, true); // レスポンスには元のモデル名を使用
+          const data = JSON.stringify(anthropicChunk);
+          // チャンクをログに記録
+          logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
+          res.write(`data: ${data}\n\n`);
+        }
+      );
+      
+      // ストリーミング終了
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } else {
+      // 非ストリーミングモードでレスポンスを取得
+      const result = await LmApiHandler.getChatCompletionFromLmApi(
+        vscodeLmMessages, 
+        model, 
+        null // モデルはmapClaudeCodeModelで既に解決済み
+      );
+      
+      // ツール呼び出し情報を検出（もしあれば）
+      let detectedToolCalls = undefined;
+      
+      // tools引数が指定されていた場合のみツール検出を試みる
+      if (tools && tools.length > 0) {
+        // レスポンステキストからツール呼び出し情報を抽出する処理を試みる
+        const responseText = result.responseText;
+        if (responseText.includes('```json') && (responseText.includes('"type":') || responseText.includes('"name":'))) {
+          try {
+            const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
+            if (jsonMatch && jsonMatch[1]) {
+              const toolCall = JSON.parse(jsonMatch[1].trim());
+              if (toolCall && toolCall.name) {
+                detectedToolCalls = [{
+                  id: `call_${generateRandomId()}`,
+                  type: toolCall.type || 'function',
+                  name: toolCall.name,
+                  input: toolCall.input || {}
+                }];
+              }
+            }
+          } catch (e) {
+            logger.error('Failed to parse tool call from response:', e as Error);
+          }
+        }
+      }
+      
+      // Anthropic形式に変換（ツール呼び出し情報を含む）
+      const response = convertToAnthropicFormat(
+        { content: result.responseText, isComplete: true },
+        requestedModel, // レスポンスには元のモデル名を使用
+        false,
+        detectedToolCalls
+      );
+      
+      // トークン使用量情報を更新
+      response.usage = {
+        input_tokens: result.promptTokens,
+        output_tokens: result.completionTokens
+      };
+      
+      res.json(response);
+    }
+  } catch (error) {
+    logger.error('Anthropic messages API error:', error as Error);
+    const errorStatus = (error as any).statusCode || 500;
+    const errorType = (error as any).type || 'api_error';
+    const errorMessage = (error as Error).message || 'Unknown error';
+    
+    // エラーレスポンス
+    const errorResponse = {
+      error: {
+        message: errorMessage,
+        type: errorType
+      }
+    };
+    
+    res.status(errorStatus).json(errorResponse);
   }
 }
 

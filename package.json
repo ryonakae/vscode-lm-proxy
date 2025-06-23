@@ -67,6 +67,34 @@
           "type": "boolean",
           "default": true,
           "description": "Whether to display the output panel when the extension starts"
+        },
+        "vscode-lm-proxy.openaiModel": {
+          "type": "string",
+          "default": "vscode-lm-proxy",
+          "description": "Model ID to use for OpenAI API compatible endpoints",
+          "scope": "machine-overridable",
+          "markdownDescription": "**注: このモデル設定はコマンドパレットから行ってください**"
+        },
+        "vscode-lm-proxy.anthropicModel": {
+          "type": "string",
+          "default": "vscode-lm-proxy",
+          "description": "Model ID to use for Anthropic API compatible endpoints",
+          "scope": "machine-overridable",
+          "markdownDescription": "**注: このモデル設定はコマンドパレットから行ってください**"
+        },
+        "vscode-lm-proxy.claudeBackgroundModel": {
+          "type": "string",
+          "default": "vscode-lm-proxy",
+          "description": "Model ID to use for Claude Code background tasks (haiku model)",
+          "scope": "machine-overridable",
+          "markdownDescription": "**注: このモデル設定はコマンドパレットから行ってください**"
+        },
+        "vscode-lm-proxy.claudeThinkModel": {
+          "type": "string",
+          "default": "vscode-lm-proxy",
+          "description": "Model ID to use for Claude Code think tasks (sonnet model)",
+          "scope": "machine-overridable",
+          "markdownDescription": "**注: このモデル設定はコマンドパレットから行ってください**"
         }
       }
     },
@@ -94,6 +122,21 @@
       {
         "command": "vscode-lm-proxy.clearOutput",
         "title": "Clear Output Panel",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.configureOpenaiModel",
+        "title": "Configure OpenAI API Model",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.configureAnthropicModel",
+        "title": "Configure Anthropic API Model",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.configureClaudeCodeModels",
+        "title": "Configure Claude Code Models",
         "category": "LM Proxy"
       },
       {
@@ -135,6 +178,22 @@
         {
           "command": "vscode-lm-proxy.stopServer",
           "when": "vscode-lm-proxy.serverRunning"
+        },
+        {
+          "command": "vscode-lm-proxy.selectModel",
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureOpenaiModel",
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureAnthropicModel", 
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureClaudeCodeModels",
+          "when": "true"
         }
       ],
       "statusBar/remoteIndicator": [
@@ -148,7 +207,19 @@
         },
         {
           "command": "vscode-lm-proxy.selectModel",
-          "group": "1_model"
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureOpenaiModel",
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureAnthropicModel", 
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureClaudeCodeModels",
+          "when": "true"
         }
       ]
     }

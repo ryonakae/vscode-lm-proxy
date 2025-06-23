@@ -140,7 +140,10 @@ async function handleOpenAIModelInfo(req: express.Request, res: express.Response
 async function handleOpenAIChatCompletions(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { messages, model, stream } = validateAndConvertOpenAIRequest(req.body);
+    const { messages, model: requestedModel, stream } = validateAndConvertOpenAIRequest(req.body);
+    
+    // OpenAI用の設定モデルを使用
+    const model = modelManager.getOpenAIModel();
     
     // OpenAI形式のリクエストをVSCode LM API形式に変換
     const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);
@@ -172,11 +175,11 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         // 共通ハンドラーを使用してストリーミングレスポンスを送信
         await LmApiHandler.streamChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
-          model, 
-          modelManager.getSelectedModel(),
+          model,
+          null, // モデルはgetOpenAIModelで既に解決済み
           (chunk) => {
-            // OpenAI形式に変換してレスポンス
-            const openAIChunk = convertToOpenAIFormat(chunk, model, true);
+            // OpenAI形式に変換してレスポンス (元のモデル名を使用)
+            const openAIChunk = convertToOpenAIFormat(chunk, requestedModel, true);
             const data = JSON.stringify(openAIChunk);
             // チャンクをログに記録
             logger.logStreamChunk(req.originalUrl || req.url, openAIChunk, chunkIndex++);
@@ -191,8 +194,8 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         // 非ストリーミングモードでレスポンスを取得
         const result = await LmApiHandler.getChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
-          model, 
-          modelManager.getSelectedModel()
+          model,
+          null // モデルはgetOpenAIModelで既に解決済み
         );
         
         // OpenAI形式に変換
