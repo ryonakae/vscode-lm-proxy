@@ -37,18 +37,6 @@ Once the server is running, you can use either the OpenAI or Anthropic compatibl
 Send requests to either the `http://localhost:4000/openai/chat/completions` or `http://localhost:4000/openai/v1/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
 
 ```bash
-# Traditional format
-curl -X POST http://localhost:4000/openai/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "vscode-lm-proxy",
-    "messages": [
-      {"role": "system", "content": "You are an excellent AI assistant."},
-      {"role": "user", "content": "Hello!"}
-    ]
-  }'
-
-# Format fully compatible with OpenAI API clients
 curl -X POST http://localhost:4000/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
@@ -80,18 +68,6 @@ curl -X POST http://localhost:4000/openai/v1/chat/completions \
 Send requests to either the `http://localhost:4000/anthropic/messages` or `http://localhost:4000/anthropic/v1/messages` endpoint in the same format as the Anthropic Messages API:
 
 ```bash
-# Traditional format
-curl -X POST http://localhost:4000/anthropic/messages \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "claude-3.5-sonnet",
-    "system": "You are an excellent AI assistant.",
-    "messages": [
-      {"role": "user", "content": "Hello!"}
-    ]
-  }'
-
-# Format fully compatible with Anthropic API clients
 curl -X POST http://localhost:4000/anthropic/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
