@@ -184,10 +184,10 @@ function handleAnthropicCountTokens(_req: express.Request, res: express.Response
 /**
  * Anthropic Models list request handler
  */
-function handleAnthropicModels(_req: express.Request, res: express.Response) {
+async function handleAnthropicModels(_req: express.Request, res: express.Response) {
   try {
     // モデル一覧を返す
-    const models = getAnthropicModels();
+    const models = await getAnthropicModels();
     res.json(models);
   } catch (error) {
     logger.error(`Anthropic models API error: ${(error as Error).message}`, error as Error);
@@ -209,12 +209,12 @@ function handleAnthropicModels(_req: express.Request, res: express.Response) {
 /**
  * Anthropic Model info request handler
  */
-function handleAnthropicModelInfo(req: express.Request, res: express.Response) {
+async function handleAnthropicModelInfo(req: express.Request, res: express.Response) {
   try {
     const modelId = req.params.model;
     
     // モデル情報の取得
-    const modelInfo = getAnthropicModelInfo(modelId);
+    const modelInfo = await getAnthropicModelInfo(modelId);
     
     if (modelInfo) {
       res.json(modelInfo);

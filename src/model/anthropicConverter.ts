@@ -109,29 +109,59 @@ export function convertAnthropicRequestToVSCodeRequest(anthropicRequest: any): {
  * 利用可能なモデル情報をAnthropic API形式で返す
  * @returns Anthropic API形式のモデル一覧レスポンス
  */
-export function getAnthropicModels(): AnthropicModelsResponse {
-  // Anthropic互換のモデル一覧を作成
-  const models: AnthropicModel[] = [
-    {
-      id: 'claude-3-7-sonnet-20250219',
-      type: 'model',
-      display_name: 'Claude 3.7 Sonnet',
-      created_at: '2025-02-19T00:00:00Z'
-    },
-    {
-      id: 'claude-3-5-sonnet-20240620',
-      type: 'model',
-      display_name: 'Claude 3.5 Sonnet',
-      created_at: '2024-06-20T00:00:00Z'
-    }
-  ];
-  
-  return {
-    data: models,
-    first_id: models[0].id,
-    last_id: models[models.length - 1].id,
-    has_more: false
-  };
+export async function getAnthropicModels(): Promise<AnthropicModelsResponse> {
+  try {
+    // modelManagerからモデル一覧を取得
+    const { modelManager } = await import('./manager.js');
+    const openAIModels = await modelManager.getAvailableModels();
+    
+    // OpenAI形式のモデルデータをAnthropic形式に変換
+    const models: AnthropicModel[] = openAIModels.data.map((model: {
+      id: string;
+      object: string;
+      created: number;
+      owned_by: string;
+    }) => {
+      // IDは保持し、表示名を生成する
+      const displayName = model.id
+        .split('-')
+        .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
+        .join(' ')
+        .replace('.', ' ');
+        
+      return {
+        id: model.id,
+        type: 'model',
+        display_name: displayName,
+        created_at: new Date(model.created * 1000).toISOString()
+      };
+    });
+    
+    return {
+      data: models,
+      first_id: models.length > 0 ? models[0].id : null,
+      last_id: models.length > 0 ? models[models.length - 1].id : null,
+      has_more: false
+    };
+  } catch (error) {
+    console.error('Error fetching Anthropic models:', error);
+    
+    // エラーが発生した場合はデフォルトのモデルリストを返す
+    const now = new Date().toISOString();
+    return {
+      data: [
+        {
+          id: 'vscode-lm-proxy',
+          type: 'model',
+          display_name: 'VSCode LM Proxy',
+          created_at: now
+        }
+      ],
+      first_id: 'vscode-lm-proxy',
+      last_id: 'vscode-lm-proxy',
+      has_more: false
+    };
+  }
 }
 
 /**
@@ -139,8 +169,14 @@ export function getAnthropicModels(): AnthropicModelsResponse {
  * @param modelId モデルID
  * @returns Anthropic API形式のモデル情報
  */
-export function getAnthropicModelInfo(modelId: string): AnthropicModel | null {
-  // モデルIDに対応するモデル情報を返す
-  const models = getAnthropicModels().data;
-  return models.find(model => model.id === modelId) || null;
+export async function getAnthropicModelInfo(modelId: string): Promise<AnthropicModel | null> {
+  try {
+    // モデルIDに対応するモデル情報を返す
+    const modelsResponse = await getAnthropicModels();
+    const models = modelsResponse.data;
+    return models.find((model: AnthropicModel) => model.id === modelId) || null;
+  } catch (error) {
+    console.error(`Error fetching model info for ${modelId}:`, error);
+    return null;
+  }
 }
