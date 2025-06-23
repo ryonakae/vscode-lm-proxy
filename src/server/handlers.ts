@@ -81,8 +81,15 @@ function validateChatCompletionRequest(body: any): {
     throw error;
   }
   
-  // モデルの指定がなければvscode-lm-proxyを使用
-  const model = body.model || 'vscode-lm-proxy';
+  // モデルの必須チェック
+  if (!body.model) {
+    const error: any = new Error('The model field is required');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  const model = body.model;
   
   // モデルが'vscode-lm-proxy'の場合、選択されたモデルがあるか確認
   if (model === 'vscode-lm-proxy' && !modelManager.getSelectedModel()) {

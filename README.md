@@ -68,7 +68,7 @@ curl -X POST http://localhost:4000/chat/completions \
   }'
 ```
 
-> **Note**: Always specify `"vscode-lm-proxy"` for the `model` parameter. The actual model selection is done via the command palette within VSCode.
+> **Note**: You must specify a model parameter. Use `"vscode-lm-proxy"` to use the model selected via the command palette within VSCode, or specify a specific model ID directly.
 
 Streaming mode:
 
@@ -133,7 +133,7 @@ Sends a chat completion request. This is an OpenAI Chat Completions API compatib
 
 | Parameter | Type | Required | Description |
 |-----------|------|---------|-------------|
-| model | string | No | The ID of the model to use. If omitted or set to "vscode-lm-proxy", the model selected via the VSCode command palette will be used. If a specific model ID is provided, that model will be used. |
+| model | string | Yes | The ID of the model to use. Use "vscode-lm-proxy" to use the model selected via the VSCode command palette. If a specific model ID is provided, that model will be used. |
 | messages | array | Yes | An array of chat messages |
 | stream | boolean | No | Whether to enable streaming mode (default: false) |
 
