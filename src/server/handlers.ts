@@ -4,8 +4,8 @@ import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
 
 /**
- * OpenAI互換のChat Completions APIエンドポイントを設定
- * @param app Express.jsアプリケーション
+ * Sets up OpenAI-compatible Chat Completions API endpoint
+ * @param app Express.js application
  */
 export function setupChatCompletionsEndpoint(app: express.Express): void {
   // 両方のパターンのエンドポイントを登録（OpenAI API互換性の向上）
@@ -14,7 +14,7 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
 }
 
 /**
- * Chat Completionsリクエストのハンドラー
+ * Chat Completions request handler
  */
 async function handleChatCompletions(req: express.Request, res: express.Response) {
   try {

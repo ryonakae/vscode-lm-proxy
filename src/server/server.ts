@@ -75,11 +75,11 @@ export function createServer(): express.Express {
       endpoints: {
         'chat/completions': {
           method: 'POST',
-          description: 'OpenAI互換のChat Completions API'
+          description: 'OpenAI-compatible Chat Completions API'
         },
         'v1/chat/completions': {
           method: 'POST',
-          description: 'OpenAI互換のChat Completions API（`/v1/`プレフィックス版）'
+          description: 'OpenAI-compatible Chat Completions API (with `/v1/` prefix)'
         }
       }
     });
@@ -90,10 +90,10 @@ export function createServer(): express.Express {
   
   // エラーハンドラーの設定
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    logger.error('サーバーエラー:', err);
+    logger.error('Server error:', err);
     res.status(500).json({
       error: {
-        message: `内部サーバーエラー: ${err.message}`,
+        message: `Internal Server Error: ${err.message}`,
         type: 'server_error',
       }
     });

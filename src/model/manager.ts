@@ -135,7 +135,7 @@ class ModelManager {
         });
       });
     } catch (error) {
-      logger.error(`モデル選択エラー: ${(error as Error).message}`, error as Error);
+      logger.error(`Model selection error: ${(error as Error).message}`, error as Error);
       vscode.window.showErrorMessage(`Error selecting model: ${(error as Error).message}`);
       return undefined;
     }
@@ -460,7 +460,7 @@ class ModelManager {
       
       return false;
     } catch (error) {
-      logger.error('モデルチェックエラー:', error as Error);
+      logger.error('Model check error:', error as Error);
       return false;
     }
   }
