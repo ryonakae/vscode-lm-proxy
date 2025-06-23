@@ -30,10 +30,22 @@ This extension allows external applications to easily utilize the VSCode Languag
 
 ### Using the API
 
-Once the server is running, you can send requests to the `http://localhost:4000/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
+Once the server is running, you can send requests to either the `http://localhost:4000/chat/completions` or `http://localhost:4000/v1/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
 
 ```bash
+# Traditional format
 curl -X POST http://localhost:4000/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "vscode-lm-proxy",
+    "messages": [
+      {"role": "system", "content": "You are an excellent AI assistant."},
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'
+
+# Format fully compatible with OpenAI API clients
+curl -X POST http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vscode-lm-proxy",
@@ -49,7 +61,7 @@ curl -X POST http://localhost:4000/chat/completions \
 Streaming mode:
 
 ```bash
-curl -X POST http://localhost:4000/chat/completions \
+curl -X POST http://localhost:4000/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vscode-lm-proxy",
@@ -71,11 +83,17 @@ This section provides detailed information about the API features offered by LM 
 http://localhost:4000
 ```
 
+Or, for full compatibility with OpenAI API client libraries:
+
+```
+http://localhost:4000/v1
+```
+
 > **Note**: The port number can be changed in the settings.
 
 ### Endpoints
 
-#### GET /
+#### GET / or GET /v1/ or GET /v1
 
 Returns server status information.
 
@@ -83,6 +101,8 @@ Returns server status information.
 
 ```bash
 curl http://localhost:4000/
+# or
+curl http://localhost:4000/v1/
 ```
 
 ##### Response
@@ -96,12 +116,16 @@ curl http://localhost:4000/
     "chat/completions": {
       "method": "POST",
       "description": "OpenAI-compatible Chat Completions API"
+    },
+    "v1/chat/completions": {
+      "method": "POST",
+      "description": "OpenAI-compatible Chat Completions API with /v1/ prefix"
     }
   }
 }
 ```
 
-#### POST /chat/completions
+#### POST /chat/completions or POST /v1/chat/completions
 
 Sends a chat completion request. This is an OpenAI Chat Completions API compatible interface.
 
@@ -275,6 +299,17 @@ This guide describes common issues you might encounter when using the VSCode LM 
 2. Try disabling and re-enabling the extension.
 
 ## API Usage Issues
+
+### API Client Connection Issues
+
+**Symptom**: OpenAI API client cannot connect to the server or reports "invalid API key" or "invalid URL" errors.
+
+**Solution**:
+1. Ensure you're using the correct base URL format:
+   - For most clients: `http://localhost:4000` or `http://localhost:4000/v1`
+   - The extension supports both URL formats with and without the `/v1/` prefix
+2. When using third-party OpenAI API clients, try both formats as some clients automatically append `/v1/` to the base URL
+3. For API key issues, many clients require a dummy API key even when not needed - try using `sk-placeholder` as the API key
 
 ### Request Times Out
 

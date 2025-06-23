@@ -8,22 +8,30 @@ import { logger } from '../utils/logger';
  * @param app Express.jsアプリケーション
  */
 export function setupChatCompletionsEndpoint(app: express.Express): void {
-  app.post('/chat/completions', async (req: express.Request, res: express.Response) => {
-    try {
-      // リクエストの検証
-      const { messages, model, stream } = validateChatCompletionRequest(req.body);
-      
-      // ストリーミングモードのチェック
-      const isStreaming = stream === true;
-      
-      if (isStreaming) {
+  // 両方のパターンのエンドポイントを登録（OpenAI API互換性の向上）
+  app.post('/chat/completions', handleChatCompletions);
+  app.post('/v1/chat/completions', handleChatCompletions);
+}
+
+/**
+ * Chat Completionsリクエストのハンドラー
+ */
+async function handleChatCompletions(req: express.Request, res: express.Response) {
+  try {
+    // リクエストの検証
+    const { messages, model, stream } = validateChatCompletionRequest(req.body);
+    
+    // ストリーミングモードのチェック
+    const isStreaming = stream === true;
+    
+    if (isStreaming) {
         // ストリーミングレスポンスの設定
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         
         // ストリーミング開始をログに記録
-        logger.logStreamStart('/chat/completions');
+        logger.logStreamStart(req.originalUrl || req.url);
         
         // チャンクのカウントを追跡
         let chunkIndex = 0;
@@ -32,7 +40,7 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
         await modelManager.streamChatCompletion(messages, model, (chunk) => {
           const data = JSON.stringify(chunk);
           // チャンクをログに記録
-          logger.logStreamChunk('/chat/completions', chunk, chunkIndex++);
+          logger.logStreamChunk(req.originalUrl || req.url, chunk, chunkIndex++);
           res.write(`data: ${data}\n\n`);
         });
         
@@ -60,7 +68,6 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
       
       res.status(statusCode).json(errorResponse);
     }
-  });
 }
 
 /**

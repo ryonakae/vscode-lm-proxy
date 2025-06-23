@@ -61,8 +61,13 @@ export function createServer(): express.Express {
     next();
   });
   
-  // ルートエンドポイント
-  app.get('/', (_req, res) => {
+  // ルートエンドポイント（OpenAI API互換性向上のため複数パターンをサポート）
+  app.get('/', sendRootResponse);
+  app.get('/v1', sendRootResponse);
+  app.get('/v1/', sendRootResponse);
+  
+  // ルートエンドポイントのハンドラー関数
+  function sendRootResponse(_req: express.Request, res: express.Response) {
     res.json({
       status: 'ok',
       message: 'VSCode LM API Proxy server is running',
@@ -71,10 +76,14 @@ export function createServer(): express.Express {
         'chat/completions': {
           method: 'POST',
           description: 'OpenAI互換のChat Completions API'
+        },
+        'v1/chat/completions': {
+          method: 'POST',
+          description: 'OpenAI互換のChat Completions API（`/v1/`プレフィックス版）'
         }
       }
     });
-  });
+  };
 
   // OpenAI互換エンドポイントのセットアップ
   setupChatCompletionsEndpoint(app);
