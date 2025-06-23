@@ -1,7 +1,8 @@
 // Express.jsサーバーの設定とAPIエンドポイントの実装
 import express from 'express';
-import { setupChatCompletionsEndpoint, setupModelsEndpoints, setupStatusEndpoint } from './openaiHandlers';
+import { setupChatCompletionsEndpoint, setupModelsEndpoints } from './openaiHandlers';
 import { setupAnthropicEndpoints } from './anthropicHandlers';
+import { setupStatusEndpoint } from './handlers';
 import { logger } from '../utils/logger';
 
 /**

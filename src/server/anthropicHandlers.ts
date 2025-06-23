@@ -1,9 +1,9 @@
 // Anthropic API互換ハンドラー
 import express from 'express';
+import * as vscode from 'vscode';
 import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
-import { getAnthropicModelInfo, getAnthropicModels, convertToAnthropicFormat, convertAnthropicRequestToVSCodeRequest } from '../model/anthropicConverter';
-import * as vscode from 'vscode';
+import { getAnthropicModelInfo, getAnthropicModels, convertToAnthropicFormat, validateAndConvertAnthropicRequest } from '../model/anthropicConverter';
 import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 
@@ -69,7 +69,7 @@ function sendAnthropicRootResponse(_req: express.Request, res: express.Response)
 async function handleAnthropicMessages(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { vscodeLmMessages, model, stream, originalMessages } = validateAnthropicMessagesRequest(req.body);
+    const { vscodeLmMessages, model, stream, originalMessages } = validateAndConvertAnthropicRequest(req.body);
     
     // トークン制限チェック（元のメッセージに対して実行）
     const tokenLimitError = await limitsManager.validateTokenLimit(originalMessages, model);
@@ -241,82 +241,4 @@ async function handleAnthropicModelInfo(req: express.Request, res: express.Respo
   }
 }
 
-/**
- * Anthropic Messages APIリクエストのバリデーション
- * @param body リクエストボディ
- * @returns 検証済みのリクエストパラメータ
- */
-function validateAnthropicMessagesRequest(body: any): {
-  vscodeLmMessages: vscode.LanguageModelChatMessage[];
-  model: string;
-  stream?: boolean;
-  originalMessages: any[];
-} {
-  // 必須フィールドのチェック
-  if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
-    const error: any = new Error('The messages field is required');
-    error.statusCode = 400;
-    error.type = 'invalid_request_error';
-    throw error;
-  }
-  
-  // モデルの必須チェック
-  if (!body.model) {
-    const error: any = new Error('The model field is required');
-    error.statusCode = 400;
-    error.type = 'invalid_request_error';
-    throw error;
-  }
-  
-  const model = body.model;
 
-  // メッセージをVSCode形式に変換
-  let vscodeLmMessages: vscode.LanguageModelChatMessage[] = [];
-  
-  // システムプロンプトがあれば、最初のユーザーメッセージとして追加
-  if (body.system) {
-    let systemContent = '';
-    if (typeof body.system === 'string') {
-      systemContent = body.system;
-    } else if (Array.isArray(body.system)) {
-      // 配列形式のシステムプロンプトを文字列に変換
-      systemContent = body.system
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n');
-    }
-    
-    if (systemContent) {
-      // システムプロンプトをユーザーメッセージとして先頭に追加
-      vscodeLmMessages.push(vscode.LanguageModelChatMessage.User(`[SYSTEM] ${systemContent}`));
-    }
-  }
-  
-  // メッセージの変換
-  for (const msg of body.messages) {
-    // contentが配列の場合は、textのみを抽出
-    let content = msg.content;
-    if (Array.isArray(content)) {
-      content = content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n');
-    }
-    
-    if (msg.role === 'user') {
-      vscodeLmMessages.push(vscode.LanguageModelChatMessage.User(content));
-    } else if (msg.role === 'assistant') {
-      vscodeLmMessages.push(vscode.LanguageModelChatMessage.Assistant(content));
-    } else {
-      // その他のロールはユーザーメッセージとして扱う
-      vscodeLmMessages.push(vscode.LanguageModelChatMessage.User(`[${msg.role}] ${content}`));
-    }
-  }
-  
-  return {
-    vscodeLmMessages,
-    model,
-    stream: body.stream,
-    originalMessages: body.messages
-  };
-}

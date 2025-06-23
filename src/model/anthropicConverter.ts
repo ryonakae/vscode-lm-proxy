@@ -2,6 +2,9 @@
 import * as vscode from 'vscode';
 import { AnthropicMessageResponse, AnthropicMessageChunk, AnthropicModel, AnthropicModelsResponse } from './types';
 
+// モデルマネージャーをインポート
+import { modelManager } from './manager';
+
 /**
  * VSCode LM APIのレスポンスをAnthropic API形式に変換
  * @param response VSCode LM APIレスポンス
@@ -112,7 +115,6 @@ export function convertAnthropicRequestToVSCodeRequest(anthropicRequest: any): {
 export async function getAnthropicModels(): Promise<AnthropicModelsResponse> {
   try {
     // modelManagerからモデル一覧を取得
-    const { modelManager } = await import('./manager.js');
     const openAIModels = await modelManager.getAvailableModels();
     
     // OpenAI形式のモデルデータをAnthropic形式に変換
@@ -179,4 +181,92 @@ export async function getAnthropicModelInfo(modelId: string): Promise<AnthropicM
     console.error(`Error fetching model info for ${modelId}:`, error);
     return null;
   }
+}
+
+/**
+ * Anthropic Messages APIリクエストのバリデーション
+ * @param body リクエストボディ
+ * @returns 検証済みのリクエストパラメータ
+ */
+export function validateAndConvertAnthropicRequest(body: any): {
+  vscodeLmMessages: vscode.LanguageModelChatMessage[];
+  model: string;
+  stream?: boolean;
+  originalMessages: any[];
+} {
+  // 必須フィールドのチェック
+  if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+    const error: any = new Error('The messages field is required');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  // モデルの必須チェック
+  if (!body.model) {
+    const error: any = new Error('The model field is required');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  const model = body.model;
+
+  // メッセージをVSCode形式に変換
+  let vscodeLmMessages: vscode.LanguageModelChatMessage[] = [];
+  
+  // システムプロンプトがあれば、最初のユーザーメッセージとして追加
+  if (body.system) {
+    let systemContent = '';
+    if (typeof body.system === 'string') {
+      systemContent = body.system;
+    } else if (Array.isArray(body.system)) {
+      // 配列形式のシステムプロンプトを文字列に変換
+      systemContent = body.system
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('\n');
+    }
+    
+    if (systemContent) {
+      // システムプロンプトをユーザーメッセージとして先頭に追加
+      vscodeLmMessages.push(vscode.LanguageModelChatMessage.User(`[SYSTEM] ${systemContent}`));
+    }
+  }
+  
+  // メッセージの変換
+  for (const msg of body.messages) {
+    // contentが配列の場合は、textのみを抽出
+    let content = msg.content;
+    if (Array.isArray(content)) {
+      content = content
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('\n');
+    }
+    
+    if (msg.role === 'user') {
+      vscodeLmMessages.push(vscode.LanguageModelChatMessage.User(content));
+    } else if (msg.role === 'assistant') {
+      vscodeLmMessages.push(vscode.LanguageModelChatMessage.Assistant(content));
+    } else {
+      // その他のロールはユーザーメッセージとして扱う
+      vscodeLmMessages.push(vscode.LanguageModelChatMessage.User(`[${msg.role}] ${content}`));
+    }
+  }
+  
+  // モデルが'vscode-lm-proxy'の場合、選択されたモデルがあるか確認
+  if (model === 'vscode-lm-proxy' && !modelManager.getSelectedModel()) {
+    const error: any = new Error('No valid model selected. Please select a model first.');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  return {
+    vscodeLmMessages,
+    model,
+    stream: body.stream,
+    originalMessages: body.messages
+  };
 }

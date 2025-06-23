@@ -2,6 +2,9 @@
 import * as vscode from 'vscode';
 import { OpenAIChatCompletionResponse, OpenAIChatCompletionChunk } from './types';
 
+// モデルマネージャーをインポート
+import { modelManager } from './manager';
+
 /**
  * VSCode LM APIのレスポンスをOpenAI API形式に変換
  * @param response VSCode LM APIレスポンス
@@ -162,4 +165,50 @@ export function convertVSCodeResponseToOpenAIResponse(
     },
     service_tier: 'default'
   } as OpenAIChatCompletionResponse;
+}
+
+/**
+ * OpenAI Chat Completion APIリクエストのバリデーション
+ * @param body リクエストボディ
+ * @returns 検証済みのリクエストパラメータ
+ */
+export function validateAndConvertOpenAIRequest(body: any): {
+  messages: any[];
+  model: string;
+  stream?: boolean;
+} {
+  // 必須フィールドのチェック
+  if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+    const error: any = new Error('The messages field is required');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  // モデルの必須チェック
+  if (!body.model) {
+    const error: any = new Error('The model field is required');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  const model = body.model;
+  
+  // モデルが'vscode-lm-proxy'の場合、選択されたモデルがあるか確認
+  if (model === 'vscode-lm-proxy' && !modelManager.getSelectedModel()) {
+    const error: any = new Error('No valid model selected. Please select a model first.');
+    error.statusCode = 400;
+    error.type = 'invalid_request_error';
+    throw error;
+  }
+  
+  // OpenAIリクエストをVSCodeリクエストに変換
+  const { messages } = convertOpenAIRequestToVSCodeRequest(body);
+  
+  return {
+    messages,
+    model,
+    stream: body.stream
+  };
 }

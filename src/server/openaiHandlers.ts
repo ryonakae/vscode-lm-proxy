@@ -2,7 +2,7 @@
 import express from 'express';
 import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
-import { convertToOpenAIFormat, convertOpenAIRequestToVSCodeRequest } from '../model/openaiConverter';
+import { convertToOpenAIFormat, convertOpenAIRequestToVSCodeRequest, validateAndConvertOpenAIRequest } from '../model/openaiConverter';
 import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 import { OpenAIChatCompletionResponse } from '../model/types';
@@ -90,7 +90,7 @@ async function handleOpenAIModelInfo(req: express.Request, res: express.Response
 async function handleOpenAIChatCompletions(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { messages, model, stream } = validateOpenAIChatCompletionRequest(req.body);
+    const { messages, model, stream } = validateAndConvertOpenAIRequest(req.body);
     
     // OpenAI形式のリクエストをVSCode LM API形式に変換
     const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);
@@ -188,129 +188,4 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
     }
 }
 
-/**
- * リクエストのバリデーション
- * @param body リクエストボディ
- * @returns 検証済みのリクエストパラメータ
- */
-function validateOpenAIChatCompletionRequest(body: any): {
-  messages: any[];
-  model: string;
-  stream?: boolean;
-} {
-  // 必須フィールドのチェック
-  if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
-    const error: any = new Error('The messages field is required');
-    error.statusCode = 400;
-    error.type = 'invalid_request_error';
-    throw error;
-  }
-  
-  // モデルの必須チェック
-  if (!body.model) {
-    const error: any = new Error('The model field is required');
-    error.statusCode = 400;
-    error.type = 'invalid_request_error';
-    throw error;
-  }
-  
-  const model = body.model;
-  
-  // モデルが'vscode-lm-proxy'の場合、選択されたモデルがあるか確認
-  if (model === 'vscode-lm-proxy' && !modelManager.getSelectedModel()) {
-    const error: any = new Error('No valid model selected. Please select a model first.');
-    error.statusCode = 400;
-    error.type = 'invalid_request_error';
-    throw error;
-  }
-  
-  // OpenAIリクエストをVSCodeリクエストに変換
-  const { messages } = convertOpenAIRequestToVSCodeRequest(body);
-  
-  return {
-    messages,
-    model,
-    stream: body.stream
-  };
-}
 
-/**
- * Sets up server status endpoint
- * @param app Express.js application
- */
-export function setupStatusEndpoint(app: express.Express): void {
-  app.get('/', handleServerStatus);
-}
-
-/**
- * Server status request handler
- */
-function handleServerStatus(_req: express.Request, res: express.Response) {
-  res.json({
-    status: 'ok',
-    message: 'VSCode LM API Proxy server is running',
-    version: '0.0.1',
-    endpoints: {
-      '/': {
-        method: 'GET',
-        description: 'Server status endpoint'
-      },
-      '/openai/chat/completions': {
-        method: 'POST',
-        description: 'OpenAI-compatible Chat Completions API'
-      },
-      '/openai/v1/chat/completions': {
-        method: 'POST',
-        description: 'OpenAI-compatible Chat Completions API (with `/v1/` prefix)'
-      },
-      '/openai/models': {
-        method: 'GET',
-        description: 'OpenAI-compatible Models API - List available models'
-      },
-      '/openai/v1/models': {
-        method: 'GET',
-        description: 'OpenAI-compatible Models API - List available models (with `/v1/` prefix)'
-      },
-      '/openai/models/:model': {
-        method: 'GET',
-        description: 'OpenAI-compatible Models API - Get specific model info'
-      },
-      '/openai/v1/models/:model': {
-        method: 'GET',
-        description: 'OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)'
-      },
-      '/anthropic/messages': {
-        method: 'POST',
-        description: 'Anthropic-compatible Messages API'
-      },
-      '/anthropic/v1/messages': {
-        method: 'POST',
-        description: 'Anthropic-compatible Messages API (with `/v1/` prefix)'
-      },
-      '/anthropic/messages/count_tokens': {
-        method: 'POST',
-        description: 'Anthropic-compatible Count Message Tokens API'
-      },
-      '/anthropic/v1/messages/count_tokens': {
-        method: 'POST',
-        description: 'Anthropic-compatible Count Message Tokens API (with `/v1/` prefix)'
-      },
-      '/anthropic/models': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - List available models'
-      },
-      '/anthropic/v1/models': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - List available models (with `/v1/` prefix)'
-      },
-      '/anthropic/models/:model': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - Get specific model info'
-      },
-      '/anthropic/v1/models/:model': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - Get specific model info (with `/v1/` prefix)'
-      }
-    }
-  });
-}
