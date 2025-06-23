@@ -58,14 +58,12 @@ class StatusBarManager {
       return;
     }
     
-    // 選択中のモデル名を取得（強制的に最新の状態を反映）
+    // 選択中のモデル名とモデル設定情報を取得
     const selectedModelName = modelManager.getSelectedModelName();
-    // 設定から各モデル情報を取得
-    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-    const openaiModel = config.get<string>('openaiModel') || 'vscode-lm-proxy';
-    const anthropicModel = config.get<string>('anthropicModel') || 'vscode-lm-proxy';
-    const claudeBackgroundModel = config.get<string>('claudeBackgroundModel') || 'vscode-lm-proxy';
-    const claudeThinkModel = config.get<string>('claudeThinkModel') || 'vscode-lm-proxy';
+    const openaiModel = modelManager.getOpenaiModelId();
+    const anthropicModel = modelManager.getAnthropicModelId();
+    const claudeBackgroundModel = modelManager.getClaudeBackgroundModelId();
+    const claudeThinkModel = modelManager.getClaudeThinkModelId();
     
     if (errorMessage) {
       // エラー状態

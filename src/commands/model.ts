@@ -60,18 +60,19 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       const quickPickItems = availableModels.map(model => ({
         label: model.name,
         description: `${model.id}`,
-        id: model.id
+        id: model.id,
+        name: model.name
       }));
       
       // プロキシモデルを追加
       quickPickItems.unshift({
         label: 'Use current selected model',
         description: 'vscode-lm-proxy',
-        id: 'vscode-lm-proxy'
+        id: 'vscode-lm-proxy',
+        name: 'Current Selected Model'
       });
       
-      const currentConfig = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      const currentModelId = currentConfig.get<string>('openaiModel') || 'vscode-lm-proxy';
+      const currentModelId = modelManager.getOpenaiModelId();
       
       const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
         placeHolder: 'Select model for OpenAI API endpoints',
@@ -79,10 +80,17 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       });
       
       if (selectedItem) {
-        await currentConfig.update('openaiModel', selectedItem.id, true);
+        // globalStateに保存
+        modelManager.setOpenaiModelId(selectedItem.id, selectedItem.name);
+        
         vscode.window.showInformationMessage(
           `OpenAI API model set to: ${selectedItem.label} (${selectedItem.id})`
         );
+        
+        // ステータスバーを更新 (非同期でタイミングをずらして確実に更新を反映)
+        setTimeout(() => {
+          statusBarManager.updateStatus(serverManager.isRunning());
+        }, 10);
       }
     } catch (error) {
       vscode.window.showErrorMessage(`Error configuring OpenAI model: ${(error as Error).message}`);
@@ -98,18 +106,19 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       const quickPickItems = availableModels.map(model => ({
         label: model.name,
         description: `${model.id}`,
-        id: model.id
+        id: model.id,
+        name: model.name
       }));
       
       // プロキシモデルを追加
       quickPickItems.unshift({
         label: 'Use current selected model',
         description: 'vscode-lm-proxy',
-        id: 'vscode-lm-proxy'
+        id: 'vscode-lm-proxy',
+        name: 'Current Selected Model'
       });
       
-      const currentConfig = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      const currentModelId = currentConfig.get<string>('anthropicModel') || 'vscode-lm-proxy';
+      const currentModelId = modelManager.getAnthropicModelId();
       
       const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
         placeHolder: 'Select model for Anthropic API endpoints',
@@ -117,10 +126,17 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       });
       
       if (selectedItem) {
-        await currentConfig.update('anthropicModel', selectedItem.id, true);
+        // globalStateに保存
+        modelManager.setAnthropicModelId(selectedItem.id, selectedItem.name);
+        
         vscode.window.showInformationMessage(
           `Anthropic API model set to: ${selectedItem.label} (${selectedItem.id})`
         );
+        
+        // ステータスバーを更新 (非同期でタイミングをずらして確実に更新を反映)
+        setTimeout(() => {
+          statusBarManager.updateStatus(serverManager.isRunning());
+        }, 10);
       }
     } catch (error) {
       vscode.window.showErrorMessage(`Error configuring Anthropic model: ${(error as Error).message}`);
@@ -136,20 +152,20 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       const modelOptions = availableModels.map(model => ({
         label: model.name,
         description: `${model.id}`,
-        id: model.id
+        id: model.id,
+        name: model.name
       }));
       
       // プロキシモデルを追加
       modelOptions.unshift({
         label: 'Use current selected model',
         description: 'vscode-lm-proxy',
-        id: 'vscode-lm-proxy'
+        id: 'vscode-lm-proxy',
+        name: 'Current Selected Model'
       });
       
-      const currentConfig = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      
       // バックグラウンドモデル設定
-      const currentBackgroundId = currentConfig.get<string>('claudeBackgroundModel') || 'vscode-lm-proxy';
+      const currentBackgroundId = modelManager.getClaudeBackgroundModelId();
       const backgroundItem = await vscode.window.showQuickPick(modelOptions, {
         placeHolder: 'Select model for Claude Code background tasks (haiku)',
         title: 'Configure Claude Code Background Model'
@@ -160,7 +176,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       }
       
       // シンクモデル設定
-      const currentThinkId = currentConfig.get<string>('claudeThinkModel') || 'vscode-lm-proxy';
+      const currentThinkId = modelManager.getClaudeThinkModelId();
       const thinkItem = await vscode.window.showQuickPick(modelOptions, {
         placeHolder: 'Select model for Claude Code think tasks (sonnet)',
         title: 'Configure Claude Code Think Model'
@@ -171,8 +187,8 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
       }
       
       // 両方のモデルが選択されたら設定を更新
-      await currentConfig.update('claudeBackgroundModel', backgroundItem.id, true);
-      await currentConfig.update('claudeThinkModel', thinkItem.id, true);
+      modelManager.setClaudeBackgroundModelId(backgroundItem.id, backgroundItem.name);
+      modelManager.setClaudeThinkModelId(thinkItem.id, thinkItem.name);
       
       vscode.window.showInformationMessage(
         `Claude Code models configured:\n` +

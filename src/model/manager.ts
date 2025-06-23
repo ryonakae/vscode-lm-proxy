@@ -199,8 +199,26 @@ class ModelManager {
    * @returns OpenAI API用モデルID
    */
   public getOpenaiModelId(): string {
-    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-    return config.get<string>('openaiModel') || 'vscode-lm-proxy';
+    if (!this.extensionContext) {
+      return 'vscode-lm-proxy';
+    }
+    return this.extensionContext.globalState.get<string>('openaiModelId') || 'vscode-lm-proxy';
+  }
+  
+  /**
+   * OpenAI API用のモデルを設定
+   * @param modelId 設定するモデルID
+   * @param modelName モデル名（オプション）
+   */
+  public setOpenaiModelId(modelId: string, modelName?: string): void {
+    if (!this.extensionContext) {
+      return;
+    }
+    this.openaiModelId = modelId;
+    this.extensionContext.globalState.update('openaiModelId', modelId);
+    if (modelName) {
+      this.extensionContext.globalState.update('openaiModelName', modelName);
+    }
   }
   
   /**
@@ -208,8 +226,26 @@ class ModelManager {
    * @returns Anthropic API用モデルID
    */
   public getAnthropicModelId(): string {
-    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-    return config.get<string>('anthropicModel') || 'vscode-lm-proxy';
+    if (!this.extensionContext) {
+      return 'vscode-lm-proxy';
+    }
+    return this.extensionContext.globalState.get<string>('anthropicModelId') || 'vscode-lm-proxy';
+  }
+  
+  /**
+   * Anthropic API用のモデルを設定
+   * @param modelId 設定するモデルID
+   * @param modelName モデル名（オプション）
+   */
+  public setAnthropicModelId(modelId: string, modelName?: string): void {
+    if (!this.extensionContext) {
+      return;
+    }
+    this.anthropicModelId = modelId;
+    this.extensionContext.globalState.update('anthropicModelId', modelId);
+    if (modelName) {
+      this.extensionContext.globalState.update('anthropicModelName', modelName);
+    }
   }
   
   /**
@@ -217,8 +253,26 @@ class ModelManager {
    * @returns Claude Codeバックグラウンド用モデルID
    */
   public getClaudeBackgroundModelId(): string {
-    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-    return config.get<string>('claudeBackgroundModel') || 'vscode-lm-proxy';
+    if (!this.extensionContext) {
+      return 'vscode-lm-proxy';
+    }
+    return this.extensionContext.globalState.get<string>('claudeBackgroundModelId') || 'vscode-lm-proxy';
+  }
+  
+  /**
+   * Claude Codeバックグラウンド用モデルを設定
+   * @param modelId 設定するモデルID
+   * @param modelName モデル名（オプション）
+   */
+  public setClaudeBackgroundModelId(modelId: string, modelName?: string): void {
+    if (!this.extensionContext) {
+      return;
+    }
+    this.claudeBackgroundModelId = modelId;
+    this.extensionContext.globalState.update('claudeBackgroundModelId', modelId);
+    if (modelName) {
+      this.extensionContext.globalState.update('claudeBackgroundModelName', modelName);
+    }
   }
   
   /**
@@ -226,8 +280,26 @@ class ModelManager {
    * @returns Claude Codeシンク用モデルID
    */
   public getClaudeThinkModelId(): string {
-    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-    return config.get<string>('claudeThinkModel') || 'vscode-lm-proxy';
+    if (!this.extensionContext) {
+      return 'vscode-lm-proxy';
+    }
+    return this.extensionContext.globalState.get<string>('claudeThinkModelId') || 'vscode-lm-proxy';
+  }
+  
+  /**
+   * Claude Codeシンク用モデルを設定
+   * @param modelId 設定するモデルID
+   * @param modelName モデル名（オプション）
+   */
+  public setClaudeThinkModelId(modelId: string, modelName?: string): void {
+    if (!this.extensionContext) {
+      return;
+    }
+    this.claudeThinkModelId = modelId;
+    this.extensionContext.globalState.update('claudeThinkModelId', modelId);
+    if (modelName) {
+      this.extensionContext.globalState.update('claudeThinkModelName', modelName);
+    }
   }
   
   /**
@@ -758,7 +830,7 @@ class ModelManager {
 
   /**
    * 利用可能なすべてのモデルを取得する
-   * @returns VSCode LM APIから取得した生のモデルリスト
+   * @returns VSCode LM APIから取得した利用可能なLanguageModelChatモデルの配列
    */
   public async getAvailableModels(): Promise<vscode.LanguageModelChat[]> {
     try {
@@ -779,10 +851,11 @@ class ModelManager {
         }
       }
       
+      // モデル配列をそのまま返す
       return allModels;
     } catch (error) {
       logger.error(`Get models error: ${(error as Error).message}`, error as Error);
-      throw error;
+      return [];
     }
   }
   
