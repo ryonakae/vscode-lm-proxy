@@ -41,7 +41,7 @@ export class LimitsManager {
   private rateLimits: Map<string, RateLimitInfo> = new Map();
   
   // レート制限の設定
-  private readonly MAX_REQUESTS_PER_MINUTE = 10;
+  private readonly MAX_REQUESTS_PER_MINUTE = 100;
   private readonly RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1分
   
   /**
