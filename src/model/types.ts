@@ -53,6 +53,68 @@ export interface OpenAIChatCompletionResponse {
 }
 
 /**
+ * Anthropic Message APIのレスポンス型
+ */
+export interface AnthropicMessageResponse {
+  id: string;
+  type: 'message';
+  role: 'assistant';
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  model: string;
+  stop_reason: string | null;
+  stop_sequence: string | null;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  container: any | null;
+}
+
+/**
+ * Anthropic Message Stream APIのチャンク型
+ */
+export interface AnthropicMessageChunk {
+  id: string;
+  type: 'message';
+  role: 'assistant';
+  content: Array<{
+    type: string;
+    text: string;
+  }>;
+  model: string;
+  stop_reason: string | null;
+  stop_sequence: string | null;
+  usage: {
+    input_tokens: number;
+    output_tokens: number;
+  };
+  container: any | null;
+}
+
+/**
+ * Anthropic Modelの型定義
+ */
+export interface AnthropicModel {
+  id: string;
+  type: 'model';
+  display_name: string;
+  created_at: string;
+}
+
+/**
+ * Anthropic Models APIのレスポンス型
+ */
+export interface AnthropicModelsResponse {
+  data: AnthropicModel[];
+  first_id: string | null;
+  last_id: string | null;
+  has_more: boolean;
+}
+
+/**
  * OpenAI Chat Completion Stream APIのチャンク型
  */
 export interface OpenAIChatCompletionChunk {

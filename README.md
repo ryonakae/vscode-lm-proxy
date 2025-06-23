@@ -1,11 +1,11 @@
 # LM Proxy
 
-An extension that exposes the VSCode Language Model API as an OpenAI-compatible REST API.
-This extension allows external applications to easily utilize the VSCode Language Model API.
+An extension that exposes the VSCode Language Model API as OpenAI and Anthropic compatible REST APIs.
+This extension allows external applications to easily utilize the VSCode Language Model API via industry-standard API formats.
 
 ## Features
 
-- Exposes VSCode's LM API as an OpenAI-compatible REST API
+- Exposes VSCode's LM API as OpenAI and Anthropic compatible REST APIs
 - Supports multiple model families (gpt-4o, gpt-4o-mini, o1, o1-mini, claude-3.5-sonnet)
 - Server management from the status bar
 - Command palette commands for starting/stopping the server and selecting models
@@ -30,7 +30,11 @@ This extension allows external applications to easily utilize the VSCode Languag
 
 ### Using the API
 
-Once the server is running, you can send requests to either the `http://localhost:4000/openai/chat/completions` or `http://localhost:4000/openai/v1/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
+Once the server is running, you can use either the OpenAI or Anthropic compatible API endpoints.
+
+#### OpenAI Compatible API
+
+Send requests to either the `http://localhost:4000/openai/chat/completions` or `http://localhost:4000/openai/v1/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
 
 ```bash
 # Traditional format
@@ -56,9 +60,7 @@ curl -X POST http://localhost:4000/openai/v1/chat/completions \
   }'
 ```
 
-> **Note**: You must specify a model parameter. Use `"vscode-lm-proxy"` to use the model selected via the command palette within VSCode, or specify a specific model ID directly.
-
-Streaming mode:
+OpenAI Streaming mode:
 
 ```bash
 curl -X POST http://localhost:4000/openai/v1/chat/completions \
@@ -72,6 +74,51 @@ curl -X POST http://localhost:4000/openai/v1/chat/completions \
     "stream": true
   }' --no-buffer
 ```
+
+#### Anthropic Compatible API
+
+Send requests to either the `http://localhost:4000/anthropic/messages` or `http://localhost:4000/anthropic/v1/messages` endpoint in the same format as the Anthropic Messages API:
+
+```bash
+# Traditional format
+curl -X POST http://localhost:4000/anthropic/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-3.5-sonnet",
+    "system": "You are an excellent AI assistant.",
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'
+
+# Format fully compatible with Anthropic API clients
+curl -X POST http://localhost:4000/anthropic/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-3.5-sonnet",
+    "system": "You are an excellent AI assistant.",
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ]
+  }'
+```
+
+Anthropic Streaming mode:
+
+```bash
+curl -X POST http://localhost:4000/anthropic/v1/messages \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "claude-3.5-sonnet",
+    "system": "You are an excellent AI assistant.",
+    "messages": [
+      {"role": "user", "content": "Hello!"}
+    ],
+    "stream": true
+  }' --no-buffer
+```
+
+> **Note**: You must specify a model parameter. For OpenAI endpoints, use `"vscode-lm-proxy"` to use the model selected via the command palette within VSCode, or specify a specific model ID directly. For Anthropic endpoints, specify a Claude model ID such as `"claude-3.5-sonnet"` or `"claude-3-7-sonnet-20250219"`.
 
 ## API Reference
 
@@ -93,6 +140,18 @@ Or, for full compatibility with OpenAI API client libraries:
 
 ```
 http://localhost:4000/openai/v1
+```
+
+For Anthropic API endpoints:
+
+```
+http://localhost:4000/anthropic
+```
+
+Or, for full compatibility with Anthropic API client libraries:
+
+```
+http://localhost:4000/anthropic/v1
 ```
 
 > **Note**: The port number can be changed in the settings.
@@ -144,6 +203,38 @@ curl http://localhost:4000/
     "/openai/v1/models/:model": {
       "method": "GET",
       "description": "OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)"
+    },
+    "/anthropic/messages": {
+      "method": "POST",
+      "description": "Anthropic-compatible Messages API"
+    },
+    "/anthropic/v1/messages": {
+      "method": "POST",
+      "description": "Anthropic-compatible Messages API (with `/v1/` prefix)"
+    },
+    "/anthropic/messages/count_tokens": {
+      "method": "POST",
+      "description": "Anthropic-compatible Count Message Tokens API"
+    },
+    "/anthropic/v1/messages/count_tokens": {
+      "method": "POST",
+      "description": "Anthropic-compatible Count Message Tokens API (with `/v1/` prefix)"
+    },
+    "/anthropic/models": {
+      "method": "GET",
+      "description": "Anthropic-compatible Models API - List available models"
+    },
+    "/anthropic/v1/models": {
+      "method": "GET",
+      "description": "Anthropic-compatible Models API - List available models (with `/v1/` prefix)"
+    },
+    "/anthropic/models/:model": {
+      "method": "GET",
+      "description": "Anthropic-compatible Models API - Get specific model info"
+    },
+    "/anthropic/v1/models/:model": {
+      "method": "GET",
+      "description": "Anthropic-compatible Models API - Get specific model info (with `/v1/` prefix)"
     }
   }
 }
@@ -311,223 +402,179 @@ curl http://localhost:4000/openai/v1/models/vscode-lm-proxy
 }
 ```
 
-### Error Responses
+#### GET /anthropic or GET /anthropic/v1 or GET /anthropic/v1/
 
-If an error occurs, the server will return an appropriate HTTP status code and a JSON response in the following format:
+Returns Anthropic API information.
+
+##### Request
+
+```bash
+curl http://localhost:4000/anthropic/
+# or
+curl http://localhost:4000/anthropic/v1/
+```
+
+##### Response
 
 ```json
 {
-  "error": {
-    "message": "Error message",
-    "type": "Error type",
-    "code": "Error code"
+  "status": "ok",
+  "message": "Anthropic API compatible endpoints",
+  "version": "0.0.1",
+  "endpoints": {
+    "v1/messages": {
+      "method": "POST",
+      "description": "Messages API"
+    },
+    "v1/messages/count_tokens": {
+      "method": "POST",
+      "description": "Count Message Tokens API"
+    },
+    "v1/models": {
+      "method": "GET",
+      "description": "List available models"
+    },
+    "v1/models/:model": {
+      "method": "GET",
+      "description": "Get model information"
+    }
   }
 }
 ```
 
-#### Common Error Types
-
-- `invalid_request_error` - Invalid request parameters
-- `token_limit_error` - Token limit exceeded
-- `rate_limit_error` - Rate limit reached
-- `model_not_found_error` - Requested model not found
-- `api_error` - Internal API error
-- `server_error` - Internal server error
-
-### Limitations
-
-- Rate Limit: 10 requests per minute
-- Token Limit (per model):
-  - gpt-4o: 128,000 tokens
-  - gpt-4o-mini: 32,000 tokens
-  - o1: 128,000 tokens
-  - o1-mini: 32,000 tokens
-  - claude-3.5-sonnet: 200,000 tokens
-
-## Commands
-
-- `LM Proxy: Start LM Proxy Server` - Starts the proxy server
-- `LM Proxy: Stop LM Proxy Server` - Stops the running proxy server
-- `LM Proxy: Select Language Model` - Selects the language model to use
-
-## Keyboard Shortcuts
-
-- Start Server: `Ctrl+Shift+L S` (or `Cmd+Shift+L S` on Mac)
-- Stop Server: `Ctrl+Shift+L X` (or `Cmd+Shift+L X` on Mac)
-- Select Model: `Ctrl+Shift+L M` (or `Cmd+Shift+L M` on Mac)
-
-## Limitations
-
-- Token limits are approximate based on model families
-- Subject to VSCode LM API limitations
-- Model usage requires appropriate authentication and consent
-
-# Troubleshooting Guide
-
-This guide describes common issues you might encounter when using the VSCode LM Proxy extension and their solutions.
-
-## Installation Issues
-
-### Cannot Install Extension
-
-**Symptom**: Extension installation fails.
-
-**Solution**:
-1. Ensure VSCode is updated to the latest version.
-2. Check your internet connection.
-3. Restart VSCode and try installing again.
-4. Check the VSCode Developer Tools Console for detailed error messages.
-
-## Server Related Issues
-
-### Server Does Not Start
-
-**Symptom**: "Server startup error" message is displayed.
-
-**Solution**:
-1. Restart VSCode.
-2. Check if another application is using port 4000.
-   ```bash
-   lsof -i :4000
-   ```
-3. If in use, terminate the process or change the port number in the extension settings.
-4. Try running VSCode with administrator privileges.
-
-### Server Stops Unexpectedly
-
-**Symptom**: The server was running but stopped suddenly.
-
-**Solution**:
-1. Check the logs in the VSCode Output panel.
-2. Check for memory shortage or other system resource issues.
-3. Try disabling and re-enabling the extension.
-
-## Model Selection Issues
-
-### Cannot Select Model
-
-**Symptom**: Running the model selection command shows nothing or displays an error.
-
-**Solution**:
-1. Ensure you have access to the VSCode Language Model API.
-2. Check your internet connection.
-3. Ensure the GitHub Copilot extension is installed and correctly configured.
-4. Try restarting VSCode.
-
-### Selected Model is Not Remembered
-
-**Symptom**: The selected model resets after restarting the extension.
-
-**Solution**:
-1. Ensure your VSCode workspace or user settings are writable.
-2. Try disabling and re-enabling the extension.
-
-## API Usage Issues
-
-### API Client Connection Issues
-
-**Symptom**: OpenAI API client cannot connect to the server or reports "invalid API key" or "invalid URL" errors.
-
-**Solution**:
-1. Ensure you're using the correct base URL format:
-   - For most clients: `http://localhost:4000/openai` or `http://localhost:4000/openai/v1`
-   - The extension supports both URL formats with and without the `/v1/` prefix
-2. When using third-party OpenAI API clients, try both formats as some clients automatically append `/v1/` to the base URL
-3. For API key issues, many clients require a dummy API key even when not needed - try using `sk-placeholder` as the API key
-
-### Request Times Out
-
-**Symptom**: API requests take a long time to respond and time out.
-
-**Solution**:
-1. Check your network connection.
-2. Ensure the request is not too complex.
-3. Verify that the server is running.
-4. Check if VSCode's memory usage is too high.
-
-### Token Limit Error Occurs
-
-**Symptom**: "Token limit exceeded" error is returned.
-
-**Solution**:
-1. Shorten the message in your request.
-2. Split the request into multiple smaller requests.
-3. Switch to a model with a larger context window.
-
-### Rate Limit Error Occurs
-
-**Symptom**: "Rate limit reached" error is returned.
-
-**Solution**:
-1. Reduce the frequency of your requests (default is 10 requests per minute).
-2. Wait for a while and try again.
-3. Consider combining multiple requests into one.
-
-## Other Issues
-
-### Status Bar Display Not Updating
-
-**Symptom**: The status bar does not update even when the server status changes.
-
-**Solution**:
-1. Reload VSCode by running "Developer: Reload Window" from the Command Palette.
-2. Try disabling and re-enabling the extension.
-
-### Keybindings Not Working
-
-**Symptom**: Commands are not executed with the configured keybindings.
-
-**Solution**:
-1. Check your keyboard shortcut settings to ensure keybindings do not conflict with other commands.
-2. Try manually reconfiguring the keybinding in VSCode's "Keyboard Shortcuts" settings.
-
-## If the Problem Persists
-
-If the above solutions do not resolve the issue, please create an Issue including the following information:
-
-1. VSCode version
-2. Extension version
-3. Operating system information
-4. Detailed error message and stack trace (if possible)
-5. Steps to reproduce the problem
-
-Additionally, checking the console logs by opening the VSCode Developer Tools (Help > Toggle Developer Tools) may provide more detailed diagnostic information.
-
-## Compliance and Privacy
-
-### Compliance with Microsoft AI Guidelines
-
-This extension complies with the following Microsoft AI guidelines:
-
-- [Microsoft AI tools and practices guidelines](https://learn.microsoft.com/en-us/legal/cognitive-services/openai/transparency-note)
-- [GitHub Copilot extensibility acceptable development policy](https://docs.github.com/en/copilot/overview-of-github-copilot/about-github-copilot-extensibility)
-
-This extension meets the following requirements:
-
-1. **Transparency**: Clearly informs the user that this extension uses AI models.
-2. **Consent**: Obtains explicit user consent before using models.
-3. **Security**: All data processing is done locally and no data is sent externally.
-4. **Performance**: Optimizes performance through model selection and rate limiting.
-5. **Accessibility**: Provides keyboard shortcuts for all features.
-
-### Privacy and Data Collection
-
-This extension operates according to the following privacy policy:
-
-- User data is not sent externally.
-- All processing is done within the local VSCode instance.
-- Statistical information or usage data is not collected.
-- Server functionality operates only within localhost.
-
-### Required Permissions
-
-This extension accesses the following VSCode APIs:
-
-- `vscode.lm`: Access to the Language Model API
-- Network features: Running an HTTP API server on localhost
-
-User consent is obtained through the standard VSCode authentication flow when using models.
-
-## License
-
-MIT
+#### POST /anthropic/messages or POST /anthropic/v1/messages
+
+Sends a message request. This is an Anthropic Messages API compatible interface.
+
+##### Request Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|---------|-------------|
+| model | string | Yes | The ID of the model to use, such as "claude-3.5-sonnet" |
+| messages | array | Yes | An array of chat messages |
+| system | string | No | A system prompt to provide context for the message creation |
+| stream | boolean | No | Whether to enable streaming mode (default: false) |
+
+##### Message Format
+
+| Field | Type | Required | Description |
+|-----------|------|---------|-------------|
+| role | string | Yes | The role of the message ("user" or "assistant") |
+| content | string or array | Yes | The content of the message. Can be a string or an array of content blocks |
+
+##### Response
+
+```json
+{
+  "id": "msg_abc123",
+  "type": "message",
+  "role": "assistant",
+  "content": [
+    {
+      "type": "text",
+      "text": "Hello! Please let me know if there is anything I can help you with."
+    }
+  ],
+  "model": "claude-3.5-sonnet",
+  "stop_reason": "end_turn",
+  "stop_sequence": null,
+  "usage": {
+    "input_tokens": 0,
+    "output_tokens": 0
+  },
+  "container": null
+}
+```
+
+##### Streaming Mode
+
+If `stream: true` is specified, the server will return streaming responses in the following format:
+
+```
+data: {"id":"msg_abc123","type":"message","role":"assistant","content":[{"type":"text","text":"Hello!"}],"model":"claude-3.5-sonnet","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0},"container":null}
+
+data: {"id":"msg_abc123","type":"message","role":"assistant","content":[{"type":"text","text":" Please"}],"model":"claude-3.5-sonnet","stop_reason":null,"stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0},"container":null}
+
+data: {"id":"msg_abc123","type":"message","role":"assistant","content":[{"type":"text","text":" let me know if there is anything I can help you with."}],"model":"claude-3.5-sonnet","stop_reason":"end_turn","stop_sequence":null,"usage":{"input_tokens":0,"output_tokens":0},"container":null}
+
+data: [DONE]
+```
+
+#### POST /anthropic/messages/count_tokens or POST /anthropic/v1/messages/count_tokens
+
+Counts tokens for a message request. This is an Anthropic Count Tokens API compatible interface.
+
+##### Request Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|---------|-------------|
+| model | string | Yes | The ID of the model to use |
+| messages | array | Yes | An array of chat messages |
+| system | string | No | A system prompt to provide context for the message creation |
+
+##### Response
+
+```json
+{
+  "input_tokens": 2095
+}
+```
+
+#### GET /anthropic/models or GET /anthropic/v1/models
+
+Returns a list of available Anthropic models. This is an Anthropic Models API compatible interface.
+
+##### Request
+
+```bash
+curl http://localhost:4000/anthropic/models
+# or
+curl http://localhost:4000/anthropic/v1/models
+```
+
+##### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "claude-3-7-sonnet-20250219",
+      "type": "model",
+      "display_name": "Claude 3.7 Sonnet",
+      "created_at": "2025-02-19T00:00:00Z"
+    },
+    {
+      "id": "claude-3-5-sonnet-20240620",
+      "type": "model",
+      "display_name": "Claude 3.5 Sonnet",
+      "created_at": "2024-06-20T00:00:00Z"
+    }
+  ],
+  "first_id": "claude-3-7-sonnet-20250219",
+  "last_id": "claude-3-5-sonnet-20240620",
+  "has_more": false
+}
+```
+
+#### GET /anthropic/models/:model or GET /anthropic/v1/models/:model
+
+Returns information about a specific Anthropic model. This is an Anthropic Models API compatible interface.
+
+##### Request
+
+```bash
+curl http://localhost:4000/anthropic/models/claude-3-5-sonnet-20240620
+# or
+curl http://localhost:4000/anthropic/v1/models/claude-3-7-sonnet-20250219
+```
+
+##### Response
+
+```json
+{
+  "id": "claude-3-5-sonnet-20240620",
+  "type": "model",
+  "display_name": "Claude 3.5 Sonnet",
+  "created_at": "2024-06-20T00:00:00Z"
+}
+```

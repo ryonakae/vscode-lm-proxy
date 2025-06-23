@@ -101,6 +101,11 @@ export function convertOpenAIRequestToVSCodeRequest(openaiRequest: any): {
 } {
   // メッセージの変換
   const messages = openaiRequest.messages.map((msg: any) => {
+    // systemロールの場合はUserメッセージとして扱う
+    if (msg.role === 'system') {
+      return vscode.LanguageModelChatMessage.User(`[SYSTEM] ${msg.content}`);
+    }
+    // user/assistantはそのまま使用
     return new vscode.LanguageModelChatMessage(
       msg.role,
       msg.content
@@ -132,7 +137,8 @@ export function convertVSCodeResponseToOpenAIResponse(
     system_fingerprint: systemFingerprint,
     choices: [
       {
-        message: {            role: vsCodeResponse.message.role,
+        message: {
+            role: vsCodeResponse.message.role,
             content: vsCodeResponse.message.content
         },
         index: 0,
