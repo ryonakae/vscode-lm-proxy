@@ -102,6 +102,14 @@ export interface AnthropicModel {
   type: 'model';
   display_name: string;
   created_at: string;
+  capabilities?: {
+    tools?: boolean;
+    functions?: boolean;
+    tool_conversation?: boolean;
+    vision?: boolean;
+  };
+  context_window?: number;
+  max_tokens?: number;
 }
 
 /**
@@ -172,4 +180,47 @@ export interface OpenAIChatCompletionRequest {
   seed?: number;
   frequency_penalty?: number;
   presence_penalty?: number;
+}
+
+/**
+ * Claude Code向けのツール呼び出し型定義
+ */
+export interface ClaudeCodeTool {
+  type: string;
+  name: string;
+  description?: string;
+  parameters?: {
+    type: 'object';
+    properties: Record<string, any>;
+    required?: string[];
+  };
+}
+
+/**
+ * Claude Code向けのツール呼び出し結果型定義
+ */
+export interface ClaudeCodeToolCall {
+  id: string;
+  type: string;
+  name: string;
+  input: Record<string, any>;
+}
+
+/**
+ * Claude Code向けのツール呼び出し結果型定義
+ */
+export interface ClaudeCodeToolResult {
+  tool_call_id: string;
+  output: string | Record<string, any>;
+  error?: string;
+}
+
+/**
+ * Claude Code API特有の追加型定義
+ */
+export interface ClaudeCodeSpecificFields {
+  tools?: ClaudeCodeTool[];
+  tool_choice?: 'auto' | 'none' | { type: string; name: string };
+  tool_calls?: ClaudeCodeToolCall[];
+  tool_results?: ClaudeCodeToolResult[];
 }

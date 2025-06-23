@@ -8,6 +8,14 @@ import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 
 /**
+ * ランダムなIDを生成（ツール呼び出し用）
+ * @returns ランダム文字列
+ */
+function generateRandomId(): string {
+  return Math.random().toString(36).substring(2, 15);
+}
+
+/**
  * Sets up all Anthropic-compatible API endpoints
  * @param app Express.js application
  */
@@ -20,6 +28,9 @@ export function setupAnthropicEndpoints(app: express.Express): void {
   
   // モデル関連のエンドポイント
   setupAnthropicModelsEndpoints(app);
+  
+  // Claude Code専用のエンドポイント
+  setupClaudeCodeEndpoints(app);
 }
 
 /**
@@ -95,7 +106,7 @@ function sendAnthropicRootResponse(_req: express.Request, res: express.Response)
 async function handleAnthropicMessages(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { vscodeLmMessages, model, stream, originalMessages } = validateAndConvertAnthropicRequest(req.body);
+    const { vscodeLmMessages, model, stream, originalMessages, tools, toolChoice } = validateAndConvertAnthropicRequest(req.body);
     
     // トークン制限チェック（元のメッセージに対して実行）
     const tokenLimitError = await limitsManager.validateTokenLimit(originalMessages, model);
@@ -147,10 +158,40 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
         modelManager.getSelectedModel()
       );
       
-      // Anthropic形式に変換
+      // ツール呼び出し情報を検出（もしあれば）
+      let detectedToolCalls = undefined;
+      
+      // tools引数が指定されていた場合のみツール検出を試みる
+      if (tools && tools.length > 0) {
+        // レスポンステキストからツール呼び出し情報を抽出する処理を試みる
+        // この例では簡易的な実装として、JSON形式のツール呼び出しを探します
+        const responseText = result.responseText;
+        if (responseText.includes('```json') && (responseText.includes('"type":') || responseText.includes('"name":'))) {
+          try {
+            const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
+            if (jsonMatch && jsonMatch[1]) {
+              const toolCall = JSON.parse(jsonMatch[1].trim());
+              if (toolCall && toolCall.name) {
+                detectedToolCalls = [{
+                  id: `call_${generateRandomId()}`,
+                  type: toolCall.type || 'function',
+                  name: toolCall.name,
+                  input: toolCall.input || {}
+                }];
+              }
+            }
+          } catch (e) {
+            logger.error('Failed to parse tool call from response:', e as Error);
+          }
+        }
+      }
+      
+      // Anthropic形式に変換（ツール呼び出し情報を含む）
       const response = convertToAnthropicFormat(
         { content: result.responseText, isComplete: true },
-        model
+        model,
+        false,
+        detectedToolCalls
       );
       
       // トークン使用量情報を更新
@@ -265,6 +306,53 @@ async function handleAnthropicModelInfo(req: express.Request, res: express.Respo
     
     res.status(statusCode).json(errorResponse);
   }
+}
+
+/**
+ * Sets up Claude Code specific endpoints
+ * @param app Express.js application
+ */
+function setupClaudeCodeEndpoints(app: express.Express): void {
+  // Claude Code専用のルートエンドポイント
+  app.get('/anthropic/claude-code', sendClaudeCodeRootResponse);
+  app.get('/anthropic/claude-code/v1', sendClaudeCodeRootResponse);
+  
+  // Claude Code Messages API（通常のMessages APIと同じハンドラを使用）
+  app.post('/anthropic/claude-code/v1/messages', handleAnthropicMessages);
+  app.post('/anthropic/claude-code/messages', handleAnthropicMessages);
+  
+  // Claude Code Models API（通常のModels APIと同じハンドラを使用）
+  app.get('/anthropic/claude-code/v1/models', handleAnthropicModels);
+  app.get('/anthropic/claude-code/models', handleAnthropicModels);
+  
+  // Claude Code Model Info API（通常のModel Info APIと同じハンドラを使用）
+  app.get('/anthropic/claude-code/v1/models/:model', handleAnthropicModelInfo);
+  app.get('/anthropic/claude-code/models/:model', handleAnthropicModelInfo);
+}
+
+/**
+ * Claude Codeルートエンドポイントのハンドラー関数
+ */
+function sendClaudeCodeRootResponse(_req: express.Request, res: express.Response) {
+  res.json({
+    status: 'ok',
+    message: 'Claude Code API compatible endpoints',
+    version: '0.0.1',
+    endpoints: {
+      'v1/messages': {
+        method: 'POST',
+        description: 'Claude Code Messages API'
+      },
+      'v1/models': {
+        method: 'GET',
+        description: 'List available Claude Code compatible models'
+      },
+      'v1/models/:model': {
+        method: 'GET',
+        description: 'Get Claude Code model information'
+      }
+    }
+  });
 }
 
 

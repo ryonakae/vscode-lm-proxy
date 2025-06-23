@@ -10,25 +10,62 @@ import { modelManager } from './manager';
  * @param response VSCode LM APIレスポンス
  * @param modelId モデルID
  * @param isStreaming ストリーミングモードかどうか
+ * @param toolCalls ツール呼び出し情報（オプション）
  * @returns Anthropic API形式のレスポンス
  */
 export function convertToAnthropicFormat(
   response: { content: string; isComplete?: boolean },
   modelId: string,
-  isStreaming: boolean = false
+  isStreaming: boolean = false,
+  toolCalls?: any[]
 ): AnthropicMessageResponse | AnthropicMessageChunk {
   const now = Math.floor(Date.now() / 1000);
   const randomId = `msg_${generateRandomId()}`;
+  
+  // Claude Codeツール呼び出しを検出して処理
+  let toolCallsDetected = undefined;
+  let responseContent = response.content || '';
+
+  // レスポンステキストからツール呼び出しを検出する
+  // (テキストから解析する必要があるため簡略化していますが、実際にはより堅牢な解析が必要)
+  if (!toolCalls && responseContent.includes('```json') && (responseContent.includes('"type":') || responseContent.includes('"name":'))) {
+    try {
+      // JSONブロックを抽出
+      const jsonMatch = responseContent.match(/```json\n([\s\S]*?)\n```/);
+      if (jsonMatch && jsonMatch[1]) {
+        const jsonStr = jsonMatch[1].trim();
+        const toolCall = JSON.parse(jsonStr);
+        
+        if (toolCall && toolCall.name) {
+          // ツール呼び出しとして検出された場合
+          toolCallsDetected = [{
+            id: `call_${generateRandomId()}`,
+            type: toolCall.type || 'function',
+            name: toolCall.name,
+            input: toolCall.input || {}
+          }];
+          
+          // レスポンスからJSON部分を削除
+          responseContent = responseContent.replace(/```json\n[\s\S]*?\n```/, '').trim();
+        }
+      }
+    } catch (e) {
+      console.error('Failed to parse tool call from response:', e);
+    }
+  }
+  
+  // 明示的に渡されたツール呼び出し情報がある場合はそれを優先
+  const finalToolCalls = toolCalls || toolCallsDetected;
 
   if (isStreaming) {
     // ストリーミング用のチャンクフォーマット
-    return {
+    const responseObj: AnthropicMessageChunk = {
       id: randomId,
       type: 'message',
       role: 'assistant',
-      content: response.isComplete || response.content === undefined
-        ? [{ type: 'text', text: response.content || '' }]
-        : [{ type: 'text', text: response.content }],
+      content: response.isComplete || responseContent === undefined
+        ? [{ type: 'text', text: responseContent }]
+        : [{ type: 'text', text: responseContent }],
       model: modelId,
       stop_reason: response.isComplete ? 'end_turn' : null,
       stop_sequence: null,
@@ -37,14 +74,21 @@ export function convertToAnthropicFormat(
         output_tokens: 0
       },
       container: null
-    } as AnthropicMessageChunk;
+    };
+    
+    // ツール呼び出しがあれば追加
+    if (finalToolCalls && finalToolCalls.length > 0) {
+      (responseObj as any).tool_calls = finalToolCalls;
+    }
+    
+    return responseObj;
   } else {
     // 通常のレスポンスフォーマット
-    return {
+    const responseObj: AnthropicMessageResponse = {
       id: randomId,
       type: 'message',
       role: 'assistant',
-      content: [{ type: 'text', text: response.content || '' }],
+      content: [{ type: 'text', text: responseContent }],
       model: modelId,
       stop_reason: 'end_turn',
       stop_sequence: null,
@@ -53,7 +97,14 @@ export function convertToAnthropicFormat(
         output_tokens: 0
       },
       container: null
-    } as AnthropicMessageResponse;
+    };
+    
+    // ツール呼び出しがあれば追加
+    if (finalToolCalls && finalToolCalls.length > 0) {
+      (responseObj as any).tool_calls = finalToolCalls;
+    }
+    
+    return responseObj;
   }
 }
 
@@ -135,6 +186,52 @@ export async function getAnthropicModels(): Promise<AnthropicModelsResponse> {
       created_at: new Date().toISOString()
     });
     
+    // Claude Codeのモデル定義を追加
+    models.push({
+      id: 'claude-3-opus-20240229',
+      type: 'model',
+      display_name: 'Claude 3 Opus',
+      created_at: new Date().toISOString(),
+      capabilities: {
+        tools: true,
+        functions: true,
+        tool_conversation: true,
+        vision: true
+      },
+      context_window: 200000,
+      max_tokens: 4096
+    });
+    
+    models.push({
+      id: 'claude-3-sonnet-20240229',
+      type: 'model',
+      display_name: 'Claude 3 Sonnet',
+      created_at: new Date().toISOString(),
+      capabilities: {
+        tools: true,
+        functions: true,
+        tool_conversation: true,
+        vision: true
+      },
+      context_window: 200000,
+      max_tokens: 4096
+    });
+    
+    models.push({
+      id: 'claude-3-haiku-20240307',
+      type: 'model',
+      display_name: 'Claude 3 Haiku',
+      created_at: new Date().toISOString(),
+      capabilities: {
+        tools: true,
+        functions: true,
+        tool_conversation: true,
+        vision: true
+      },
+      context_window: 200000,
+      max_tokens: 4096
+    });
+    
     return {
       data: models,
       first_id: models.length > 0 ? models[0].id : null,
@@ -153,10 +250,24 @@ export async function getAnthropicModels(): Promise<AnthropicModelsResponse> {
           type: 'model',
           display_name: 'VSCode LM Proxy',
           created_at: now
+        },
+        {
+          id: 'claude-3-opus-20240229',
+          type: 'model',
+          display_name: 'Claude 3 Opus',
+          created_at: now,
+          capabilities: {
+            tools: true,
+            functions: true,
+            tool_conversation: true,
+            vision: true
+          },
+          context_window: 200000,
+          max_tokens: 4096
         }
       ],
       first_id: 'vscode-lm-proxy',
-      last_id: 'vscode-lm-proxy',
+      last_id: 'claude-3-opus-20240229',
       has_more: false
     };
   }
@@ -189,6 +300,8 @@ export function validateAndConvertAnthropicRequest(body: any): {
   model: string;
   stream?: boolean;
   originalMessages: any[];
+  tools?: any[];
+  toolChoice?: any;
 } {
   // 必須フィールドのチェック
   if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
@@ -259,10 +372,25 @@ export function validateAndConvertAnthropicRequest(body: any): {
     throw error;
   }
   
+  // Claude Codeのツール関連情報を抽出
+  const tools = body.tools || undefined;
+  const toolChoice = body.tool_choice || undefined;
+  
+  // ツール情報がある場合、最後のシステムプロンプトとして追加
+  if (tools && tools.length > 0) {
+    // ツール情報を文字列に変換してシステムプロンプトに追加
+    const toolsDescription = JSON.stringify(tools, null, 2);
+    vscodeLmMessages.push(vscode.LanguageModelChatMessage.User(
+      `[TOOLS] The following tools are available. Format tool calls as JSON: ${toolsDescription}`
+    ));
+  }
+  
   return {
     vscodeLmMessages,
     model,
     stream: body.stream,
-    originalMessages: body.messages
+    originalMessages: body.messages,
+    tools,
+    toolChoice
   };
 }
