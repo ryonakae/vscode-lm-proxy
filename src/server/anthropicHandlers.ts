@@ -28,9 +28,6 @@ export function setupAnthropicEndpoints(app: express.Express): void {
   
   // モデル関連のエンドポイント
   setupAnthropicModelsEndpoints(app);
-  
-  // Claude Code専用のエンドポイント
-  setupClaudeCodeEndpoints(app);
 }
 
 /**
@@ -308,51 +305,6 @@ async function handleAnthropicModelInfo(req: express.Request, res: express.Respo
   }
 }
 
-/**
- * Sets up Claude Code specific endpoints
- * @param app Express.js application
- */
-function setupClaudeCodeEndpoints(app: express.Express): void {
-  // Claude Code専用のルートエンドポイント
-  app.get('/anthropic/claude-code', sendClaudeCodeRootResponse);
-  app.get('/anthropic/claude-code/v1', sendClaudeCodeRootResponse);
-  
-  // Claude Code Messages API（通常のMessages APIと同じハンドラを使用）
-  app.post('/anthropic/claude-code/v1/messages', handleAnthropicMessages);
-  app.post('/anthropic/claude-code/messages', handleAnthropicMessages);
-  
-  // Claude Code Models API（通常のModels APIと同じハンドラを使用）
-  app.get('/anthropic/claude-code/v1/models', handleAnthropicModels);
-  app.get('/anthropic/claude-code/models', handleAnthropicModels);
-  
-  // Claude Code Model Info API（通常のModel Info APIと同じハンドラを使用）
-  app.get('/anthropic/claude-code/v1/models/:model', handleAnthropicModelInfo);
-  app.get('/anthropic/claude-code/models/:model', handleAnthropicModelInfo);
-}
 
-/**
- * Claude Codeルートエンドポイントのハンドラー関数
- */
-function sendClaudeCodeRootResponse(_req: express.Request, res: express.Response) {
-  res.json({
-    status: 'ok',
-    message: 'Claude Code API compatible endpoints',
-    version: '0.0.1',
-    endpoints: {
-      'v1/messages': {
-        method: 'POST',
-        description: 'Claude Code Messages API'
-      },
-      'v1/models': {
-        method: 'GET',
-        description: 'List available Claude Code compatible models'
-      },
-      'v1/models/:model': {
-        method: 'GET',
-        description: 'Get Claude Code model information'
-      }
-    }
-  });
-}
 
 
