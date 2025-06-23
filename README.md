@@ -30,11 +30,11 @@ This extension allows external applications to easily utilize the VSCode Languag
 
 ### Using the API
 
-Once the server is running, you can send requests to either the `http://localhost:4000/chat/completions` or `http://localhost:4000/v1/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
+Once the server is running, you can send requests to either the `http://localhost:4000/openai/chat/completions` or `http://localhost:4000/openai/v1/chat/completions` endpoint in the same format as the OpenAI Chat Completions API:
 
 ```bash
 # Traditional format
-curl -X POST http://localhost:4000/chat/completions \
+curl -X POST http://localhost:4000/openai/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vscode-lm-proxy",
@@ -45,7 +45,7 @@ curl -X POST http://localhost:4000/chat/completions \
   }'
 
 # Format fully compatible with OpenAI API clients
-curl -X POST http://localhost:4000/v1/chat/completions \
+curl -X POST http://localhost:4000/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vscode-lm-proxy",
@@ -61,7 +61,7 @@ curl -X POST http://localhost:4000/v1/chat/completions \
 Streaming mode:
 
 ```bash
-curl -X POST http://localhost:4000/v1/chat/completions \
+curl -X POST http://localhost:4000/openai/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "vscode-lm-proxy",
@@ -83,17 +83,23 @@ This section provides detailed information about the API features offered by LM 
 http://localhost:4000
 ```
 
+For OpenAI API endpoints:
+
+```
+http://localhost:4000/openai
+```
+
 Or, for full compatibility with OpenAI API client libraries:
 
 ```
-http://localhost:4000/v1
+http://localhost:4000/openai/v1
 ```
 
 > **Note**: The port number can be changed in the settings.
 
 ### Endpoints
 
-#### GET / or GET /v1/ or GET /v1
+#### GET /
 
 Returns server status information.
 
@@ -101,8 +107,6 @@ Returns server status information.
 
 ```bash
 curl http://localhost:4000/
-# or
-curl http://localhost:4000/v1/
 ```
 
 ##### Response
@@ -113,19 +117,51 @@ curl http://localhost:4000/v1/
   "message": "VSCode LM API Proxy server is running",
   "version": "0.0.1",
   "endpoints": {
-    "chat/completions": {
+    "/": {
+      "method": "GET",
+      "description": "Server status endpoint"
+    },
+    "/openai/chat/completions": {
       "method": "POST",
       "description": "OpenAI-compatible Chat Completions API"
     },
-    "v1/chat/completions": {
+    "/openai/v1/chat/completions": {
       "method": "POST",
-      "description": "OpenAI-compatible Chat Completions API with /v1/ prefix"
+      "description": "OpenAI-compatible Chat Completions API (with `/v1/` prefix)"
     }
   }
 }
 ```
 
-#### POST /chat/completions or POST /v1/chat/completions
+#### GET /openai or GET /openai/v1 or GET /openai/v1/
+
+Returns OpenAI API information.
+
+##### Request
+
+```bash
+curl http://localhost:4000/openai/
+# or
+curl http://localhost:4000/openai/v1/
+```
+
+##### Response
+
+```json
+{
+  "status": "ok",
+  "message": "OpenAI API compatible endpoints",
+  "version": "0.0.1",
+  "endpoints": {
+    "chat/completions": {
+      "method": "POST",
+      "description": "Chat Completions API"
+    }
+  }
+}
+```
+
+#### POST /openai/chat/completions or POST /openai/v1/chat/completions
 
 Sends a chat completion request. This is an OpenAI Chat Completions API compatible interface.
 
@@ -306,7 +342,7 @@ This guide describes common issues you might encounter when using the VSCode LM 
 
 **Solution**:
 1. Ensure you're using the correct base URL format:
-   - For most clients: `http://localhost:4000` or `http://localhost:4000/v1`
+   - For most clients: `http://localhost:4000/openai` or `http://localhost:4000/openai/v1`
    - The extension supports both URL formats with and without the `/v1/` prefix
 2. When using third-party OpenAI API clients, try both formats as some clients automatically append `/v1/` to the base URL
 3. For API key issues, many clients require a dummy API key even when not needed - try using `sk-placeholder` as the API key

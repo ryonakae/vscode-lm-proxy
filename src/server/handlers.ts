@@ -8,9 +8,9 @@ import { logger } from '../utils/logger';
  * @param app Express.js application
  */
 export function setupChatCompletionsEndpoint(app: express.Express): void {
-  // 両方のパターンのエンドポイントを登録（OpenAI API互換性の向上）
-  app.post('/chat/completions', handleChatCompletions);
-  app.post('/v1/chat/completions', handleChatCompletions);
+  // OpenAI API互換エンドポイントを登録
+  app.post('/openai/chat/completions', handleChatCompletions);
+  app.post('/openai/v1/chat/completions', handleChatCompletions);
 }
 
 /**
@@ -111,4 +111,37 @@ function validateChatCompletionRequest(body: any): {
     model,
     stream: body.stream
   };
+}
+
+/**
+ * Sets up server status endpoint
+ * @param app Express.js application
+ */
+export function setupStatusEndpoint(app: express.Express): void {
+  app.get('/', handleServerStatus);
+}
+
+/**
+ * Server status request handler
+ */
+function handleServerStatus(_req: express.Request, res: express.Response) {
+  res.json({
+    status: 'ok',
+    message: 'VSCode LM API Proxy server is running',
+    version: '0.0.1',
+    endpoints: {
+      '/': {
+        method: 'GET',
+        description: 'Server status endpoint'
+      },
+      '/openai/chat/completions': {
+        method: 'POST',
+        description: 'OpenAI-compatible Chat Completions API'
+      },
+      '/openai/v1/chat/completions': {
+        method: 'POST',
+        description: 'OpenAI-compatible Chat Completions API (with `/v1/` prefix)'
+      }
+    }
+  });
 }

@@ -1,6 +1,6 @@
 // Express.jsサーバーの設定とAPIエンドポイントの実装
 import express from 'express';
-import { setupChatCompletionsEndpoint } from './handlers';
+import { setupChatCompletionsEndpoint, setupStatusEndpoint } from './handlers';
 import { logger } from '../utils/logger';
 
 /**
@@ -61,30 +61,29 @@ export function createServer(): express.Express {
     next();
   });
   
-  // ルートエンドポイント（OpenAI API互換性向上のため複数パターンをサポート）
-  app.get('/', sendRootResponse);
-  app.get('/v1', sendRootResponse);
-  app.get('/v1/', sendRootResponse);
+  // OpenAI API互換性向上のためのルートパス
+  app.get('/openai', sendOpenAIRootResponse);
+  app.get('/openai/v1', sendOpenAIRootResponse);
+  app.get('/openai/v1/', sendOpenAIRootResponse);
   
-  // ルートエンドポイントのハンドラー関数
-  function sendRootResponse(_req: express.Request, res: express.Response) {
+  // OpenAIルートエンドポイントのハンドラー関数
+  function sendOpenAIRootResponse(_req: express.Request, res: express.Response) {
     res.json({
       status: 'ok',
-      message: 'VSCode LM API Proxy server is running',
+      message: 'OpenAI API compatible endpoints',
       version: '0.0.1',
       endpoints: {
         'chat/completions': {
           method: 'POST',
-          description: 'OpenAI-compatible Chat Completions API'
-        },
-        'v1/chat/completions': {
-          method: 'POST',
-          description: 'OpenAI-compatible Chat Completions API (with `/v1/` prefix)'
+          description: 'Chat Completions API'
         }
       }
     });
   };
 
+  // サーバーステータスエンドポイントのセットアップ
+  setupStatusEndpoint(app);
+  
   // OpenAI互換エンドポイントのセットアップ
   setupChatCompletionsEndpoint(app);
   
