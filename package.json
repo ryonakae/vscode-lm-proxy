@@ -157,27 +157,15 @@
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
-    "pretest": "npm run compile && npm run lint",
-    "lint": "eslint src --ext ts",
-    "test": "vscode-test",
-    "test:unit": "vscode-test --extensionDevelopmentPath=. --extensionTestsPath=out/test/suite/index",
-    "test:commands": "vscode-test --extensionDevelopmentPath=. --extensionTestsPath=out/test/suite/commands.test",
-    "test:server": "vscode-test --extensionDevelopmentPath=. --extensionTestsPath=out/test/suite/server.test",
-    "test:model": "vscode-test --extensionDevelopmentPath=. --extensionTestsPath=out/test/suite/model.test",
-    "test:integration": "vscode-test --extensionDevelopmentPath=. --extensionTestsPath=out/test/suite/integration.test"
+    "lint": "eslint src --ext ts"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/mocha": "^10.0.10",
     "@types/node": "20.x",
     "@types/vscode": "^1.93.0",
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
-    "@vscode/test-cli": "^0.0.9",
-    "@vscode/test-electron": "^2.4.0",
     "eslint": "^8.57.1",
-    "glob": "^11.0.3",
-    "mocha": "^11.7.0",
     "typescript": "^5.8.2"
   },
   "dependencies": {

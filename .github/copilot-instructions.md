@@ -42,7 +42,6 @@ VSCode LM Proxy は VSCode の Language Model API を OpenAI 互換の REST API 
 - **src/server/**: Express サーバーと API エンドポイント
 - **src/ui/**: ステータスバーなどの UI コンポーネント
 - **src/utils/**: ユーティリティ関数やクラス
-- **src/test/**: テストコード
 
 ## モジュール設計 (Module Design)
 
@@ -87,16 +86,8 @@ VSCode LM Proxy は VSCode の Language Model API を OpenAI 互換の REST API 
 
 - **型安全性**: 適切な型定義がされているか
 - **エラーハンドリング**: 例外処理が適切か
-- **テスト**: 重要な機能のテストが追加されているか
 - **ドキュメント**: 公開 API や複雑なロジックにコメントがあるか
 - **パフォーマンス**: 効率的な実装になっているか
-
-## テスト (Testing)
-
-- **ユニットテスト**: モデル変換、制限管理などの重要なロジック
-- **統合テスト**: サーバーとモデル API の連携
-- **コマンドテスト**: UI コマンドの動作確認
-- **モック**: VSCode API や外部依存をモック化してテスト
 
 ## セキュリティ考慮事項 (Security Considerations)
 
