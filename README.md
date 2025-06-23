@@ -1,17 +1,15 @@
 # LM Proxy
 
-An extension that exposes the VSCode Language Model API as OpenAI and Anthropic compatible REST APIs.
-This extension allows external applications to easily utilize the VSCode Language Model API via industry-standard API formats.
+An extension that exposes the VSCode Language Model API as OpenAI and Anthropic compatible REST APIs, allowing external applications to easily utilize VSCode's language capabilities via industry-standard API formats.
 
 ## Features
 
-- Exposes VSCode's LM API as OpenAI and Anthropic compatible REST APIs
-- Supports multiple model families (gpt-4o, gpt-4o-mini, o1, o1-mini, claude-3.5-sonnet)
-- Server management from the status bar
-- Command palette commands for starting/stopping the server and selecting models
-- Streaming response support
-- Token limit and rate limit management
-- Error handling
+- OpenAI and Anthropic compatible REST APIs for VSCode's Language Model API
+- Support for multiple model families (gpt-4o, gpt-4o-mini, o1, o1-mini, claude-3.5-sonnet)
+- Convenient server management via status bar and command palette
+- Full streaming response support
+- Built-in token limit and rate limit management
+- Comprehensive error handling
 
 ## Installation
 
@@ -30,7 +28,7 @@ This extension allows external applications to easily utilize the VSCode Languag
 
 ### Using the API
 
-Once the server is running, you can use either the OpenAI or Anthropic compatible API endpoints.
+Once the server is running, you can use either the OpenAI or Anthropic compatible API endpoints from your applications, scripts, or command line.
 
 #### OpenAI Compatible API
 
@@ -98,7 +96,7 @@ curl -X POST http://localhost:4000/anthropic/v1/messages \
 
 ## API Reference
 
-This section provides detailed information about the API features offered by LM Proxy.
+This section provides a comprehensive reference for all API endpoints offered by LM Proxy.
 
 ### Base URL
 
@@ -173,7 +171,6 @@ curl http://localhost:4000/
 ```
 
 > **Note**: All endpoints are also available with the `/v1/` prefix for compatibility with API client libraries (e.g., `/openai/v1/chat/completions`, `/anthropic/v1/messages`, etc.)
-```
 
 #### GET /openai
 
