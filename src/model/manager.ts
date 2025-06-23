@@ -21,6 +21,10 @@ class ModelManager {
     'gpt-4o', 'gpt-4o-mini', 'o1', 'o1-mini', 'claude-3.5-sonnet'
   ];
 
+  // モデル変更時のイベントエミッター
+  private readonly _onDidChangeSelectedModel = new vscode.EventEmitter<void>();
+  public readonly onDidChangeSelectedModel = this._onDidChangeSelectedModel.event;
+
   /**
    * AsyncIterableなストリームを文字列に変換
    * @param stream 文字列のAsyncIterable
@@ -105,6 +109,9 @@ class ModelManager {
             // モデル情報をログ出力
             logger.info(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
             
+            // モデル変更イベントを発火
+            this._onDidChangeSelectedModel.fire();
+            
             quickPick.dispose();
             resolve(this.selectedModelId as string);
           } else {
@@ -150,6 +157,9 @@ class ModelManager {
   public setSelectedModel(modelId: string, modelName?: string): void {
     this.selectedModelId = modelId;
     this.selectedModelName = modelName || modelId;
+    
+    // モデル変更イベントを発火
+    this._onDidChangeSelectedModel.fire();
   }
   
   /**

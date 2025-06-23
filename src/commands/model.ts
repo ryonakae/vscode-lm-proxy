@@ -22,17 +22,24 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
         vscode.window.showInformationMessage(`Model selected: ${selectedModelName || selectedModel}`);
 
         // ステータスバーを更新 (新しいモデル名で、サーバーは元の状態)
-        statusBarManager.updateStatus(wasRunning);
+        // 非同期でタイミングをずらして確実に更新を反映
+        setTimeout(() => {
+          statusBarManager.updateStatus(wasRunning);
+        }, 10);
 
         // サーバーが実行中だった場合は再起動
         if (wasRunning) {
           vscode.window.showInformationMessage('Restarting server with new model...');
           await serverManager.stop();
-          // ステータスバーを停止状態に更新
-          statusBarManager.updateStatus(false);
+          // ステータスバーを停止状態に更新 (非同期でタイミングをずらす)
+          setTimeout(() => {
+            statusBarManager.updateStatus(false);
+          }, 10);
           await serverManager.start();
-          // ステータスバーを実行状態に更新
-          statusBarManager.updateStatus(true);
+          // ステータスバーを実行状態に更新 (非同期でタイミングをずらす)
+          setTimeout(() => {
+            statusBarManager.updateStatus(true);
+          }, 10);
           vscode.window.showInformationMessage('Server restarted successfully.');
         }
       }

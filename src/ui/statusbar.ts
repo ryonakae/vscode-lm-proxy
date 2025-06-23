@@ -30,6 +30,14 @@ class StatusBarManager {
     // ステータスバーを表示
     this.statusBarItem.show();
     
+    // モデル変更イベントをリッスン
+    context.subscriptions.push(
+      modelManager.onDidChangeSelectedModel(() => {
+        // モデルが変更されたらステータスバーを更新
+        this.updateStatus(serverManager.isRunning());
+      })
+    );
+    
     // ステータスメニューコマンドを登録
     const statusMenuCommand = vscode.commands.registerCommand(
       'vscode-lm-proxy.showStatusMenu', 
@@ -50,7 +58,7 @@ class StatusBarManager {
       return;
     }
     
-    // 選択中のモデル名を取得
+    // 選択中のモデル名を取得（強制的に最新の状態を反映）
     const selectedModelName = modelManager.getSelectedModelName();
     // モデル表示テキスト
     const modelText = selectedModelName ? ` (${selectedModelName})` : '';
