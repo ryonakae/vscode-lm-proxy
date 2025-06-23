@@ -36,8 +36,32 @@ export function setupModelsEndpoints(app: express.Express): void {
  */
 async function handleOpenAIModels(_req: express.Request, res: express.Response) {
   try {
-    const models = await modelManager.getAvailableModels();
-    res.json(models);
+    // 利用可能なモデルを取得
+    const availableModels = await modelManager.getAvailableModels();
+    
+    // OpenAI API形式に変換
+    const now = Math.floor(Date.now() / 1000);
+    const modelsData = availableModels.map(model => ({
+      id: model.id,
+      object: 'model',
+      created: now,
+      owned_by: model.vendor || 'vscode'
+    }));
+    
+    // プロキシモデルIDも追加
+    modelsData.push({
+      id: 'vscode-lm-proxy',
+      object: 'model',
+      created: now,
+      owned_by: 'vscode-lm-proxy'
+    });
+    
+    const openAIModelsResponse = {
+      object: 'list',
+      data: modelsData
+    };
+    
+    res.json(openAIModelsResponse);
   } catch (error) {
     logger.error(`OpenAI Models API error: ${(error as Error).message}`, error as Error);
     
@@ -64,7 +88,33 @@ async function handleOpenAIModelInfo(req: express.Request, res: express.Response
     const modelId = req.params.model;
     
     // モデル情報の取得
-    const modelInfo = await modelManager.getModelInfo(modelId);
+    if (modelId === 'vscode-lm-proxy') {
+      // プロキシモデルの場合、固定情報を返す
+      res.json({
+        id: 'vscode-lm-proxy',
+        object: 'model',
+        created: Math.floor(Date.now() / 1000),
+        owned_by: 'vscode-lm-proxy'
+      });
+      return;
+    }
+    
+    const model = await modelManager.getModelInfo(modelId);
+    if (!model) {
+      const error: any = new Error(`Model ${modelId} not found`);
+      error.statusCode = 404;
+      error.type = 'model_not_found_error';
+      throw error;
+    }
+    
+    // OpenAI API形式に変換
+    const modelInfo = {
+      id: model.id,
+      object: 'model',
+      created: Math.floor(Date.now() / 1000),
+      owned_by: model.vendor || 'vscode'
+    };
+    
     res.json(modelInfo);
   } catch (error) {
     logger.error(`OpenAI Model info API error: ${(error as Error).message}`, error as Error);

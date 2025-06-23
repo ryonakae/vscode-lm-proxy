@@ -114,29 +114,25 @@ export function convertAnthropicRequestToVSCodeRequest(anthropicRequest: any): {
  */
 export async function getAnthropicModels(): Promise<AnthropicModelsResponse> {
   try {
-    // modelManagerからモデル一覧を取得
-    const openAIModels = await modelManager.getAvailableModels();
+    // modelManagerから生のモデル一覧を取得
+    const availableModels = await modelManager.getAvailableModels();
     
-    // OpenAI形式のモデルデータをAnthropic形式に変換
-    const models: AnthropicModel[] = openAIModels.data.map((model: {
-      id: string;
-      object: string;
-      created: number;
-      owned_by: string;
-    }) => {
-      // IDは保持し、表示名を生成する
-      const displayName = model.id
-        .split('-')
-        .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ')
-        .replace('.', ' ');
-        
+    // VSCode LM APIのモデルデータをAnthropic形式に変換
+    const models: AnthropicModel[] = availableModels.map((model) => {
       return {
         id: model.id,
         type: 'model',
-        display_name: displayName,
-        created_at: new Date(model.created * 1000).toISOString()
+        display_name: model.name,
+        created_at: new Date().toISOString()
       };
+    });
+    
+    // プロキシモデルも追加
+    models.push({
+      id: 'vscode-lm-proxy',
+      type: 'model',
+      display_name: 'VSCode LM Proxy',
+      created_at: new Date().toISOString()
     });
     
     return {

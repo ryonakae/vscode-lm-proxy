@@ -710,17 +710,9 @@ class ModelManager {
 
   /**
    * 利用可能なすべてのモデルを取得する
-   * @returns OpenAI API形式のモデル一覧
+   * @returns VSCode LM APIから取得した生のモデルリスト
    */
-  public async getAvailableModels(): Promise<{
-    object: string;
-    data: Array<{
-      id: string;
-      object: string;
-      created: number;
-      owned_by: string;
-    }>;
-  }> {
+  public async getAvailableModels(): Promise<vscode.LanguageModelChat[]> {
     try {
       // サポートされているモデルを取得
       let allModels: vscode.LanguageModelChat[] = [];
@@ -739,27 +731,7 @@ class ModelManager {
         }
       }
       
-      // OpenAI API形式に変換
-      const now = Math.floor(Date.now() / 1000);
-      const modelsData = allModels.map(model => ({
-        id: model.id,
-        object: 'model',
-        created: now,
-        owned_by: model.vendor || 'vscode'
-      }));
-      
-      // プロキシモデルIDも追加
-      modelsData.push({
-        id: 'vscode-lm-proxy',
-        object: 'model',
-        created: now,
-        owned_by: 'vscode-lm-proxy'
-      });
-      
-      return {
-        object: 'list',
-        data: modelsData
-      };
+      return allModels;
     } catch (error) {
       logger.error(`Get models error: ${(error as Error).message}`, error as Error);
       throw error;
@@ -769,23 +741,13 @@ class ModelManager {
   /**
    * 特定のモデル情報を取得する
    * @param modelId モデルID
-   * @returns OpenAI API形式のモデル情報
+   * @returns VSCode LMモデルインスタンスまたはプロキシモデルの場合はnull
    */
-  public async getModelInfo(modelId: string): Promise<{
-    id: string;
-    object: string;
-    created: number;
-    owned_by: string;
-  }> {
+  public async getModelInfo(modelId: string): Promise<vscode.LanguageModelChat | null> {
     try {
       // vscode-lm-proxyの場合は特別扱い
       if (modelId === 'vscode-lm-proxy') {
-        return {
-          id: 'vscode-lm-proxy',
-          object: 'model',
-          created: Math.floor(Date.now() / 1000),
-          owned_by: 'vscode-lm-proxy'
-        };
+        return null; // プロキシモデルはVSCode LMモデルインスタンスを持たない
       }
       
       // 指定されたIDのモデルを取得
@@ -798,12 +760,7 @@ class ModelManager {
         throw error;
       }
       
-      return {
-        id: model.id,
-        object: 'model',
-        created: Math.floor(Date.now() / 1000),
-        owned_by: model.vendor || 'vscode'
-      };
+      return model;
     } catch (error) {
       if ((error as any).statusCode === 404) {
         throw error;
