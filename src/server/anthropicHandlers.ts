@@ -2,8 +2,10 @@
 import express from 'express';
 import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
-import { getAnthropicModelInfo, getAnthropicModels, convertToAnthropicFormat } from '../model/anthropicConverter';
+import { getAnthropicModelInfo, getAnthropicModels, convertToAnthropicFormat, convertAnthropicRequestToVSCodeRequest } from '../model/anthropicConverter';
 import * as vscode from 'vscode';
+import { LmApiHandler } from './handlers';
+import { limitsManager } from '../model/limits';
 
 /**
  * Sets up Anthropic-compatible API endpoints
@@ -67,7 +69,16 @@ function sendAnthropicRootResponse(_req: express.Request, res: express.Response)
 async function handleAnthropicMessages(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { vscodeLmMessages, model, stream } = validateAnthropicMessagesRequest(req.body);
+    const { vscodeLmMessages, model, stream, originalMessages } = validateAnthropicMessagesRequest(req.body);
+    
+    // トークン制限チェック（元のメッセージに対して実行）
+    const tokenLimitError = await limitsManager.validateTokenLimit(originalMessages, model);
+    if (tokenLimitError) {
+      const error = new Error(tokenLimitError.message);
+      (error as any).statusCode = 400; // Bad Request
+      (error as any).type = 'token_limit_error';
+      throw error;
+    }
     
     // ストリーミングモードのチェック
     const isStreaming = stream === true;
@@ -84,25 +95,44 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
       // チャンクのカウントを追跡
       let chunkIndex = 0;
       
-      // モデルマネージャーを使用してストリーミングレスポンスを送信
-      await modelManager.streamChatCompletion(vscodeLmMessages, model, (chunk) => {
-        const anthropicChunk = convertToAnthropicFormat(chunk, model, true);
-        const data = JSON.stringify(anthropicChunk);
-        // チャンクをログに記録
-        logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
-        res.write(`data: ${data}\n\n`);
-      });
+      // 共通ハンドラーを使用してストリーミングレスポンスを送信
+      await LmApiHandler.streamChatCompletionFromLmApi(
+        vscodeLmMessages, 
+        model, 
+        modelManager.getSelectedModel(),
+        (chunk) => {
+          // Anthropic形式に変換してレスポンス
+          const anthropicChunk = convertToAnthropicFormat(chunk, model, true);
+          const data = JSON.stringify(anthropicChunk);
+          // チャンクをログに記録
+          logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
+          res.write(`data: ${data}\n\n`);
+        }
+      );
       
       // ストリーミング終了
       res.write('data: [DONE]\n\n');
       res.end();
     } else {
       // 非ストリーミングモードでレスポンスを取得
-      const completion = await modelManager.getChatCompletion(vscodeLmMessages, model);
+      const result = await LmApiHandler.getChatCompletionFromLmApi(
+        vscodeLmMessages, 
+        model, 
+        modelManager.getSelectedModel()
+      );
+      
+      // Anthropic形式に変換
       const response = convertToAnthropicFormat(
-        { content: completion.choices[0].message.content, isComplete: true },
+        { content: result.responseText, isComplete: true },
         model
       );
+      
+      // トークン使用量情報を更新
+      response.usage = {
+        input_tokens: result.promptTokens,
+        output_tokens: result.completionTokens
+      };
+      
       res.json(response);
     }
   } catch (error) {
@@ -220,6 +250,7 @@ function validateAnthropicMessagesRequest(body: any): {
   vscodeLmMessages: vscode.LanguageModelChatMessage[];
   model: string;
   stream?: boolean;
+  originalMessages: any[];
 } {
   // 必須フィールドのチェック
   if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
@@ -285,6 +316,7 @@ function validateAnthropicMessagesRequest(body: any): {
   return {
     vscodeLmMessages,
     model,
-    stream: body.stream
+    stream: body.stream,
+    originalMessages: body.messages
   };
 }
