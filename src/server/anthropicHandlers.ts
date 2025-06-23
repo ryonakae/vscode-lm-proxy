@@ -8,15 +8,35 @@ import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 
 /**
- * Sets up Anthropic-compatible API endpoints
+ * Sets up all Anthropic-compatible API endpoints
  * @param app Express.js application
  */
 export function setupAnthropicEndpoints(app: express.Express): void {
   // ルートエンドポイント
+  setupAnthropicRootEndpoint(app);
+  
+  // メッセージおよびトークンカウント関連のエンドポイント
+  setupAnthropicMessagesEndpoints(app);
+  
+  // モデル関連のエンドポイント
+  setupAnthropicModelsEndpoints(app);
+}
+
+/**
+ * Sets up Anthropic root endpoint
+ * @param app Express.js application
+ */
+function setupAnthropicRootEndpoint(app: express.Express): void {
   app.get('/anthropic', sendAnthropicRootResponse);
   app.get('/anthropic/v1', sendAnthropicRootResponse);
   app.get('/anthropic/v1/', sendAnthropicRootResponse);
-  
+}
+
+/**
+ * Sets up Anthropic Messages and Token Count API endpoints
+ * @param app Express.js application
+ */
+function setupAnthropicMessagesEndpoints(app: express.Express): void {
   // Messages API
   app.post('/anthropic/v1/messages', handleAnthropicMessages);
   app.post('/anthropic/messages', handleAnthropicMessages);
@@ -24,7 +44,13 @@ export function setupAnthropicEndpoints(app: express.Express): void {
   // Token Count API
   app.post('/anthropic/v1/messages/count_tokens', handleAnthropicCountTokens);
   app.post('/anthropic/messages/count_tokens', handleAnthropicCountTokens);
-  
+}
+
+/**
+ * Sets up Anthropic Models API endpoints
+ * @param app Express.js application
+ */
+function setupAnthropicModelsEndpoints(app: express.Express): void {
   // Models API
   app.get('/anthropic/v1/models', handleAnthropicModels);
   app.get('/anthropic/models', handleAnthropicModels);
