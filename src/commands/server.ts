@@ -8,6 +8,13 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
   // サーバー起動コマンド
   const startServerCommand = vscode.commands.registerCommand('vscode-lm-proxy.startServer', async () => {
     try {
+      // モデルマネージャーからモデルの選択状態を確認
+      const modelManager = require('../model/manager').modelManager;
+      if (!modelManager.getSelectedModel()) {
+        vscode.window.showErrorMessage('Cannot start server: No model selected. Please select a model first.');
+        return;
+      }
+      
       await serverManager.start();
       context.globalState.update('serverRunning', true);
       vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', true);

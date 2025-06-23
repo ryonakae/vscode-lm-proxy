@@ -10,6 +10,21 @@ import { logger } from '../utils/logger';
  * VSCode Language Model APIへのアクセスとモデル選択を管理
  */
 class ModelManager {
+  // VSCode ExtensionContext（グローバルState用）
+  private extensionContext: vscode.ExtensionContext | null = null;
+  /**
+   * ExtensionContextをセット（グローバルState利用のため）
+   */
+  public setExtensionContext(context: vscode.ExtensionContext) {
+    this.extensionContext = context;
+    // 起動時に保存済みモデル情報があれば復元
+    const savedModelId = context.globalState.get<string>('selectedModelId');
+    const savedModelName = context.globalState.get<string>('selectedModelName');
+    if (savedModelId) {
+      this.selectedModelId = savedModelId;
+      this.selectedModelName = savedModelName || savedModelId;
+    }
+  }
   // 選択されたモデルID
   private selectedModelId: string | null = null;
   
@@ -103,15 +118,8 @@ class ModelManager {
           const selectedItem = quickPick.selectedItems[0] as any;
           if (selectedItem) {
             // 選択されたモデルのIDとモデル名を保存
-            this.selectedModelId = selectedItem.model.id;
-            this.selectedModelName = selectedItem.model.name || selectedItem.model.id;
-            
-            // モデル情報をログ出力
+            this.setSelectedModel(selectedItem.model.id, selectedItem.model.name);
             logger.info(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
-            
-            // モデル変更イベントを発火
-            this._onDidChangeSelectedModel.fire();
-            
             quickPick.dispose();
             resolve(this.selectedModelId as string);
           } else {
@@ -157,7 +165,11 @@ class ModelManager {
   public setSelectedModel(modelId: string, modelName?: string): void {
     this.selectedModelId = modelId;
     this.selectedModelName = modelName || modelId;
-    
+    // 永続化
+    if (this.extensionContext) {
+      this.extensionContext.globalState.update('selectedModelId', this.selectedModelId);
+      this.extensionContext.globalState.update('selectedModelName', this.selectedModelName);
+    }
     // モデル変更イベントを発火
     this._onDidChangeSelectedModel.fire();
   }

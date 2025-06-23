@@ -5,9 +5,39 @@ import { serverManager } from './server/manager';
 import { statusBarManager } from './ui/statusbar';
 import { logger } from './utils/logger';
 
+// グローバルコンテキストの保存用変数
+let globalExtensionContext: vscode.ExtensionContext;
+
+// グローバルモデルマネージャー変数
+let modelManager: any;
+
+// モデルマネージャーを取得する関数をエクスポート
+export function getModelManager() {
+  return modelManager;
+}
+
 // 拡張機能が有効化された時に実行される関数
 export function activate(context: vscode.ExtensionContext) {
-  logger.info('LM Proxy extension activated');
+  // グローバル変数にコンテキストを保存
+  globalExtensionContext = context;
+  
+  // モデル管理クラスのインポートと初期化（グローバル変数に格納）
+  modelManager = require('./model/manager').modelManager;
+  
+  // 保存されたモデル情報の復元
+  const savedModelId = context.globalState.get<string>('selectedModelId');
+  const savedModelName = context.globalState.get<string>('selectedModelName');
+  
+  // モデル情報が保存されていれば復元
+  if (savedModelId && savedModelName) {
+    modelManager.setSelectedModel(savedModelId, savedModelName);
+    logger.info(`Restored model: ${savedModelName} (${savedModelId})`);
+  }
+  
+  // 選択中のモデルとサーバー状態をログに出力
+  const selectedModel = modelManager.getSelectedModelName() || 'Not selected';
+  const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped';
+  logger.info(`LM Proxy extension activated (Model: ${selectedModel}, Server: ${serverStatus})`);
 
   // 設定に応じて出力パネルを表示
   const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
@@ -54,6 +84,15 @@ export function activate(context: vscode.ExtensionContext) {
 // 拡張機能が無効化された時に実行される関数
 export function deactivate(): Promise<void> | undefined {
   logger.info('LM Proxy extension deactivated');
+  
+  // モデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
+  const selectedModelId = modelManager.getSelectedModel();
+  const selectedModelName = modelManager.getSelectedModelName();
+  
+  // グローバル状態へモデル情報と実行状態を保存
+  globalExtensionContext.globalState.update('selectedModelId', selectedModelId);
+  globalExtensionContext.globalState.update('selectedModelName', selectedModelName);
+  globalExtensionContext.globalState.update('serverRunning', serverManager.isRunning());
   
   // サーバーが実行中なら停止
   if (serverManager.isRunning()) {

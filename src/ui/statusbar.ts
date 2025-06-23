@@ -61,7 +61,7 @@ class StatusBarManager {
     // 選択中のモデル名を取得（強制的に最新の状態を反映）
     const selectedModelName = modelManager.getSelectedModelName();
     // モデル表示テキスト
-    const modelText = selectedModelName ? ` (${selectedModelName})` : '';
+    const modelText = selectedModelName ? ` (${selectedModelName})` : ' (Model not selected)';
     
     if (errorMessage) {
       // エラー状態
@@ -73,12 +73,12 @@ class StatusBarManager {
       this.statusBarItem.text = `$(server) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
-      this.statusBarItem.tooltip = `Server: Running (${url})${selectedModelName ? `\nModel: ${selectedModelName}` : ''}`;
+      this.statusBarItem.tooltip = `Server: Running (${url})${selectedModelName ? `\nModel: ${selectedModelName}` : '\nModel: Not selected'}`;
     } else {
       // 停止中
       this.statusBarItem.text = `$(stop) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = `Server: Stopped${selectedModelName ? `\nModel: ${selectedModelName}` : ''}`;
+      this.statusBarItem.tooltip = `Server: Stopped${selectedModelName ? `\nModel: ${selectedModelName}` : '\nModel: Not selected'}`;
     }
   }
   
