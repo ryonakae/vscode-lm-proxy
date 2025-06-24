@@ -868,72 +868,16 @@ class ModelManager {
    * @returns 実際に使用するモデルID
    */
   public mapClaudeCodeModel(requestedModel: string): string {
-    // VSCode設定からモデルを取得
-    const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-    
     // モデル名に基づきマッピングを行う
     if (requestedModel.includes('haiku')) {
-      // バックグラウンドモデル（軽量処理用）
-      this.claudeBackgroundModelId = config.get('claudeBackgroundModel') || this.getClaudeBackgroundModelId();
-      return this.claudeBackgroundModelId || 'vscode-lm-proxy';
+      return this.getClaudeBackgroundModelId();
     } else if (requestedModel.includes('sonnet')) {
-      // シンクモデル（重要処理用）
-      this.claudeThinkModelId = config.get('claudeThinkModel') || this.getClaudeThinkModelId();
-      return this.claudeThinkModelId || 'vscode-lm-proxy';
+      return this.getClaudeThinkModelId();
     }
-    
     // デフォルトはAnthropicモデルを使用
-    this.anthropicModelId = config.get('anthropicModel') || this.getAnthropicModelId();
-    return this.anthropicModelId || 'vscode-lm-proxy';
+    return this.getAnthropicModelId();
   }
 
-  /**
-   * OpenAI API用のモデルを取得
-   * @returns 使用するモデルID
-   */
-  public getOpenAIModel(): string {
-    if (this.openaiModelId === null) {
-      const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.openaiModelId = config.get('openaiModel') || this.getOpenaiModelId();
-    }
-    return this.openaiModelId || this.getOpenaiModelId();
-  }
-
-  /**
-   * Anthropic API用のモデルを取得
-   * @returns 使用するモデルID
-   */
-  public getAnthropicModel(): string {
-    if (this.anthropicModelId === null) {
-      const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.anthropicModelId = config.get('anthropicModel') || this.getAnthropicModelId();
-    }
-    return this.anthropicModelId || this.getAnthropicModelId();
-  }
-
-  /**
-   * Claude Code用のバックグラウンドモデル（haiku）を取得
-   * @returns 使用するモデルID
-   */
-  public getClaudeBackgroundModel(): string {
-    if (this.claudeBackgroundModelId === null) {
-      const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.claudeBackgroundModelId = config.get('claudeBackgroundModel') || this.getClaudeBackgroundModelId();
-    }
-    return this.claudeBackgroundModelId || this.getClaudeBackgroundModelId();
-  }
-
-  /**
-   * Claude Code用のシンクモデル（sonnet）を取得
-   * @returns 使用するモデルID
-   */
-  public getClaudeThinkModel(): string {
-    if (this.claudeThinkModelId === null) {
-      const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.claudeThinkModelId = config.get('claudeThinkModel') || this.getClaudeThinkModelId();
-    }
-    return this.claudeThinkModelId || this.getClaudeThinkModelId();
-  }
 }
 
 // シングルトンインスタンスをエクスポート

@@ -110,7 +110,7 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
     
     // model: 'vscode-lm-proxy' または 'vscode-lm-api' の場合は設定モデル、それ以外はリクエストのモデルIDを使う
     const model = (requestedModel === 'vscode-lm-proxy' || requestedModel === 'vscode-lm-api')
-      ? modelManager.getAnthropicModel()
+      ? modelManager.getAnthropicModelId()
       : requestedModel;
     
     // トークン制限チェック（元のメッセージに対して実行）
@@ -346,7 +346,7 @@ async function handleClaudeCodeMessages(req: express.Request, res: express.Respo
     
     // model: 'vscode-lm-proxy' または 'vscode-lm-api' の場合は設定モデル、それ以外はリクエストのモデルIDを使う
     const model = (requestedModel === 'vscode-lm-proxy' || requestedModel === 'vscode-lm-api')
-      ? modelManager.getClaudeThinkModel() // Claude CodeのデフォルトはThinkモデル
+      ? modelManager.getClaudeThinkModelId() // Claude CodeのデフォルトはThinkモデル
       : modelManager.mapClaudeCodeModel(requestedModel);
     
     // トークン制限チェック（元のメッセージに対して実行）
