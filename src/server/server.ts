@@ -29,7 +29,7 @@ export function createServer(): express.Express {
     const originalEnd = res.end;
     
     // カスタムのsendメソッド
-    res.send = function(body: any): express.Response {
+    res.send = function(_body: any): express.Response {
       const responseTime = Date.now() - startTime;
       // logger.logResponse(res.statusCode, path, body, responseTime);
       return originalSend.apply(res, arguments as any);
