@@ -175,8 +175,8 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
             // OpenAI形式に変換してレスポンス
             const openAIChunk = convertToOpenAIFormat(chunk, model, true);
             const data = JSON.stringify(openAIChunk);
-            // チャンクをログに記録
-            logger.logStreamChunk(req.originalUrl || req.url, openAIChunk, chunkIndex++);
+            // // チャンクをログに記録
+            // logger.logStreamChunk(req.originalUrl || req.url, openAIChunk, chunkIndex++);
             res.write(`data: ${data}\n\n`);
           }
         );
