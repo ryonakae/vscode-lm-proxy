@@ -26,13 +26,13 @@ export class LmApiHandler {
    * チャット完了のレスポンスを取得（共通処理）
    * @param messages LM API形式のメッセージ配列
    * @param modelId 使用するモデルのID
-   * @param selectedModelId 選択されたモデルID（vscode-lm-proxyの場合）
+   * @param openaiModelId 選択中のOpenAIモデルID（vscode-lm-proxyの場合）
    * @returns LM APIからの生レスポンスとトークン情報
    */
   public static async getChatCompletionFromLmApi(
-    messages: vscode.LanguageModelChatMessage[], 
+    messages: vscode.LanguageModelChatMessage[],
     modelId: string,
-    selectedModelId: string | null
+    openaiModelId: string | null
   ): Promise<{
     responseText: string;
     promptTokens: number;
@@ -40,8 +40,8 @@ export class LmApiHandler {
     model: vscode.LanguageModelChat;
   }> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? selectedModelId : modelId;
+      // vscode-lm-proxyの場合は選択中のOpenAIモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? openaiModelId : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
@@ -102,18 +102,18 @@ export class LmApiHandler {
    * ストリーミングチャット完了を行う共通処理
    * @param messages LM API形式のメッセージ配列
    * @param modelId 使用するモデルのID
-   * @param selectedModelId 選択されたモデルID（vscode-lm-proxyの場合）
+   * @param openaiModelId 選択中のOpenAIモデルID（vscode-lm-proxyの場合）
    * @param onChunk チャンク受信時のコールバック関数
    */
   public static async streamChatCompletionFromLmApi(
-    messages: vscode.LanguageModelChatMessage[], 
+    messages: vscode.LanguageModelChatMessage[],
     modelId: string,
-    selectedModelId: string | null,
+    openaiModelId: string | null,
     onChunk: (chunk: { content: string; isComplete?: boolean }) => void
   ): Promise<void> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? selectedModelId : modelId;
+      // vscode-lm-proxyの場合は選択中のOpenAIモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? openaiModelId : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {

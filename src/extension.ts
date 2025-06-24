@@ -28,10 +28,10 @@ export function activate(context: vscode.ExtensionContext) {
   // これにより内部で保存されたモデル情報が復元される
   modelManager.setExtensionContext(context);
   
-  // 選択中のモデルとサーバー状態をログに出力
-  const selectedModel = modelManager.getSelectedModelId() || 'Not selected';
+  // 選択中のOpenAIモデルとサーバー状態をログに出力
+  const openaiModel = modelManager.getOpenaiModelId() || 'Not selected';
   const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped';
-  logger.info(`LM Proxy extension activated (Model: ${selectedModel}, Server: ${serverStatus})`);
+  logger.info(`LM Proxy extension activated (Model: ${openaiModel}, Server: ${serverStatus})`);
 
   // 設定に応じて出力パネルを表示
   const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
@@ -79,11 +79,11 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate(): Promise<void> | undefined {
   logger.info('LM Proxy extension deactivated');
   
-  // モデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
-  const selectedModelId = modelManager.getSelectedModelId();
+  // OpenAIモデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
+  const openaiModelId = modelManager.getOpenaiModelId();
   
-  // グローバル状態へモデル情報と実行状態を保存
-  globalExtensionContext.globalState.update('selectedModelId', selectedModelId);
+  // グローバル状態へOpenAIモデル情報と実行状態を保存
+  globalExtensionContext.globalState.update('openaiModelId', openaiModelId);
   globalExtensionContext.globalState.update('serverRunning', serverManager.isRunning());
   
   // サーバーが実行中なら停止

@@ -195,9 +195,9 @@ export function validateAndConvertOpenAIRequest(body: any): {
   
   const model = body.model;
   
-  // モデルが'vscode-lm-proxy'の場合、選択されたモデルがあるか確認
-  if (model === 'vscode-lm-proxy' && !modelManager.getSelectedModelId()) {
-    const error: any = new Error('No valid model selected. Please select a model first.');
+  // モデルが'vscode-lm-proxy'の場合、選択中のOpenAIモデルがあるか確認
+  if (model === 'vscode-lm-proxy' && !modelManager.getOpenaiModelId()) {
+    const error: any = new Error('No valid OpenAI model selected. Please select a model first.');
     error.statusCode = 400;
     error.type = 'invalid_request_error';
     throw error;

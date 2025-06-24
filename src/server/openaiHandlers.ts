@@ -172,8 +172,8 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         // 共通ハンドラーを使用してストリーミングレスポンスを送信
         await LmApiHandler.streamChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
-          model, 
-          modelManager.getSelectedModelId(),
+          model,
+          modelManager.getOpenaiModelId(),
           (chunk) => {
             // OpenAI形式に変換してレスポンス
             const openAIChunk = convertToOpenAIFormat(chunk, model, true);
@@ -191,8 +191,8 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         // 非ストリーミングモードでレスポンスを取得
         const result = await LmApiHandler.getChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
-          model, 
-          modelManager.getSelectedModelId()
+          model,
+          modelManager.getOpenaiModelId()
         );
         
         // OpenAI形式に変換

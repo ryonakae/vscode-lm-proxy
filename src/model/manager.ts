@@ -18,22 +18,22 @@ class ModelManager {
   public setExtensionContext(context: vscode.ExtensionContext) {
     this.extensionContext = context;
     // 起動時に保存済みモデル情報があれば復元
-    const savedModelId = context.globalState.get<string>('selectedModelId');
-    if (savedModelId) {
-      this.selectedModelId = savedModelId;
+    const savedOpenaiModelId = context.globalState.get<string>('openaiModelId');
+    if (savedOpenaiModelId) {
+      this.openaiModelId = savedOpenaiModelId;
     }
   }
-  // 選択されたモデルID
-  private selectedModelId: string | null = null;
+  // 選択中のOpenAIモデルID
+  private openaiModelId: string | null = null;
   
   // サポートするモデルファミリー
   private supportedFamilies = [
     'gpt-4o', 'gpt-4o-mini', 'o1', 'o1-mini', 'claude-3.5-sonnet'
   ];
 
-  // モデル変更時のイベントエミッター
-  private readonly _onDidChangeSelectedModelId = new vscode.EventEmitter<void>();
-  public readonly onDidChangeSelectedModelId = this._onDidChangeSelectedModelId.event;
+  // OpenAIモデル変更時のイベントエミッター
+  private readonly _onDidChangeOpenaiModelId = new vscode.EventEmitter<void>();
+  public readonly onDidChangeOpenaiModelId = this._onDidChangeOpenaiModelId.event;
 
   /**
    * AsyncIterableなストリームを文字列に変換
@@ -113,10 +113,10 @@ class ModelManager {
           const selectedItem = quickPick.selectedItems[0] as any;
           if (selectedItem) {
             // 選択されたモデルのIDとモデル名を保存
-            this.setSelectedModelId(selectedItem.model.id);
-            logger.info(`Selected model: ${this.selectedModelId}`);
+            this.setOpenaiModelId(selectedItem.model.id);
+            logger.info(`Selected model: ${this.openaiModelId}`);
             quickPick.dispose();
-            resolve(this.selectedModelId as string);
+            resolve(this.openaiModelId as string);
           } else {
             quickPick.dispose();
             resolve(undefined);
@@ -140,22 +140,22 @@ class ModelManager {
    * 現在選択されているモデルIDを取得
    * @returns モデルID
    */
-  public getSelectedModelId(): string | null {
-    return this.selectedModelId;
+  public getOpenaiModelId(): string | null {
+    return this.openaiModelId;
   }
   
   /**
    * モデルIDを直接設定する
    * @param modelId 設定するモデルID
    */
-  public setSelectedModelId(modelId: string): void {
-    this.selectedModelId = modelId;
+  public setOpenaiModelId(modelId: string): void {
+    this.openaiModelId = modelId;
     // 永続化
     if (this.extensionContext) {
-      this.extensionContext.globalState.update('selectedModelId', this.selectedModelId);
+      this.extensionContext.globalState.update('openaiModelId', this.openaiModelId);
     }
-    // モデル変更イベントを発火
-    this._onDidChangeSelectedModelId.fire();
+    // OpenAIモデル変更イベントを発火
+    this._onDidChangeOpenaiModelId.fire();
   }
   
   /**
@@ -163,7 +163,7 @@ class ModelManager {
    * @returns デフォルトモデルのID
    */
   public getDefaultModel(): string | null {
-    return this.selectedModelId;
+    return this.openaiModelId;
   }
   
   /**
@@ -177,8 +177,8 @@ class ModelManager {
     modelId: string
   ): Promise<OpenAIChatCompletionResponse> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      // vscode-lm-proxyの場合は選択中のOpenAIモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.openaiModelId : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
@@ -281,8 +281,8 @@ class ModelManager {
     systemPrompt?: string
   ): Promise<OpenAIChatCompletionResponse> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      // vscode-lm-proxyの場合は選択中のOpenAIモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.openaiModelId : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
@@ -390,8 +390,8 @@ class ModelManager {
     callback: (chunk: any) => void
   ): Promise<void> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      // vscode-lm-proxyの場合は選択中のOpenAIモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.openaiModelId : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
@@ -548,8 +548,8 @@ class ModelManager {
     systemPrompt?: string
   ): Promise<void> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      // vscode-lm-proxyの場合は選択中のOpenAIモデルを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.openaiModelId : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
