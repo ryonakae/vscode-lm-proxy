@@ -141,6 +141,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
   try {
     // リクエストの検証
     const { messages, model, stream } = validateAndConvertOpenAIRequest(req.body);
+    logger.info(`OpenAI Chat completions request: model=${model}, messages=${messages.length}, stream=${stream}`);
     
     // OpenAI形式のリクエストをVSCode LM API形式に変換
     const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);

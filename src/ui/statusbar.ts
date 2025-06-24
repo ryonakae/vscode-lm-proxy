@@ -89,13 +89,13 @@ class StatusBarManager {
     if (isRunning) {
       items.push({
         label: '$(debug-stop) Stop Server',
-        description: 'Stop the LM Proxy server',
+        description: 'Stop LM Proxy server',
         command: 'vscode-lm-proxy.stopServer'
       });
     } else {
       items.push({
         label: '$(play) Start Server',
-        description: 'Start the LM Proxy server',
+        description: 'Start LM Proxy server',
         command: 'vscode-lm-proxy.startServer'
       });
     }

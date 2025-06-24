@@ -51,6 +51,8 @@ export class LimitsManager {
    * @returns トークン上限のPromise
    */
   public async getTokenLimit(modelId: string): Promise<number> {
+    logger.info(`Getting token limit for model: ${modelId}`);
+
     // キャッシュにあればそれを返す
     if (this.tokenLimits[modelId]) {
       return this.tokenLimits[modelId];
@@ -59,17 +61,16 @@ export class LimitsManager {
     try {
       // VSCode LM APIからモデル情報を取得
       const models = await vscode.lm.selectChatModels({ id: modelId });
+      logger.info(`Retrieved models for ${modelId}: ${JSON.stringify(models)}`);
       
       if (models && models.length > 0) {
         const model = models[0];
         
         // モデルから直接トークン上限を取得
-        // VSCode APIでは tokenBudget が上限値として提供されている場合がある
-        if ('tokenBudget' in model && typeof model.tokenBudget === 'number') {
-          const limit = model.tokenBudget;
-          // キャッシュに保存
+        if ('maxInputTokens' in model) {
+          const limit = model.maxInputTokens;
           this.tokenLimits[modelId] = limit;
-          logger.info(`Model ${modelId} token limit retrieved from API: ${limit}`);
+          logger.info(`Model ${modelId} token limit retrieved from maxInputTokens: ${limit}`);
           return limit;
         }
       }
