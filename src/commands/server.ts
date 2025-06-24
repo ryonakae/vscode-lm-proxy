@@ -10,7 +10,7 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
     try {
       // モデルマネージャーからモデルの選択状態を確認
       const modelManager = require('../model/manager').modelManager;
-      if (!modelManager.getSelectedModel()) {
+      if (!modelManager.getSelectedModelId()) {
         vscode.window.showErrorMessage('Cannot start server: No model selected. Please select a model first.');
         return;
       }

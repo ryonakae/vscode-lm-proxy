@@ -32,7 +32,7 @@ class StatusBarManager {
     
     // モデル変更イベントをリッスン
     context.subscriptions.push(
-      modelManager.onDidChangeSelectedModel(() => {
+      modelManager.onDidChangeSelectedModelId(() => {
         // モデルが変更されたらステータスバーを更新
         this.updateStatus(serverManager.isRunning());
       })
@@ -58,10 +58,10 @@ class StatusBarManager {
       return;
     }
     
-    // 選択中のモデル名を取得（強制的に最新の状態を反映）
-    const selectedModelName = modelManager.getSelectedModelName();
+    // 選択中のモデルIDを取得（強制的に最新の状態を反映）
+    const selectedModelId = modelManager.getSelectedModelId();
     // モデル表示テキスト
-    const modelText = selectedModelName ? ` (${selectedModelName})` : ' (Model not selected)';
+    const modelText = selectedModelId ? ` (${selectedModelId})` : ' (Model not selected)';
     
     if (errorMessage) {
       // エラー状態
@@ -73,12 +73,12 @@ class StatusBarManager {
       this.statusBarItem.text = `$(server) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
-      this.statusBarItem.tooltip = `Server: Running (${url})${selectedModelName ? `\nModel: ${selectedModelName}` : '\nModel: Not selected'}`;
+      this.statusBarItem.tooltip = `Server: Running (${url})${selectedModelId ? `\nModel: ${selectedModelId}` : '\nModel: Not selected'}`;
     } else {
       // 停止中
       this.statusBarItem.text = `$(stop) LM Proxy${modelText}`;
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = `Server: Stopped${selectedModelName ? `\nModel: ${selectedModelName}` : '\nModel: Not selected'}`;
+      this.statusBarItem.tooltip = `Server: Stopped${selectedModelId ? `\nModel: ${selectedModelId}` : '\nModel: Not selected'}`;
     }
   }
   

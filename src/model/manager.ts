@@ -19,17 +19,12 @@ class ModelManager {
     this.extensionContext = context;
     // 起動時に保存済みモデル情報があれば復元
     const savedModelId = context.globalState.get<string>('selectedModelId');
-    const savedModelName = context.globalState.get<string>('selectedModelName');
     if (savedModelId) {
       this.selectedModelId = savedModelId;
-      this.selectedModelName = savedModelName || savedModelId;
     }
   }
   // 選択されたモデルID
   private selectedModelId: string | null = null;
-  
-  // 選択されたモデル名
-  private selectedModelName: string | null = null;
   
   // サポートするモデルファミリー
   private supportedFamilies = [
@@ -37,8 +32,8 @@ class ModelManager {
   ];
 
   // モデル変更時のイベントエミッター
-  private readonly _onDidChangeSelectedModel = new vscode.EventEmitter<void>();
-  public readonly onDidChangeSelectedModel = this._onDidChangeSelectedModel.event;
+  private readonly _onDidChangeSelectedModelId = new vscode.EventEmitter<void>();
+  public readonly onDidChangeSelectedModelId = this._onDidChangeSelectedModelId.event;
 
   /**
    * AsyncIterableなストリームを文字列に変換
@@ -118,8 +113,8 @@ class ModelManager {
           const selectedItem = quickPick.selectedItems[0] as any;
           if (selectedItem) {
             // 選択されたモデルのIDとモデル名を保存
-            this.setSelectedModel(selectedItem.model.id, selectedItem.model.name);
-            logger.info(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
+            this.setSelectedModelId(selectedItem.model.id);
+            logger.info(`Selected model: ${this.selectedModelId}`);
             quickPick.dispose();
             resolve(this.selectedModelId as string);
           } else {
@@ -145,33 +140,22 @@ class ModelManager {
    * 現在選択されているモデルIDを取得
    * @returns モデルID
    */
-  public getSelectedModel(): string | null {
+  public getSelectedModelId(): string | null {
     return this.selectedModelId;
-  }
-  
-  /**
-   * 現在選択されているモデル名を取得
-   * @returns モデル名
-   */
-  public getSelectedModelName(): string | null {
-    return this.selectedModelName;
   }
   
   /**
    * モデルIDを直接設定する
    * @param modelId 設定するモデルID
-   * @param modelName 設定するモデル名（省略時はモデルIDと同じ）
    */
-  public setSelectedModel(modelId: string, modelName?: string): void {
+  public setSelectedModelId(modelId: string): void {
     this.selectedModelId = modelId;
-    this.selectedModelName = modelName || modelId;
     // 永続化
     if (this.extensionContext) {
       this.extensionContext.globalState.update('selectedModelId', this.selectedModelId);
-      this.extensionContext.globalState.update('selectedModelName', this.selectedModelName);
     }
     // モデル変更イベントを発火
-    this._onDidChangeSelectedModel.fire();
+    this._onDidChangeSelectedModelId.fire();
   }
   
   /**

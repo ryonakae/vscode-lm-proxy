@@ -29,7 +29,7 @@ export function activate(context: vscode.ExtensionContext) {
   modelManager.setExtensionContext(context);
   
   // 選択中のモデルとサーバー状態をログに出力
-  const selectedModel = modelManager.getSelectedModelName() || 'Not selected';
+  const selectedModel = modelManager.getSelectedModelId() || 'Not selected';
   const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped';
   logger.info(`LM Proxy extension activated (Model: ${selectedModel}, Server: ${serverStatus})`);
 
@@ -80,12 +80,10 @@ export function deactivate(): Promise<void> | undefined {
   logger.info('LM Proxy extension deactivated');
   
   // モデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
-  const selectedModelId = modelManager.getSelectedModel();
-  const selectedModelName = modelManager.getSelectedModelName();
+  const selectedModelId = modelManager.getSelectedModelId();
   
   // グローバル状態へモデル情報と実行状態を保存
   globalExtensionContext.globalState.update('selectedModelId', selectedModelId);
-  globalExtensionContext.globalState.update('selectedModelName', selectedModelName);
   globalExtensionContext.globalState.update('serverRunning', serverManager.isRunning());
   
   // サーバーが実行中なら停止

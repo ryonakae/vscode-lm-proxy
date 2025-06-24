@@ -173,7 +173,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         await LmApiHandler.streamChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
           model, 
-          modelManager.getSelectedModel(),
+          modelManager.getSelectedModelId(),
           (chunk) => {
             // OpenAI形式に変換してレスポンス
             const openAIChunk = convertToOpenAIFormat(chunk, model, true);
@@ -192,7 +192,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         const result = await LmApiHandler.getChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
           model, 
-          modelManager.getSelectedModel()
+          modelManager.getSelectedModelId()
         );
         
         // OpenAI形式に変換
