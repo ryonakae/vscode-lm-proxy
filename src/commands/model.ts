@@ -61,16 +61,6 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
         name: model.name
       }));
       
-      // プロキシモデルを追加
-      quickPickItems.unshift({
-        label: 'Use current selected model',
-        description: 'vscode-lm-proxy',
-        id: 'vscode-lm-proxy',
-        name: 'Current Selected Model'
-      });
-      
-      const currentModelId = modelManager.getOpenaiModelId();
-      
       const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
         placeHolder: 'Select model for OpenAI API endpoints',
         title: 'Configure OpenAI API Model'
@@ -107,16 +97,6 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
         name: model.name
       }));
       
-      // プロキシモデルを追加
-      quickPickItems.unshift({
-        label: 'Use current selected model',
-        description: 'vscode-lm-proxy',
-        id: 'vscode-lm-proxy',
-        name: 'Current Selected Model'
-      });
-      
-      const currentModelId = modelManager.getAnthropicModelId();
-      
       const selectedItem = await vscode.window.showQuickPick(quickPickItems, {
         placeHolder: 'Select model for Anthropic API endpoints',
         title: 'Configure Anthropic API Model'
@@ -140,65 +120,67 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
     }
   });
 
-  // Claude Code用モデル設定コマンド
-  const configureClaudeCodeModelsCommand = vscode.commands.registerCommand('vscode-lm-proxy.configureClaudeCodeModels', async () => {
+  /**
+   * Claude Code Background モデル個別設定コマンド
+   * @see https://github.com/ryo-nakae/vscode-lm-proxy
+   */
+  const configureClaudeBackgroundModelsCommand = vscode.commands.registerCommand('vscode-lm-proxy.configureClaudeBackgroundModels', async () => {
     try {
       const availableModels = await modelManager.getAvailableModels();
-      
-      // モデル選択肢を作成（現在選択中のモデル + 利用可能なモデル）
       const modelOptions = availableModels.map(model => ({
         label: model.name,
         description: `${model.id}`,
         id: model.id,
-        name: model.name
+        name: model.name,
       }));
-      
-      // プロキシモデルを追加
-      modelOptions.unshift({
-        label: 'Use current selected model',
-        description: 'vscode-lm-proxy',
-        id: 'vscode-lm-proxy',
-        name: 'Current Selected Model'
-      });
-      
-      // バックグラウンドモデル設定
-      const currentBackgroundId = modelManager.getClaudeBackgroundModelId();
-      const backgroundItem = await vscode.window.showQuickPick(modelOptions, {
+      const selectedItem = await vscode.window.showQuickPick(modelOptions, {
         placeHolder: 'Select model for Claude Code background tasks (haiku)',
-        title: 'Configure Claude Code Background Model'
+        title: 'Configure Claude Code Background Model',
       });
-      
-      if (!backgroundItem) {
-        return; // キャンセルされた
-      }
-      
-      // シンクモデル設定
-      const currentThinkId = modelManager.getClaudeThinkModelId();
-      const thinkItem = await vscode.window.showQuickPick(modelOptions, {
-        placeHolder: 'Select model for Claude Code think tasks (sonnet)',
-        title: 'Configure Claude Code Think Model'
-      });
-      
-      if (!thinkItem) {
-        return; // キャンセルされた
-      }
-      
-      // 両方のモデルが選択されたら設定を更新
-      modelManager.setClaudeBackgroundModelId(backgroundItem.id, backgroundItem.name);
-      modelManager.setClaudeThinkModelId(thinkItem.id, thinkItem.name);
-      
+
+      if (!selectedItem) return;
+
+      modelManager.setClaudeBackgroundModelId(selectedItem.id, selectedItem.name);
       vscode.window.showInformationMessage(
-        `Claude Code models configured:\n` +
-        `Background (haiku): ${backgroundItem.label} (${backgroundItem.id})\n` +
-        `Think (sonnet): ${thinkItem.label} (${thinkItem.id})`
+        `Claude Code background model set to: ${selectedItem.label} (${selectedItem.id})`
       );
     } catch (error) {
-      vscode.window.showErrorMessage(`Error configuring Claude Code models: ${(error as Error).message}`);
+      vscode.window.showErrorMessage(`Error configuring Claude Code background model: ${(error as Error).message}`);
     }
   });
-  
+
+  /**
+   * Claude Code Thinking モデル個別設定コマンド
+   * @see https://github.com/ryo-nakae/vscode-lm-proxy
+   */
+  const configureClaudeThinkingModelsCommand = vscode.commands.registerCommand('vscode-lm-proxy.configureClaudeThinkingModels', async () => {
+    try {
+      const availableModels = await modelManager.getAvailableModels();
+      const modelOptions = availableModels.map(model => ({
+        label: model.name,
+        description: `${model.id}`,
+        id: model.id,
+        name: model.name,
+      }));
+      const selectedItem = await vscode.window.showQuickPick(modelOptions, {
+        placeHolder: 'Select model for Claude Code thinking tasks (sonnet)',
+        title: 'Configure Claude Code Thinking Model',
+      });
+
+      if (!selectedItem) return;
+      
+      modelManager.setClaudeThinkModelId(selectedItem.id, selectedItem.name);
+      vscode.window.showInformationMessage(
+        `Claude Code thinking model set to: ${selectedItem.label} (${selectedItem.id})`
+      );
+    } catch (error) {
+      vscode.window.showErrorMessage(`Error configuring Claude Code thinking model: ${(error as Error).message}`);
+    }
+  });
+
   // 新しいコマンドを登録
   context.subscriptions.push(configureOpenaiModelCommand);
   context.subscriptions.push(configureAnthropicModelCommand);
-  context.subscriptions.push(configureClaudeCodeModelsCommand);
+  context.subscriptions.push(configureClaudeBackgroundModelsCommand);
+  context.subscriptions.push(configureClaudeThinkingModelsCommand);
 }
