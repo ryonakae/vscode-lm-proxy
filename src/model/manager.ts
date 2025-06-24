@@ -1,6 +1,6 @@
 // モデル管理クラス
 import * as vscode from 'vscode';
-import { convertToOpenAIFormat } from './openaiConverter';
+import { convertToOpenaiResponseToVSCodeResponse } from './openaiConverter';
 import { OpenAIChatCompletionResponse } from './types';
 import { limitsManager } from './limits';
 import { logger } from '../utils/logger';
@@ -242,7 +242,7 @@ class ModelManager {
       const responseMessage = vscode.LanguageModelChatMessage.Assistant(responseText);
       const completionTokens = await model.countTokens(responseMessage);
       
-      const openAIResponse = convertToOpenAIFormat({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
+      const openAIResponse = convertToOpenaiResponseToVSCodeResponse({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
       
       // トークン数情報を更新
       openAIResponse.usage = {
@@ -352,7 +352,7 @@ class ModelManager {
       const responseMessage = vscode.LanguageModelChatMessage.Assistant(responseText);
       const completionTokens = await model.countTokens(responseMessage);
       
-      const openAIResponse = convertToOpenAIFormat({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
+      const openAIResponse = convertToOpenaiResponseToVSCodeResponse({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
       
       // トークン数情報を更新
       openAIResponse.usage = {
@@ -461,7 +461,7 @@ class ModelManager {
         accumulatedContent += chunk; // 累積コンテンツに追加
         
         // チャンクをOpenAI API形式に変換してコールバックに渡す
-        const openAIChunk = convertToOpenAIFormat(
+        const openAIChunk = convertToOpenaiResponseToVSCodeResponse(
           { 
             content: firstChunk ? '' : chunk, 
             isComplete: false 
@@ -478,7 +478,7 @@ class ModelManager {
           
           // 続いて実際のコンテンツを含むチャンクを送信
           if (chunk) {
-            const contentChunk = convertToOpenAIFormat({ content: chunk, isComplete: false }, modelId, true);
+            const contentChunk = convertToOpenaiResponseToVSCodeResponse({ content: chunk, isComplete: false }, modelId, true);
             callback(contentChunk);
             continue;
           }
@@ -501,7 +501,7 @@ class ModelManager {
       const completionTokens = await model.countTokens(responseMessage);
       
       // 完了チャンクを送信 - トークン数情報を含める
-      const finishChunk = convertToOpenAIFormat(
+      const finishChunk = convertToOpenaiResponseToVSCodeResponse(
         { content: '', isComplete: true },
         modelId,
         true
@@ -622,7 +622,7 @@ class ModelManager {
         accumulatedContent += chunk; // 累積コンテンツに追加
         
         // チャンクをOpenAI API形式に変換してコールバックに渡す
-        const openAIChunk = convertToOpenAIFormat(
+        const openAIChunk = convertToOpenaiResponseToVSCodeResponse(
           { 
             content: firstChunk ? '' : chunk, 
             isComplete: false 
@@ -639,7 +639,7 @@ class ModelManager {
           
           // 続いて実際のコンテンツを含むチャンクを送信
           if (chunk) {
-            const contentChunk = convertToOpenAIFormat({ content: chunk, isComplete: false }, modelId, true);
+            const contentChunk = convertToOpenaiResponseToVSCodeResponse({ content: chunk, isComplete: false }, modelId, true);
             callback(contentChunk);
             continue;
           }
@@ -659,7 +659,7 @@ class ModelManager {
       const completionTokens = await model.countTokens(responseMessage);
       
       // 完了チャンクを送信 - トークン数情報を含める
-      const finishChunk = convertToOpenAIFormat(
+      const finishChunk = convertToOpenaiResponseToVSCodeResponse(
         { content: '', isComplete: true },
         modelId,
         true

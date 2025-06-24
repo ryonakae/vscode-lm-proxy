@@ -2,7 +2,7 @@
 import express from 'express';
 import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
-import { convertToOpenAIFormat, convertOpenAIRequestToVSCodeRequest, validateAndConvertOpenAIRequest } from '../model/openaiConverter';
+import { convertToOpenaiResponseToVSCodeResponse, convertOpenaiRequestToVSCodeRequest, validateAndConvertOpenaiRequest } from '../model/openaiConverter';
 import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 import { OpenAIChatCompletionResponse } from '../model/types';
@@ -140,11 +140,11 @@ async function handleOpenAIModelInfo(req: express.Request, res: express.Response
 async function handleOpenAIChatCompletions(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { messages, model, stream } = validateAndConvertOpenAIRequest(req.body);
+    const { messages, model, stream } = validateAndConvertOpenaiRequest(req.body);
     logger.info(`OpenAI Chat completions request: model=${model}, messages=${messages.length}, stream=${stream}`);
     
     // OpenAI形式のリクエストをVSCode LM API形式に変換
-    const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);
+    const vscodeLmRequest = convertOpenaiRequestToVSCodeRequest(req.body);
     
     // トークン制限チェック（元のメッセージに対して実行）
     const tokenLimitError = await limitsManager.validateTokenLimit(messages, model);
@@ -173,7 +173,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
           model,
           (chunk) => {
             // OpenAI形式に変換してレスポンス
-            const openAIChunk = convertToOpenAIFormat(chunk, model, true);
+            const openAIChunk = convertToOpenaiResponseToVSCodeResponse(chunk, model, true);
             const data = JSON.stringify(openAIChunk);
             // // チャンクをログに記録
             // logger.logStreamChunk(req.originalUrl || req.url, openAIChunk, chunkIndex++);
@@ -190,7 +190,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
           model
         );
         // OpenAI形式に変換
-        const completion = convertToOpenAIFormat(
+        const completion = convertToOpenaiResponseToVSCodeResponse(
           { content: result.responseText, isComplete: true }, 
           model
         ) as OpenAIChatCompletionResponse;
