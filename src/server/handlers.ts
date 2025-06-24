@@ -207,38 +207,6 @@ export function handleServerStatus(_req: express.Request, res: express.Response)
         method: 'GET',
         description: 'OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)'
       },
-      '/anthropic/messages': {
-        method: 'POST',
-        description: 'Anthropic-compatible Messages API'
-      },
-      '/anthropic/v1/messages': {
-        method: 'POST',
-        description: 'Anthropic-compatible Messages API (with `/v1/` prefix)'
-      },
-      '/anthropic/messages/count_tokens': {
-        method: 'POST',
-        description: 'Anthropic-compatible Count Message Tokens API'
-      },
-      '/anthropic/v1/messages/count_tokens': {
-        method: 'POST',
-        description: 'Anthropic-compatible Count Message Tokens API (with `/v1/` prefix)'
-      },
-      '/anthropic/models': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - List available models'
-      },
-      '/anthropic/v1/models': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - List available models (with `/v1/` prefix)'
-      },
-      '/anthropic/models/:model': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - Get specific model info'
-      },
-      '/anthropic/v1/models/:model': {
-        method: 'GET',
-        description: 'Anthropic-compatible Models API - Get specific model info (with `/v1/` prefix)'
-      }
     }
   });
 }
