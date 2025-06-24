@@ -107,8 +107,13 @@
         "category": "LM Proxy"
       },
       {
-        "command": "vscode-lm-proxy.configureClaudeCodeModels",
-        "title": "Configure Claude Code Models",
+        "command": "vscode-lm-proxy.configureClaudeBackgroundModels",
+        "title": "Configure Claude Code Background Model",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.configureClaudeThinkingModels",
+        "title": "Configure Claude Code Thinking Model",
         "category": "LM Proxy"
       },
       {
@@ -164,7 +169,11 @@
           "when": "true"
         },
         {
-          "command": "vscode-lm-proxy.configureClaudeCodeModels",
+          "command": "vscode-lm-proxy.configureClaudeBackgroundModels",
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureClaudeThinkingModels",
           "when": "true"
         }
       ],
@@ -190,7 +199,11 @@
           "when": "true"
         },
         {
-          "command": "vscode-lm-proxy.configureClaudeCodeModels",
+          "command": "vscode-lm-proxy.configureClaudeBackgroundModels",
+          "when": "true"
+        },
+        {
+          "command": "vscode-lm-proxy.configureClaudeThinkingModels",
           "when": "true"
         }
       ]
