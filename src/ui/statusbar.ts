@@ -58,27 +58,22 @@ class StatusBarManager {
       return;
     }
     
-    // 選択中のOpenAIモデルIDを取得（強制的に最新の状態を反映）
-    const openaiModelId = modelManager.getOpenaiModelId();
-    // モデル表示テキスト
-    const modelText = openaiModelId ? ` (${openaiModelId})` : ' (Model not selected)';
-    
     if (errorMessage) {
       // エラー状態
-      this.statusBarItem.text = `$(error) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(error) LM Proxy`;
       this.statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
       this.statusBarItem.tooltip = `Server: Error - ${errorMessage}`;
     } else if (isRunning) {
       // 実行中
-      this.statusBarItem.text = `$(server) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(server) LM Proxy`;
       this.statusBarItem.backgroundColor = undefined;
       const url = serverManager.getServerUrl();
-      this.statusBarItem.tooltip = `Server: Running (${url})${openaiModelId ? `\nModel: ${openaiModelId}` : '\nModel: Not selected'}`;
+      this.statusBarItem.tooltip = `Server: Running (${url})`;
     } else {
       // 停止中
-      this.statusBarItem.text = `$(stop) LM Proxy${modelText}`;
+      this.statusBarItem.text = `$(stop) LM Proxy`;
       this.statusBarItem.backgroundColor = undefined;
-      this.statusBarItem.tooltip = `Server: Stopped${openaiModelId ? `\nModel: ${openaiModelId}` : '\nModel: Not selected'}`;
+      this.statusBarItem.tooltip = `Server: Stopped`;
     }
   }
   
@@ -107,9 +102,9 @@ class StatusBarManager {
     
     // モデル選択メニュー項目を追加
     items.push({
-      label: '$(gear) Select Model',
-      description: 'Select a model for LM Proxy',
-      command: 'vscode-lm-proxy.selectModel'
+      label: '$(gear) OpenAI API Model',
+      description: 'Select an OpenAI API model for LM Proxy',
+      command: 'vscode-lm-proxy.selectOpenaiModel'
     });
     
     // メニューを表示

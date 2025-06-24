@@ -82,8 +82,8 @@
         "category": "LM Proxy"
       },
       {
-        "command": "vscode-lm-proxy.selectModel",
-        "title": "Select Language Model",
+        "command": "vscode-lm-proxy.selectOpenaiModel",
+        "title": "Select OpenAI API Model",
         "category": "LM Proxy"
       },
       {
@@ -121,7 +121,7 @@
         "when": "vscode-lm-proxy.serverRunning"
       },
       {
-        "command": "vscode-lm-proxy.selectModel",
+        "command": "vscode-lm-proxy.selectOpenaiModel",
         "key": "ctrl+shift+l m",
         "mac": "cmd+shift+l m"
       }
@@ -147,7 +147,7 @@
           "when": "vscode-lm-proxy.serverRunning"
         },
         {
-          "command": "vscode-lm-proxy.selectModel",
+          "command": "vscode-lm-proxy.selectOpenaiModel",
           "group": "1_model"
         }
       ]

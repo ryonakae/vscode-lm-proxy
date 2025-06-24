@@ -9,8 +9,8 @@ import { serverManager } from '../server/manager';
  * @param context 拡張機能のコンテキスト
  */
 export function registerModelCommands(context: vscode.ExtensionContext): void {
-  // モデル選択コマンド
-  const selectModelCommand = vscode.commands.registerCommand('vscode-lm-proxy.selectModel', async () => {
+  // OpenAI APIモデル選択コマンド
+  const selectOpenaiModelCommand = vscode.commands.registerCommand('vscode-lm-proxy.selectOpenaiModel', async () => {
     try {
       const openaiModelId = await modelManager.selectModel();
       
@@ -19,8 +19,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
         context.globalState.update('openaiModelId', openaiModelId);
         vscode.window.showInformationMessage(`OpenAI Model selected: ${openaiModelId}`);
 
-        // ステータスバーを更新 (新しいモデル名で、サーバーは元の状態)
-        // 非同期でタイミングをずらして確実に更新を反映
+        // ステータスバーを更新（サーバーは元の状態）
         setTimeout(() => {
           statusBarManager.updateStatus(wasRunning);
         }, 10);
@@ -47,14 +46,13 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   });
 
   // コンテキストにコマンドを登録
-  context.subscriptions.push(selectModelCommand);
+  context.subscriptions.push(selectOpenaiModelCommand);
   
   // 前回選択されたOpenAIモデルを復元
   const previouslySelectedOpenaiModelId = context.globalState.get<string>('openaiModelId');
   if (previouslySelectedOpenaiModelId) {
     // OpenAIモデル選択状態を復元
     modelManager.setOpenaiModelId(previouslySelectedOpenaiModelId);
-    console.log(`Restored previously selected OpenAI model: ${previouslySelectedOpenaiModelId}`);
     // ステータスバーも更新
     statusBarManager.updateStatus(serverManager.isRunning());
   }
