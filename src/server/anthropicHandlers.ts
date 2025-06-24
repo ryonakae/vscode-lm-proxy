@@ -146,8 +146,10 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
           // Anthropic形式に変換してレスポンス
           const anthropicChunk = convertToAnthropicFormat(chunk, requestedModel, true); // 元のモデル名を使用
           const data = JSON.stringify(anthropicChunk);
-          // チャンクをログに記録
-          logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
+
+          // // チャンクをログに記録
+          // logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
+
           res.write(`data: ${data}\n\n`);
         }
       );
@@ -163,40 +165,12 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
         null // モデルはgetAnthropicModelで既に解決済み
       );
       
-      // ツール呼び出し情報を検出（もしあれば）
-      let detectedToolCalls = undefined;
-      
-      // tools引数が指定されていた場合のみツール検出を試みる
-      if (tools && tools.length > 0) {
-        // レスポンステキストからツール呼び出し情報を抽出する処理を試みる
-        // この例では簡易的な実装として、JSON形式のツール呼び出しを探します
-        const responseText = result.responseText;
-        if (responseText.includes('```json') && (responseText.includes('"type":') || responseText.includes('"name":'))) {
-          try {
-            const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
-            if (jsonMatch && jsonMatch[1]) {
-              const toolCall = JSON.parse(jsonMatch[1].trim());
-              if (toolCall && toolCall.name) {
-                detectedToolCalls = [{
-                  id: `call_${generateRandomId()}`,
-                  type: toolCall.type || 'function',
-                  name: toolCall.name,
-                  input: toolCall.input || {}
-                }];
-              }
-            }
-          } catch (e) {
-            logger.error('Failed to parse tool call from response:', e as Error);
-          }
-        }
-      }
-      
-      // Anthropic形式に変換（ツール呼び出し情報を含む）
+      // Anthropic形式に変換（ツール呼び出し情報はtools引数をそのまま渡す）
       const response = convertToAnthropicFormat(
         { content: result.responseText, isComplete: true },
         model,
         false,
-        detectedToolCalls
+        tools
       );
       
       // トークン使用量情報を更新
@@ -382,8 +356,10 @@ async function handleClaudeCodeMessages(req: express.Request, res: express.Respo
           // Anthropic形式に変換してレスポンス
           const anthropicChunk = convertToAnthropicFormat(chunk, requestedModel, true); // レスポンスには元のモデル名を使用
           const data = JSON.stringify(anthropicChunk);
-          // チャンクをログに記録
-          logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
+
+          // // チャンクをログに記録
+          // logger.logStreamChunk(req.originalUrl || req.url, anthropicChunk, chunkIndex++);
+          
           res.write(`data: ${data}\n\n`);
         }
       );
@@ -399,39 +375,12 @@ async function handleClaudeCodeMessages(req: express.Request, res: express.Respo
         null // モデルはmapClaudeCodeModelで既に解決済み
       );
       
-      // ツール呼び出し情報を検出（もしあれば）
-      let detectedToolCalls = undefined;
-      
-      // tools引数が指定されていた場合のみツール検出を試みる
-      if (tools && tools.length > 0) {
-        // レスポンステキストからツール呼び出し情報を抽出する処理を試みる
-        const responseText = result.responseText;
-        if (responseText.includes('```json') && (responseText.includes('"type":') || responseText.includes('"name":'))) {
-          try {
-            const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
-            if (jsonMatch && jsonMatch[1]) {
-              const toolCall = JSON.parse(jsonMatch[1].trim());
-              if (toolCall && toolCall.name) {
-                detectedToolCalls = [{
-                  id: `call_${generateRandomId()}`,
-                  type: toolCall.type || 'function',
-                  name: toolCall.name,
-                  input: toolCall.input || {}
-                }];
-              }
-            }
-          } catch (e) {
-            logger.error('Failed to parse tool call from response:', e as Error);
-          }
-        }
-      }
-      
-      // Anthropic形式に変換（ツール呼び出し情報を含む）
+      // Anthropic形式に変換（ツール呼び出し情報はtools引数をそのまま渡す）
       const response = convertToAnthropicFormat(
         { content: result.responseText, isComplete: true },
-        requestedModel, // レスポンスには元のモデル名を使用
+        requestedModel,
         false,
-        detectedToolCalls
+        tools
       );
       
       // トークン使用量情報を更新
