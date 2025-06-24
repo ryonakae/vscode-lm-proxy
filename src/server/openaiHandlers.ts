@@ -142,8 +142,10 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
     // リクエストの検証
     const { messages, model: requestedModel, stream } = validateAndConvertOpenAIRequest(req.body);
     
-    // OpenAI用の設定モデルを使用
-    const model = modelManager.getOpenAIModel();
+    // model: 'vscode-lm-proxy' または 'vscode-lm-api' の場合は設定モデル、それ以外はリクエストのモデルIDを使う
+    const model = (requestedModel === 'vscode-lm-proxy' || requestedModel === 'vscode-lm-api')
+      ? modelManager.getOpenAIModel()
+      : requestedModel;
     
     // OpenAI形式のリクエストをVSCode LM API形式に変換
     const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);

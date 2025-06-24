@@ -365,7 +365,7 @@ export function validateAndConvertAnthropicRequest(body: any): {
   }
   
   // モデルが'vscode-lm-proxy'の場合、選択されたモデルがあるか確認
-  if (model === 'vscode-lm-proxy' && !modelManager.getSelectedModel()) {
+  if (model === 'vscode-lm-proxy' && !modelManager.getOpenaiModelId()) {
     const error: any = new Error('No valid model selected. Please select a model first.');
     error.statusCode = 400;
     error.type = 'invalid_request_error';

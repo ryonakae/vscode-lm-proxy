@@ -108,8 +108,10 @@ async function handleAnthropicMessages(req: express.Request, res: express.Respon
     // リクエストの検証
     const { vscodeLmMessages, model: requestedModel, stream, originalMessages, tools, toolChoice } = validateAndConvertAnthropicRequest(req.body);
     
-    // 標準のAnthropicエンドポイント用のモデルを使用
-    const model = modelManager.getAnthropicModel();
+    // model: 'vscode-lm-proxy' または 'vscode-lm-api' の場合は設定モデル、それ以外はリクエストのモデルIDを使う
+    const model = (requestedModel === 'vscode-lm-proxy' || requestedModel === 'vscode-lm-api')
+      ? modelManager.getAnthropicModel()
+      : requestedModel;
     
     // トークン制限チェック（元のメッセージに対して実行）
     const tokenLimitError = await limitsManager.validateTokenLimit(originalMessages, model);
@@ -342,8 +344,10 @@ async function handleClaudeCodeMessages(req: express.Request, res: express.Respo
     const { vscodeLmMessages, model: requestedModel, stream, originalMessages, tools, toolChoice } = 
       validateAndConvertAnthropicRequest(req.body);
     
-    // Claude Codeのリクエストに基づいて適切なモデルを選択
-    const model = modelManager.mapClaudeCodeModel(requestedModel);
+    // model: 'vscode-lm-proxy' または 'vscode-lm-api' の場合は設定モデル、それ以外はリクエストのモデルIDを使う
+    const model = (requestedModel === 'vscode-lm-proxy' || requestedModel === 'vscode-lm-api')
+      ? modelManager.getClaudeThinkModel() // Claude CodeのデフォルトはThinkモデル
+      : modelManager.mapClaudeCodeModel(requestedModel);
     
     // トークン制限チェック（元のメッセージに対して実行）
     const tokenLimitError = await limitsManager.validateTokenLimit(originalMessages, model);

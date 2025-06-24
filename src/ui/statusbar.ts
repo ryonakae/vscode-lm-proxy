@@ -58,8 +58,7 @@ class StatusBarManager {
       return;
     }
     
-    // 選択中のモデル名とモデル設定情報を取得
-    const selectedModelName = modelManager.getSelectedModelName();
+    // モデル設定情報を取得
     const openaiModel = modelManager.getOpenaiModelId();
     const anthropicModel = modelManager.getAnthropicModelId();
     const claudeBackgroundModel = modelManager.getClaudeBackgroundModelId();
@@ -77,22 +76,20 @@ class StatusBarManager {
       const url = serverManager.getServerUrl();
       this.statusBarItem.tooltip = 
         `Server: Running (${url})\n` +
-        `Selected Model: ${selectedModelName || 'Not selected'}\n` +
-        `OpenAI API Model: ${openaiModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : openaiModel}\n` +
-        `Anthropic API Model: ${anthropicModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : anthropicModel}\n` +
-        `Claude Code Background Model: ${claudeBackgroundModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeBackgroundModel}\n` +
-        `Claude Code Think Model: ${claudeThinkModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeThinkModel}`;
+        `OpenAI API Model: ${openaiModel}\n` +
+        `Anthropic API Model: ${anthropicModel}\n` +
+        `Claude Code Background Model: ${claudeBackgroundModel}\n` +
+        `Claude Code Think Model: ${claudeThinkModel}`;
     } else {
       // 停止中
       this.statusBarItem.text = `$(stop) LM Proxy`;
       this.statusBarItem.backgroundColor = undefined;
       this.statusBarItem.tooltip = 
         `Server: Stopped\n` +
-        `Selected Model: ${selectedModelName || 'Not selected'}\n` +
-        `OpenAI API Model: ${openaiModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : openaiModel}\n` +
-        `Anthropic API Model: ${anthropicModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : anthropicModel}\n` +
-        `Claude Code Background Model: ${claudeBackgroundModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeBackgroundModel}\n` +
-        `Claude Code Think Model: ${claudeThinkModel === 'vscode-lm-proxy' ? selectedModelName || 'Not selected' : claudeThinkModel}`;
+        `OpenAI API Model: ${openaiModel}\n` +
+        `Anthropic API Model: ${anthropicModel}\n` +
+        `Claude Code Background Model: ${claudeBackgroundModel}\n` +
+        `Claude Code Think Model: ${claudeThinkModel}`;
     }
   }
   
@@ -119,32 +116,32 @@ class StatusBarManager {
       });
     }
     
-    // モデル関連のメニュー項目を追加
-    items.push({
-      label: '$(gear) Select Model',
-      description: 'Select a primary model for LM Proxy',
-      command: 'vscode-lm-proxy.selectModel'
-    });
-    
     // OpenAI API用モデル設定
     items.push({
-      label: '$(settings-gear) Configure OpenAI API Model',
+      label: '$(settings-gear) OpenAI API Model',
       description: 'Set a specific model for OpenAI API endpoints',
       command: 'vscode-lm-proxy.configureOpenaiModel'
     });
     
     // Anthropic API用モデル設定
     items.push({
-      label: '$(settings-gear) Configure Anthropic API Model',
+      label: '$(settings-gear) Anthropic API Model',
       description: 'Set a specific model for Anthropic API endpoints',
       command: 'vscode-lm-proxy.configureAnthropicModel'
     });
     
-    // Claude Code用モデル設定
+    // Claude Code Background用モデル設定
     items.push({
-      label: '$(settings-gear) Configure Claude Code Models',
-      description: 'Set specific models for Claude Code features',
-      command: 'vscode-lm-proxy.configureClaudeCodeModels'
+      label: '$(settings-gear) Claude Code Background Model',
+      description: 'Set a specific model for Claude Code background tasks',
+      command: 'vscode-lm-proxy.configureClaudeBackgroundModels'
+    });
+    
+    // Claude Code Thinking用モデル設定
+    items.push({
+      label: '$(settings-gear) Claude Code Thinking Model',
+      description: 'Set a specific model for Claude Code thinking tasks',
+      command: 'vscode-lm-proxy.configureClaudeThinkingModels'
     });
     
     // メニューを表示

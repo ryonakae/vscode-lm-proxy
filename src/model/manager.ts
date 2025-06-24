@@ -18,18 +18,8 @@ class ModelManager {
   public setExtensionContext(context: vscode.ExtensionContext) {
     this.extensionContext = context;
     // 起動時に保存済みモデル情報があれば復元
-    const savedModelId = context.globalState.get<string>('selectedModelId');
-    const savedModelName = context.globalState.get<string>('selectedModelName');
-    if (savedModelId) {
-      this.selectedModelId = savedModelId;
-      this.selectedModelName = savedModelName || savedModelId;
-    }
+    // ここで openaiModelId などの復元は不要（各 getter で取得する設計に統一）
   }
-  // 選択されたモデルID
-  private selectedModelId: string | null = null;
-  
-  // 選択されたモデル名
-  private selectedModelName: string | null = null;
 
   // OpenAI APIで使用するモデル
   private openaiModelId: string | null = null;
@@ -129,11 +119,10 @@ class ModelManager {
         quickPick.onDidAccept(() => {
           const selectedItem = quickPick.selectedItems[0] as any;
           if (selectedItem) {
-            // 選択されたモデルのIDとモデル名を保存
-            this.setSelectedModel(selectedItem.model.id, selectedItem.model.name);
-            logger.info(`Selected model: ${this.selectedModelName} (${this.selectedModelId})`);
+            // ここでは何も保存しない（モデル選択UIのみ）
+            logger.info(`Selected model: ${selectedItem.model.name} (${selectedItem.model.id})`);
             quickPick.dispose();
-            resolve(this.selectedModelId as string);
+            resolve(selectedItem.model.id as string);
           } else {
             quickPick.dispose();
             resolve(undefined);
@@ -157,42 +146,23 @@ class ModelManager {
    * 現在選択されているモデルIDを取得
    * @returns モデルID
    */
-  public getSelectedModel(): string | null {
-    return this.selectedModelId;
-  }
   
   /**
    * 現在選択されているモデル名を取得
    * @returns モデル名
    */
-  public getSelectedModelName(): string | null {
-    return this.selectedModelName;
-  }
   
   /**
    * モデルIDを直接設定する
    * @param modelId 設定するモデルID
    * @param modelName 設定するモデル名（省略時はモデルIDと同じ）
    */
-  public setSelectedModel(modelId: string, modelName?: string): void {
-    this.selectedModelId = modelId;
-    this.selectedModelName = modelName || modelId;
-    // 永続化
-    if (this.extensionContext) {
-      this.extensionContext.globalState.update('selectedModelId', this.selectedModelId);
-      this.extensionContext.globalState.update('selectedModelName', this.selectedModelName);
-    }
-    // モデル変更イベントを発火
-    this._onDidChangeSelectedModel.fire();
-  }
   
   /**
    * デフォルトモデルを取得
    * @returns デフォルトモデルのID
    */
-  public getDefaultModel(): string | null {
-    return this.selectedModelId;
-  }
+  // getDefaultModelは不要になったため削除
 
   /**
    * OpenAI API用に設定されているモデルを取得
@@ -313,9 +283,9 @@ class ModelManager {
     modelId: string
   ): Promise<OpenAIChatCompletionResponse> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
-      
+      // vscode-lm-proxyの場合は openaiModelId などを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.getOpenaiModelId() : modelId;
+
       // モデルが選択されていない場合
       if (!actualModelId) {
         throw new Error('No model selected. Please select a model first.');
@@ -417,8 +387,8 @@ class ModelManager {
     systemPrompt?: string
   ): Promise<OpenAIChatCompletionResponse> {
     try {
-      // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      // vscode-lm-proxyの場合は openaiModelId などを使用
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.getOpenaiModelId() : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
@@ -527,7 +497,7 @@ class ModelManager {
   ): Promise<void> {
     try {
       // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.getOpenaiModelId() : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
@@ -685,7 +655,7 @@ class ModelManager {
   ): Promise<void> {
     try {
       // vscode-lm-proxyの場合は選択されたモデルを使用
-      const actualModelId = modelId === 'vscode-lm-proxy' ? this.selectedModelId : modelId;
+      const actualModelId = modelId === 'vscode-lm-proxy' ? this.getOpenaiModelId() : modelId;
       
       // モデルが選択されていない場合
       if (!actualModelId) {
@@ -904,17 +874,17 @@ class ModelManager {
     // モデル名に基づきマッピングを行う
     if (requestedModel.includes('haiku')) {
       // バックグラウンドモデル（軽量処理用）
-      this.claudeBackgroundModelId = config.get('claudeBackgroundModel') || this.selectedModelId;
-      return this.claudeBackgroundModelId || (this.selectedModelId as string);
+      this.claudeBackgroundModelId = config.get('claudeBackgroundModel') || this.getClaudeBackgroundModelId();
+      return this.claudeBackgroundModelId || 'vscode-lm-proxy';
     } else if (requestedModel.includes('sonnet')) {
       // シンクモデル（重要処理用）
-      this.claudeThinkModelId = config.get('claudeThinkModel') || this.selectedModelId;
-      return this.claudeThinkModelId || (this.selectedModelId as string);
+      this.claudeThinkModelId = config.get('claudeThinkModel') || this.getClaudeThinkModelId();
+      return this.claudeThinkModelId || 'vscode-lm-proxy';
     }
     
     // デフォルトはAnthropicモデルを使用
-    this.anthropicModelId = config.get('anthropicModel') || this.selectedModelId;
-    return this.anthropicModelId || (this.selectedModelId as string);
+    this.anthropicModelId = config.get('anthropicModel') || this.getAnthropicModelId();
+    return this.anthropicModelId || 'vscode-lm-proxy';
   }
 
   /**
@@ -924,9 +894,9 @@ class ModelManager {
   public getOpenAIModel(): string {
     if (this.openaiModelId === null) {
       const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.openaiModelId = config.get('openaiModel') || this.selectedModelId;
+      this.openaiModelId = config.get('openaiModel') || this.getOpenaiModelId();
     }
-    return this.openaiModelId || (this.selectedModelId as string);
+    return this.openaiModelId || this.getOpenaiModelId();
   }
 
   /**
@@ -936,9 +906,9 @@ class ModelManager {
   public getAnthropicModel(): string {
     if (this.anthropicModelId === null) {
       const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.anthropicModelId = config.get('anthropicModel') || this.selectedModelId;
+      this.anthropicModelId = config.get('anthropicModel') || this.getAnthropicModelId();
     }
-    return this.anthropicModelId || (this.selectedModelId as string);
+    return this.anthropicModelId || this.getAnthropicModelId();
   }
 
   /**
@@ -948,9 +918,9 @@ class ModelManager {
   public getClaudeBackgroundModel(): string {
     if (this.claudeBackgroundModelId === null) {
       const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.claudeBackgroundModelId = config.get('claudeBackgroundModel') || this.selectedModelId;
+      this.claudeBackgroundModelId = config.get('claudeBackgroundModel') || this.getClaudeBackgroundModelId();
     }
-    return this.claudeBackgroundModelId || (this.selectedModelId as string);
+    return this.claudeBackgroundModelId || this.getClaudeBackgroundModelId();
   }
 
   /**
@@ -960,9 +930,9 @@ class ModelManager {
   public getClaudeThinkModel(): string {
     if (this.claudeThinkModelId === null) {
       const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-      this.claudeThinkModelId = config.get('claudeThinkModel') || this.selectedModelId;
+      this.claudeThinkModelId = config.get('claudeThinkModel') || this.getClaudeThinkModelId();
     }
-    return this.claudeThinkModelId || (this.selectedModelId as string);
+    return this.claudeThinkModelId || this.getClaudeThinkModelId();
   }
 }
 
