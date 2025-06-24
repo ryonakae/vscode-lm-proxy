@@ -4,6 +4,7 @@ import { registerCommands } from './commands';
 import { serverManager } from './server/manager';
 import { statusBarManager } from './ui/statusbar';
 import { logger } from './utils/logger';
+import { LmApiHandler } from './server/handlers';
 
 // グローバルコンテキストの保存用変数
 let globalExtensionContext: vscode.ExtensionContext;
@@ -27,6 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
   // モデルマネージャーにExtensionContextを設定
   // これにより内部で保存されたモデル情報が復元される
   modelManager.setExtensionContext(context);
+
+  // LmApiHandlerにグローバル状態をセット
+  LmApiHandler.initialize(context.globalState);
   
   // 選択中のOpenAIモデルとサーバー状態をログに出力
   const openaiModel = modelManager.getOpenaiModelId() || 'Not selected';

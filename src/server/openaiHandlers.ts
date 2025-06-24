@@ -162,18 +162,14 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
-        
         // ストリーミング開始をログに記録
         logger.logStreamStart(req.originalUrl || req.url);
-        
         // チャンクのカウントを追跡
         let chunkIndex = 0;
-        
         // 共通ハンドラーを使用してストリーミングレスポンスを送信
         await LmApiHandler.streamChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
           model,
-          modelManager.getOpenaiModelId(),
           (chunk) => {
             // OpenAI形式に変換してレスポンス
             const openAIChunk = convertToOpenAIFormat(chunk, model, true);
@@ -183,7 +179,6 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
             res.write(`data: ${data}\n\n`);
           }
         );
-        
         // ストリーミング終了
         res.write('data: [DONE]\n\n');
         res.end();
@@ -191,16 +186,13 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         // 非ストリーミングモードでレスポンスを取得
         const result = await LmApiHandler.getChatCompletionFromLmApi(
           vscodeLmRequest.messages, 
-          model,
-          modelManager.getOpenaiModelId()
+          model
         );
-        
         // OpenAI形式に変換
         const completion = convertToOpenAIFormat(
           { content: result.responseText, isComplete: true }, 
           model
         ) as OpenAIChatCompletionResponse;
-        
         // トークン使用量情報を更新
         completion.usage = {
           prompt_tokens: result.promptTokens,
@@ -217,7 +209,6 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
             rejected_prediction_tokens: 0
           }
         };
-        
         res.json(completion);
       }
     } catch (error) {
