@@ -20,6 +20,36 @@ function generateRandomId(): string {
 }
 
 /**
+ * OpenAI API形式のリクエストをVSCode LM API形式に変換
+ * @param openaiRequest OpenAI形式のリクエスト
+ * @returns VSCode LM API形式のリクエスト
+ */
+export function convertOpenaiRequestToVSCodeRequest(openaiRequest: OpenAIChatCompletionRequest): {
+  messages: vscode.LanguageModelChatMessage[];
+} {
+  // OpenAIのroleをVSCodeのAPIに合わせて変換
+  const messages = openaiRequest.messages.map((msg) => {
+    if (msg.role === 'system') {
+      // systemロールはUserメッセージとして扱う
+      return vscode.LanguageModelChatMessage.User(`[SYSTEM] ${msg.content ?? ''}`, msg.name);
+    }
+    if (msg.role === 'user') {
+      return vscode.LanguageModelChatMessage.User(msg.content, msg.name);
+    }
+    if (msg.role === 'assistant') {
+      // tool_callsやnameも考慮
+      return vscode.LanguageModelChatMessage.Assistant(
+        msg.content,
+        msg.name
+      );
+    }
+    // その他はUserとして扱う
+    return vscode.LanguageModelChatMessage.User(msg.content, msg.name);
+  });
+  return { messages };
+}
+
+/**
  * VSCode LM APIのレスポンスをOpenAI API形式に変換
  * @param response VSCode LM APIレスポンス
  * @param modelId モデルID
@@ -94,36 +124,6 @@ export function convertVSCodeResponseToOpenaiResponse(
       service_tier: 'default'
     } satisfies OpenAIChatCompletionResponse;
   }
-}
-
-/**
- * OpenAI API形式のリクエストをVSCode LM API形式に変換
- * @param openaiRequest OpenAI形式のリクエスト
- * @returns VSCode LM API形式のリクエスト
- */
-export function convertOpenaiRequestToVSCodeRequest(openaiRequest: OpenAIChatCompletionRequest): {
-  messages: vscode.LanguageModelChatMessage[];
-} {
-  // OpenAIのroleをVSCodeのAPIに合わせて変換
-  const messages = openaiRequest.messages.map((msg) => {
-    if (msg.role === 'system') {
-      // systemロールはUserメッセージとして扱う
-      return vscode.LanguageModelChatMessage.User(`[SYSTEM] ${msg.content ?? ''}`, msg.name);
-    }
-    if (msg.role === 'user') {
-      return vscode.LanguageModelChatMessage.User(msg.content, msg.name);
-    }
-    if (msg.role === 'assistant') {
-      // tool_callsやnameも考慮
-      return vscode.LanguageModelChatMessage.Assistant(
-        msg.content,
-        msg.name
-      );
-    }
-    // その他はUserとして扱う
-    return vscode.LanguageModelChatMessage.User(msg.content, msg.name);
-  });
-  return { messages };
 }
 
 /**

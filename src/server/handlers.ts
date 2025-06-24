@@ -22,13 +22,6 @@ export class LmApiHandler {
     return result;
   }
 
-  /**
-   * チャット完了のレスポンスを取得（共通処理）
-   * @param messages LM API形式のメッセージ配列
-   * @param modelId 使用するモデルのID
-   * @param openaiModelId 選択中のOpenAIモデルID（vscode-lm-proxyの場合）
-   * @returns LM APIからの生レスポンスとトークン情報
-   */
   // globalStateをstaticプロパティとして保持
   public static globalState: vscode.Memento;
 
@@ -43,6 +36,12 @@ export class LmApiHandler {
     return modelId;
   }
 
+  /**
+   * チャット完了のレスポンスを取得（共通処理）
+   * @param messages LM API形式のメッセージ配列
+   * @param modelId 使用するモデルのID
+   * @returns LM APIからの生レスポンスとトークン情報
+   */
   public static async getChatCompletionFromLmApi(
     messages: vscode.LanguageModelChatMessage[],
     modelId: string
