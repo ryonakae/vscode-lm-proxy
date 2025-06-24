@@ -26,7 +26,7 @@ function generateRandomId(): string {
  * @param isStreaming ストリーミングモードかどうか
  * @returns OpenAI API形式のレスポンス
  */
-export function convertToOpenaiResponseToVSCodeResponse(
+export function convertVSCodeResponseToOpenaiResponse(
   response: { content: string | null; isComplete?: boolean; tool_calls?: OpenAIToolCall[]; name?: string },
   modelId: string,
   isStreaming: boolean = false

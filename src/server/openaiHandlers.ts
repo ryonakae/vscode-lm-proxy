@@ -2,7 +2,7 @@
 import express from 'express';
 import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
-import { convertToOpenaiResponseToVSCodeResponse, convertOpenaiRequestToVSCodeRequest, validateAndConvertOpenaiRequest } from '../model/openaiConverter';
+import { convertVSCodeResponseToOpenaiResponse, convertOpenaiRequestToVSCodeRequest, validateAndConvertOpenaiRequest } from '../model/openaiConverter';
 import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 import { OpenAIChatCompletionResponse } from '../model/types';
@@ -173,7 +173,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
           model,
           (chunk) => {
             // OpenAI形式に変換してレスポンス
-            const openAIChunk = convertToOpenaiResponseToVSCodeResponse(chunk, model, true);
+            const openAIChunk = convertVSCodeResponseToOpenaiResponse(chunk, model, true);
             const data = JSON.stringify(openAIChunk);
             // // チャンクをログに記録
             // logger.logStreamChunk(req.originalUrl || req.url, openAIChunk, chunkIndex++);
@@ -190,7 +190,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
           model
         );
         // OpenAI形式に変換
-        const completion = convertToOpenaiResponseToVSCodeResponse(
+        const completion = convertVSCodeResponseToOpenaiResponse(
           { content: result.responseText, isComplete: true }, 
           model
         ) as OpenAIChatCompletionResponse;
