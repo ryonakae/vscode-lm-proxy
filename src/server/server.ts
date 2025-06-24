@@ -32,7 +32,7 @@ export function createServer(): express.Express {
     // カスタムのsendメソッド
     res.send = function(body: any): express.Response {
       const responseTime = Date.now() - startTime;
-      logger.logResponse(res.statusCode, path, body, responseTime);
+      // logger.logResponse(res.statusCode, path, body, responseTime);
       return originalSend.apply(res, arguments as any);
     };
     
@@ -51,11 +51,11 @@ export function createServer(): express.Express {
         if (res.getHeader('Content-Type') === 'text/event-stream') {
           logger.logStreamEnd(path, responseTime);
         } else {
-          logger.logResponse(res.statusCode, path, chunk, responseTime);
+          // logger.logResponse(res.statusCode, path, chunk, responseTime);
         }
       } else {
         // チャンクがない場合
-        logger.logResponse(res.statusCode, path, null, responseTime);
+        // logger.logResponse(res.statusCode, path, null, responseTime);
       }
       return originalEnd.apply(res, arguments as any);
     };

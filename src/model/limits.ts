@@ -253,13 +253,30 @@ export class LimitsManager {
       
       // VSCode LM API形式にメッセージを変換
       const vscodeLmMessages = messages.map(msg => {
+        let contentStr: string;
+        if (typeof msg.content === 'string') {
+          contentStr = msg.content;
+        } else if (Array.isArray(msg.content)) {
+          // マルチモーダル対応: テキスト部分のみ連結
+          contentStr = msg.content
+            .filter((part: any) => typeof part.text === 'string')
+            .map((part: any) => part.text)
+            .join('\n');
+          // 画像など非テキスト要素は警告
+          if (msg.content.some((part: any) => part.type === 'image')) {
+            logger.warn('Image content is not supported by VSCode LM API and will be ignored in token counting.');
+          }
+        } else {
+          contentStr = String(msg.content ?? '');
+        }
+
         if (msg.role === 'user') {
-          return vscode.LanguageModelChatMessage.User(msg.content);
+          return vscode.LanguageModelChatMessage.User(contentStr);
         } else if (msg.role === 'assistant') {
-          return vscode.LanguageModelChatMessage.Assistant(msg.content);
+          return vscode.LanguageModelChatMessage.Assistant(contentStr);
         } else {
           // システムメッセージなどはユーザーメッセージとして扱う
-          return vscode.LanguageModelChatMessage.User(msg.content);
+          return vscode.LanguageModelChatMessage.User(contentStr);
         }
       });
       

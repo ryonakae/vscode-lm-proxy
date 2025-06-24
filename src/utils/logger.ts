@@ -234,10 +234,10 @@ export class Logger {
         ? JSON.stringify(dataCopy, null, 2)
         : JSON.stringify(dataCopy);
       
-      // 文字列が長すぎる場合は切り詰める
-      if (jsonStr.length > maxLength) {
-        jsonStr = jsonStr.substring(0, maxLength) + '...(truncated)';
-      }
+      // // 文字列が長すぎる場合は切り詰める
+      // if (jsonStr.length > maxLength) {
+      //   jsonStr = jsonStr.substring(0, maxLength) + '...(truncated)';
+      // }
       
       return jsonStr;
     } catch (e) {
