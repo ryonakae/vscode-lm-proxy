@@ -101,9 +101,10 @@ class StatusBarManager {
     }
     
     // モデル選択メニュー項目を追加
+    const currentModelId = modelManager.getOpenaiModelId();
     items.push({
       label: '$(gear) OpenAI API Model',
-      description: 'Select an OpenAI API model for LM Proxy',
+      description: currentModelId ? `${currentModelId}` : 'No model selected',
       command: 'vscode-lm-proxy.selectOpenaiModel'
     });
     
