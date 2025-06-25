@@ -14,10 +14,7 @@
     "noImplicitThis": true,
     "strictNullChecks": true,
     "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "allowSyntheticDefaultImports": true
   },
   "exclude": ["node_modules"]
 }

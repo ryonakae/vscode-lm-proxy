@@ -31,10 +31,10 @@
   "main": "./out/extension.js",
   "scripts": {
     "check": "biome check",
-    "compile": "tsc -p ./tsconfig.json && tsc-alias -p ./tsconfig.json",
+    "compile": "tsc -p ./",
     "prepare": "husky",
     "vscode:prepublish": "npm run compile",
-    "watch": "concurrently \"tsc --watch -p ./tsconfig.json\" \"tsc-alias -p ./tsconfig.json --watch\""
+    "watch": "tsc -watch -p ./"
   },
   "contributes": {
     "commands": [
@@ -174,7 +174,6 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "openai": "^5.7.0",
-    "tsc-alias": "^1.8.16",
     "typescript": "^5.8.2"
   },
   "extensionDependencies": [],

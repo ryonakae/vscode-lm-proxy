@@ -1,8 +1,8 @@
 // モデル選択コマンド
 import * as vscode from 'vscode'
-import { modelManager } from '@/model/manager'
-import { serverManager } from '@/server/manager'
-import { statusBarManager } from '@/ui/statusbar'
+import { modelManager } from '../model/manager'
+import { serverManager } from '../server/manager'
+import { statusBarManager } from '../ui/statusbar'
 
 /**
  * モデル選択関連のコマンド（選択・再起動）をVSCodeに登録します。

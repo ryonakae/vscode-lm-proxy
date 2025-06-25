@@ -1,7 +1,7 @@
 import type OpenAI from 'openai'
 import * as vscode from 'vscode'
-import { generateRandomId } from '@/utils'
-import { logger } from '@/utils/logger'
+import { generateRandomId } from '../utils'
+import { logger } from '../utils/logger'
 
 /**
  * OpenAI APIのChatCompletionCreateParamsリクエストをVSCode拡張APIのチャットリクエスト形式に変換します。

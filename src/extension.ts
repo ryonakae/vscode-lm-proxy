@@ -1,10 +1,10 @@
 // VSCode拡張機能のエントリーポイント
 import * as vscode from 'vscode'
-import { registerCommands } from '@/commands'
-import { initializeLmApiHandler } from '@/server/handlers'
-import { serverManager } from '@/server/manager'
-import { statusBarManager } from '@/ui/statusbar'
-import { logger } from '@/utils/logger'
+import { registerCommands } from './commands'
+import { initializeLmApiHandler } from './server/handlers'
+import { serverManager } from './server/manager'
+import { statusBarManager } from './ui/statusbar'
+import { logger } from './utils/logger'
 
 // グローバルコンテキストの保存用変数
 let globalExtensionContext: vscode.ExtensionContext
