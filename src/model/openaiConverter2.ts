@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
-import { ChatCompletionCreateParams } from 'openai/resources/chat/completions';
+import OpenAI from 'openai';
+import { generateRandomId } from '../utils';
 
 /**
  * OpenAI APIのChatCompletionCreateParamsリクエストをVSCode拡張APIのチャットリクエスト形式に変換する。
@@ -12,7 +13,7 @@ import { ChatCompletionCreateParams } from 'openai/resources/chat/completions';
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
-export function convertOpenaiRequestToVSCodeRequest2(openaiRequest: ChatCompletionCreateParams): {
+export function convertOpenaiRequestToVSCodeRequest2(openaiRequest: OpenAI.ChatCompletionCreateParams): {
   messages: vscode.LanguageModelChatMessage[],
   options: vscode.LanguageModelChatRequestOptions
 } {
@@ -98,4 +99,138 @@ export function convertOpenaiRequestToVSCodeRequest2(openaiRequest: ChatCompleti
   }
 
   return { messages, options };
+}
+
+// VSCodeのLanguageModelTextPart/LanguageModelToolCallPart型ガード
+function isTextPart(part: any): part is vscode.LanguageModelTextPart {
+  return part instanceof vscode.LanguageModelTextPart;
+}
+function isToolCallPart(part: any): part is vscode.LanguageModelToolCallPart {
+  return part instanceof vscode.LanguageModelToolCallPart;
+}
+
+// VSCode ToolCall → OpenAI tool_call 変換
+function convertToolCall(part: vscode.LanguageModelToolCallPart, index: number): OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall {
+  return {
+    index,
+    id: part.callId,
+    type: 'function',
+    function: {
+      name: part.name,
+      arguments: JSON.stringify(part.input),
+    },
+  };
+}
+
+/**
+ * VSCode LanguageModelChatResponseをOpenAI ChatCompletion/ChatCompletionChunk形式に変換
+ * @param vscodeResponse VSCodeのLanguageModelChatResponse
+ * @param opts 追加情報（model名など）
+ * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
+ */
+export function convertVSCodeResponseToOpenaiResponse2(
+  vscodeResponse: vscode.LanguageModelChatResponse,
+  opts?: { model?: string }
+): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {
+  if (vscodeResponse && typeof vscodeResponse.stream === 'object' && Symbol.asyncIterator in vscodeResponse.stream) {
+    // ストリーミング: ChatCompletionChunkのAsyncIterableを返す
+    return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, opts?.model || 'unknown');
+  } else {
+    // 非ストリーミング: 全文をOpenAI ChatCompletionに変換
+    return convertVSCodeTextToOpenAICompletion(vscodeResponse, opts?.model || 'unknown');
+  }
+}
+
+// ストリーミング: VSCode stream → OpenAI ChatCompletionChunk[]
+async function* convertVSCodeStreamToOpenAIChunks(
+  stream: AsyncIterable<vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown>,
+  model: string
+): AsyncIterable<OpenAI.ChatCompletionChunk> {
+  const randomId = `chatcmpl-${generateRandomId()}`;
+  const created = Math.floor(Date.now() / 1000);
+  let roleSent = false;
+  let toolCallIndex = 0;
+  for await (const part of stream) {
+    const chunk: OpenAI.ChatCompletionChunk = {
+      id: randomId,
+      created,
+      model,
+      object: 'chat.completion.chunk',
+      choices: [
+        {
+          index: 0,
+          delta: {},
+          finish_reason: null,
+        },
+      ],
+    };
+    if (isTextPart(part)) {
+      if (!roleSent) {
+        chunk.choices[0].delta.role = 'assistant';
+        roleSent = true;
+      }
+      chunk.choices[0].delta.content = part.value;
+    } else if (isToolCallPart(part)) {
+      chunk.choices[0].delta.tool_calls = [convertToolCall(part, toolCallIndex++)];
+    } else {
+      // unknownパートは無視
+      continue;
+    }
+    yield chunk;
+  }
+  // 終了チャンク
+  yield {
+    id: randomId,
+    created,
+    model,
+    object: 'chat.completion.chunk',
+    choices: [
+      {
+        index: 0,
+        delta: {},
+        finish_reason: 'stop',
+      },
+    ],
+  };
+}
+
+// 非ストリーミング: VSCode text → OpenAI ChatCompletion
+async function convertVSCodeTextToOpenAICompletion(
+  vscodeResponse: vscode.LanguageModelChatResponse,
+  model: string
+): Promise<OpenAI.ChatCompletion> {
+  const randomId = `chatcmpl-${generateRandomId()}`;
+  const created = Math.floor(Date.now() / 1000);
+  let content = '';
+  let toolCalls: any[] = [];
+  if (vscodeResponse && typeof vscodeResponse.text === 'object' && Symbol.asyncIterator in vscodeResponse.text) {
+    for await (const part of vscodeResponse.text) {
+      content += part;
+    }
+  }
+  if (vscodeResponse && typeof vscodeResponse.stream === 'object' && Symbol.asyncIterator in vscodeResponse.stream) {
+    for await (const part of vscodeResponse.stream) {
+      if (isToolCallPart(part)) {
+        toolCalls.push(convertToolCall(part, 0));
+      }
+    }
+  }
+  const choice: any = {
+    index: 0,
+    message: {
+      role: 'assistant',
+      content,
+    },
+    finish_reason: 'stop',
+  };
+  if (toolCalls.length > 0) {
+    choice.message.tool_calls = toolCalls;
+  }
+  return {
+    id: randomId,
+    created,
+    model,
+    object: 'chat.completion',
+    choices: [choice],
+  };
 }
