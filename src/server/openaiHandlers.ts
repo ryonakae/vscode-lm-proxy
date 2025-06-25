@@ -196,6 +196,7 @@ async function handleOpenAIChatCompletions(
       const completion =
         await (openAIResponseOrStream as Promise<OpenAI.ChatCompletion>)
       res.json(completion)
+      return
     }
   } catch (error) {
     logger.error('OpenAI Chat completions API error', {
