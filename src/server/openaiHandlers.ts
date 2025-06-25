@@ -1,6 +1,7 @@
 // OpenAI API互換ハンドラー
 import type express from 'express'
 import type OpenAI from 'openai'
+import type { APIError } from 'openai'
 import * as vscode from 'vscode'
 import {
   convertOpenAIRequestToVSCodeRequest,
@@ -200,23 +201,55 @@ async function handleOpenAIChatCompletions(
     res.json(completion)
     return
   } catch (error) {
-    logger.error('OpenAI Chat completions API error', {
-      message: (error as Error).message,
-      error: error as Error,
-    })
+    const lmError = error as vscode.LanguageModelError
 
-    // エラーレスポンスの作成
-    const apiError = error as any
-    const statusCode = apiError.statusCode || 500
-    const errorResponse = {
-      error: {
-        message: apiError.message || 'An unknown error has occurred',
-        type: apiError.type || 'api_error',
-        code: apiError.code || 'internal_error',
-      },
+    logger.error(
+      'OpenAI Chat completions API error',
+      lmError.cause,
+      lmError.code,
+      lmError.message,
+      lmError.name,
+      lmError.stack,
+    )
+
+    // VSCodeのエラーをOpenAI互換のAPIエラーに変換
+    let statusCode = 500
+    let type = 'api_error'
+    let code = lmError.code || 'internal_error'
+
+    // LanguageModelError.code に応じてマッピング
+    if (code === 'NotFound') {
+      statusCode = 404
+      type = 'model_not_found_error'
+      code = 'model_not_found'
+    } else if (code === 'NoPermissions') {
+      statusCode = 403
+      type = 'permission_denied'
+      code = 'no_permissions'
+    } else if (code === 'Blocked') {
+      statusCode = 403
+      type = 'blocked'
+      code = 'blocked'
+    } else if (code === 'Unknown') {
+      statusCode = 500
+      type = 'api_error'
+      code = 'unknown'
     }
 
-    res.status(statusCode).json(errorResponse)
+    // VSCodeのエラーをOpenAI互換のAPIエラーに変換
+    const apiError: APIError = {
+      code,
+      message: lmError.message || 'An unknown error has occurred',
+      type,
+      status: statusCode,
+      headers: undefined,
+      error: undefined,
+      param: undefined,
+      requestID: undefined,
+      name: lmError.name || 'LanguageModelError',
+    }
+
+    res.status(statusCode).json({ error: apiError })
   }
 }
 
