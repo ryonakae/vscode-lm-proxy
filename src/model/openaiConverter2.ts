@@ -12,7 +12,7 @@ import { ChatCompletionCreateParams } from 'openai/resources/chat/completions';
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
-export function convertOpenaiRequestToVSCodeRequest(openaiRequest: ChatCompletionCreateParams): {
+export function convertOpenaiRequestToVSCodeRequest2(openaiRequest: ChatCompletionCreateParams): {
   messages: vscode.LanguageModelChatMessage[],
   options: vscode.LanguageModelChatRequestOptions
 } {
