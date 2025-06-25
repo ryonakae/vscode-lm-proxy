@@ -1,8 +1,9 @@
 // 共通ハンドラー処理
-import * as vscode from 'vscode';
-import express from 'express';
-import { logger } from '../utils/logger';
-import { limitsManager } from '../model/limits';
+
+import type express from 'express'
+import * as vscode from 'vscode'
+import { limitsManager } from '../model/limits'
+import { logger } from '../utils/logger'
 
 /**
  * LM APIとの通信を行う共通クラス
@@ -14,26 +15,28 @@ export class LmApiHandler {
    * @param stream 文字列のAsyncIterable
    * @returns 連結された文字列
    */
-  public static async streamToString(stream: AsyncIterable<string>): Promise<string> {
-    let result = '';
+  public static async streamToString(
+    stream: AsyncIterable<string>,
+  ): Promise<string> {
+    let result = ''
     for await (const chunk of stream) {
-      result += chunk;
+      result += chunk
     }
-    return result;
+    return result
   }
 
   // globalStateをstaticプロパティとして保持
-  public static globalState: vscode.Memento;
+  public static globalState: vscode.Memento
 
   public static initialize(globalState: vscode.Memento) {
-    this.globalState = globalState;
+    LmApiHandler.globalState = globalState
   }
 
   private static resolveModelId(modelId: string): string | null {
     if (modelId === 'vscode-lm-api') {
-      return this.globalState?.get<string>('openaiModelId') ?? null;
+      return LmApiHandler.globalState?.get<string>('openaiModelId') ?? null
     }
-    return modelId;
+    return modelId
   }
 
   /**
@@ -44,53 +47,54 @@ export class LmApiHandler {
    */
   public static async getChatCompletionFromLmApi(
     messages: vscode.LanguageModelChatMessage[],
-    modelId: string
+    modelId: string,
   ): Promise<{
-    responseText: string;
-    promptTokens: number;
-    completionTokens: number;
-    model: vscode.LanguageModelChat;
+    responseText: string
+    promptTokens: number
+    completionTokens: number
+    model: vscode.LanguageModelChat
   }> {
     try {
-      const actualModelId = this.resolveModelId(modelId);
+      const actualModelId = LmApiHandler.resolveModelId(modelId)
       if (!actualModelId) {
-        throw new Error('No model selected. Please select a model first.');
+        throw new Error('No model selected. Please select a model first.')
       }
       // レート制限チェック
-      const rateLimitError = limitsManager.checkRateLimit(actualModelId);
+      const rateLimitError = limitsManager.checkRateLimit(actualModelId)
       if (rateLimitError) {
-        const error = new Error(rateLimitError.message);
-        (error as any).statusCode = 429; // Too Many Requests
-        (error as any).type = 'rate_limit_error';
-        throw error;
+        const error = new Error(rateLimitError.message)
+        ;(error as any).statusCode = 429 // Too Many Requests
+        ;(error as any).type = 'rate_limit_error'
+        throw error
       }
       // VSCode LM APIを呼び出し
-      const [model] = await vscode.lm.selectChatModels({ id: actualModelId });
+      const [model] = await vscode.lm.selectChatModels({ id: actualModelId })
       if (!model) {
-        throw new Error(`Model ${actualModelId} not found`);
+        throw new Error(`Model ${actualModelId} not found`)
       }
       // プロンプトのトークン数を計算
-      let promptTokens = 0;
+      let promptTokens = 0
       for (const message of messages) {
-        promptTokens += await model.countTokens(message);
+        promptTokens += await model.countTokens(message)
       }
       const response = await model.sendRequest(
         messages,
         {},
-        new vscode.CancellationTokenSource().token
-      );
-      const responseText = await this.streamToString(response.text);
-      const responseMessage = vscode.LanguageModelChatMessage.Assistant(responseText);
-      const completionTokens = await model.countTokens(responseMessage);
+        new vscode.CancellationTokenSource().token,
+      )
+      const responseText = await LmApiHandler.streamToString(response.text)
+      const responseMessage =
+        vscode.LanguageModelChatMessage.Assistant(responseText)
+      const completionTokens = await model.countTokens(responseMessage)
       return {
         responseText,
         promptTokens,
         completionTokens,
-        model
-      };
+        model,
+      }
     } catch (error) {
-      logger.error('Chat completion error:', error as Error);
-      throw error;
+      logger.error('Chat completion error:', error as Error)
+      throw error
     }
   }
 
@@ -104,40 +108,40 @@ export class LmApiHandler {
   public static async streamChatCompletionFromLmApi(
     messages: vscode.LanguageModelChatMessage[],
     modelId: string,
-    onChunk: (chunk: { content: string; isComplete?: boolean }) => void
+    onChunk: (chunk: { content: string; isComplete?: boolean }) => void,
   ): Promise<void> {
     try {
-      const actualModelId = this.resolveModelId(modelId);
+      const actualModelId = LmApiHandler.resolveModelId(modelId)
       if (!actualModelId) {
-        throw new Error('No model selected. Please select a model first.');
+        throw new Error('No model selected. Please select a model first.')
       }
-      const rateLimitError = limitsManager.checkRateLimit(actualModelId);
+      const rateLimitError = limitsManager.checkRateLimit(actualModelId)
       if (rateLimitError) {
-        const error = new Error(rateLimitError.message);
-        (error as any).statusCode = 429; // Too Many Requests
-        (error as any).type = 'rate_limit_error';
-        throw error;
+        const error = new Error(rateLimitError.message)
+        ;(error as any).statusCode = 429 // Too Many Requests
+        ;(error as any).type = 'rate_limit_error'
+        throw error
       }
-      const [model] = await vscode.lm.selectChatModels({ id: actualModelId });
+      const [model] = await vscode.lm.selectChatModels({ id: actualModelId })
       if (!model) {
-        throw new Error(`Model ${actualModelId} not found`);
+        throw new Error(`Model ${actualModelId} not found`)
       }
       const response = await model.sendRequest(
         messages,
         {},
-        new vscode.CancellationTokenSource().token
-      );
-      onChunk({ content: '', isComplete: false });
-      let fullContent = '';
+        new vscode.CancellationTokenSource().token,
+      )
+      onChunk({ content: '', isComplete: false })
+      let fullContent = ''
       for await (const chunk of response.text) {
-        fullContent += chunk;
-        onChunk({ content: chunk, isComplete: false });
+        fullContent += chunk
+        onChunk({ content: chunk, isComplete: false })
       }
-      onChunk({ content: '', isComplete: true });
-      return;
+      onChunk({ content: '', isComplete: true })
+      return
     } catch (error) {
-      logger.error('Stream chat completion error:', error as Error);
-      throw error;
+      logger.error('Stream chat completion error:', error as Error)
+      throw error
     }
   }
 }
@@ -147,7 +151,7 @@ export class LmApiHandler {
  * @param {express.Express} app Express.jsアプリケーション
  */
 export function setupStatusEndpoint(app: express.Express): void {
-  app.get('/', handleServerStatus);
+  app.get('/', handleServerStatus)
 }
 
 /**
@@ -155,7 +159,10 @@ export function setupStatusEndpoint(app: express.Express): void {
  * @param {express.Request} _req リクエスト（未使用）
  * @param {express.Response} res レスポンス
  */
-export function handleServerStatus(_req: express.Request, res: express.Response) {
+export function handleServerStatus(
+  _req: express.Request,
+  res: express.Response,
+) {
   res.json({
     status: 'ok',
     message: 'VSCode LM API Proxy server is running',
@@ -163,32 +170,35 @@ export function handleServerStatus(_req: express.Request, res: express.Response)
     endpoints: {
       '/': {
         method: 'GET',
-        description: 'Server status endpoint'
+        description: 'Server status endpoint',
       },
       '/openai/chat/completions': {
         method: 'POST',
-        description: 'OpenAI-compatible Chat Completions API'
+        description: 'OpenAI-compatible Chat Completions API',
       },
       '/openai/v1/chat/completions': {
         method: 'POST',
-        description: 'OpenAI-compatible Chat Completions API (with `/v1/` prefix)'
+        description:
+          'OpenAI-compatible Chat Completions API (with `/v1/` prefix)',
       },
       '/openai/models': {
         method: 'GET',
-        description: 'OpenAI-compatible Models API - List available models'
+        description: 'OpenAI-compatible Models API - List available models',
       },
       '/openai/v1/models': {
         method: 'GET',
-        description: 'OpenAI-compatible Models API - List available models (with `/v1/` prefix)'
+        description:
+          'OpenAI-compatible Models API - List available models (with `/v1/` prefix)',
       },
       '/openai/models/:model': {
         method: 'GET',
-        description: 'OpenAI-compatible Models API - Get specific model info'
+        description: 'OpenAI-compatible Models API - Get specific model info',
       },
       '/openai/v1/models/:model': {
         method: 'GET',
-        description: 'OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)'
+        description:
+          'OpenAI-compatible Models API - Get specific model info (with `/v1/` prefix)',
       },
-    }
-  });
+    },
+  })
 }

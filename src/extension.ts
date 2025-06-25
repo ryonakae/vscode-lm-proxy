@@ -1,16 +1,16 @@
 // VSCode拡張機能のエントリーポイント
-import * as vscode from 'vscode';
-import { registerCommands } from './commands';
-import { serverManager } from './server/manager';
-import { statusBarManager } from './ui/statusbar';
-import { logger } from './utils/logger';
-import { LmApiHandler } from './server/handlers';
+import * as vscode from 'vscode'
+import { registerCommands } from './commands'
+import { LmApiHandler } from './server/handlers'
+import { serverManager } from './server/manager'
+import { statusBarManager } from './ui/statusbar'
+import { logger } from './utils/logger'
 
 // グローバルコンテキストの保存用変数
-let globalExtensionContext: vscode.ExtensionContext;
+let globalExtensionContext: vscode.ExtensionContext
 
 // グローバルモデルマネージャー変数
-let modelManager: any;
+let modelManager: any
 
 // モデルマネージャーを取得する関数をエクスポート
 /**
@@ -18,7 +18,7 @@ let modelManager: any;
  * @returns {any} モデルマネージャーのインスタンス
  */
 export function getModelManager() {
-  return modelManager;
+  return modelManager
 }
 
 /**
@@ -28,65 +28,82 @@ export function getModelManager() {
  */
 export function activate(context: vscode.ExtensionContext) {
   // グローバル変数にコンテキストを保存
-  globalExtensionContext = context;
+  globalExtensionContext = context
 
   // モデル管理クラスのインポートと初期化（グローバル変数に格納）
   // activate内でrequireすることで循環依存を回避
-  modelManager = require('./model/manager').modelManager;
+  modelManager = require('./model/manager').modelManager
 
   // モデルマネージャーにExtensionContextを設定
   // これにより内部で保存されたモデル情報が復元される
-  modelManager.setExtensionContext(context);
+  modelManager.setExtensionContext(context)
 
   // LmApiHandlerにグローバル状態をセット
   // VSCodeのグローバルストレージをAPIハンドラで利用可能にする
-  LmApiHandler.initialize(context.globalState);
+  LmApiHandler.initialize(context.globalState)
 
   // 選択中のOpenAIモデルとサーバー状態をログに出力
-  const openaiModel = modelManager.getOpenAIModelId() || 'Not selected';
-  const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped';
-  logger.info(`LM Proxy extension activated (Model: ${openaiModel}, Server: ${serverStatus})`);
+  const openaiModel = modelManager.getOpenAIModelId() || 'Not selected'
+  const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped'
+  logger.info(
+    `LM Proxy extension activated (Model: ${openaiModel}, Server: ${serverStatus})`,
+  )
 
   // 設定に応じて出力パネルを表示
-  const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
-  const showOnStartup = config.get<boolean>('showOutputOnStartup', true);
+  const config = vscode.workspace.getConfiguration('vscode-lm-proxy')
+  const showOnStartup = config.get<boolean>('showOutputOnStartup', true)
   if (showOnStartup) {
-    logger.show(true); // フォーカスは現在のエディタに保持
+    logger.show(true) // フォーカスは現在のエディタに保持
   }
 
   // コンテキスト変数の初期化
-  vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
+  vscode.commands.executeCommand(
+    'setContext',
+    'vscode-lm-proxy.serverRunning',
+    false,
+  )
 
   // ステータスバーの初期化
-  statusBarManager.initialize(context);
+  statusBarManager.initialize(context)
 
   // コマンドの登録
-  registerCommands(context);
+  registerCommands(context)
 
   // 設定変更の監視
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
       // ポート番号変更時、サーバーが起動中なら再起動を促す
-      if (e.affectsConfiguration('vscode-lm-proxy.port') && serverManager.isRunning()) {
+      if (
+        e.affectsConfiguration('vscode-lm-proxy.port') &&
+        serverManager.isRunning()
+      ) {
         vscode.window.showInformationMessage(
-          'Port number setting has been changed. Please restart the server to apply the change.'
-        );
+          'Port number setting has been changed. Please restart the server to apply the change.',
+        )
       }
-    })
-  );
+    }),
+  )
 
   // 状態復元
   // 以前サーバーが実行中だった場合は自動的に再起動
-  const wasServerRunning = context.globalState.get<boolean>('serverRunning', false);
+  const wasServerRunning = context.globalState.get<boolean>(
+    'serverRunning',
+    false,
+  )
   if (wasServerRunning) {
-    serverManager.start()
+    serverManager
+      .start()
       .then(() => {
-        const serverUrl = serverManager.getServerUrl();
-        vscode.window.showInformationMessage(`Language Model Proxy server started (${serverUrl})`);
+        const serverUrl = serverManager.getServerUrl()
+        vscode.window.showInformationMessage(
+          `Language Model Proxy server started (${serverUrl})`,
+        )
       })
       .catch(err => {
-        vscode.window.showErrorMessage(`Failed to auto-start server: ${err.message}`);
-      });
+        vscode.window.showErrorMessage(
+          `Failed to auto-start server: ${err.message}`,
+        )
+      })
   }
 }
 
@@ -96,19 +113,22 @@ export function activate(context: vscode.ExtensionContext) {
  * @returns {Promise<void> | undefined} サーバー停止時はPromise、不要な場合はundefined
  */
 export function deactivate(): Promise<void> | undefined {
-  logger.info('LM Proxy extension deactivated');
-  
+  logger.info('LM Proxy extension deactivated')
+
   // OpenAIモデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
-  const openaiModelId = modelManager.getOpenAIModelId();
-  
+  const openaiModelId = modelManager.getOpenAIModelId()
+
   // グローバル状態へOpenAIモデル情報と実行状態を保存
-  globalExtensionContext.globalState.update('openaiModelId', openaiModelId);
-  globalExtensionContext.globalState.update('serverRunning', serverManager.isRunning());
-  
+  globalExtensionContext.globalState.update('openaiModelId', openaiModelId)
+  globalExtensionContext.globalState.update(
+    'serverRunning',
+    serverManager.isRunning(),
+  )
+
   // サーバーが実行中なら停止
   if (serverManager.isRunning()) {
-    return serverManager.stop();
+    return serverManager.stop()
   }
-  
-  return undefined;
+
+  return undefined
 }
