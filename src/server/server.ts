@@ -32,7 +32,7 @@ export function createServer(): express.Express {
     // カスタムのsendメソッド
     res.send = (body: any): express.Response => {
       const responseTime = Date.now() - startTime
-      logger.info('Response sent', {
+      logger.info('Response sent (res.send)', {
         status: res.statusCode,
         path,
         body,
@@ -44,7 +44,7 @@ export function createServer(): express.Express {
     // カスタムのjsonメソッド
     res.json = (body: any): express.Response => {
       const responseTime = Date.now() - startTime
-      logger.info('Response sent', {
+      logger.info('Response sent (res.json)', {
         status: res.statusCode,
         path,
         body,
@@ -59,9 +59,13 @@ export function createServer(): express.Express {
       if (chunk) {
         // Content-Typeがevent-streamの場合はストリーミング終了として記録
         if (res.getHeader('Content-Type') === 'text/event-stream') {
-          logger.info('Response sent', { stream: 'end', path, responseTime })
+          logger.info('Response sent (res.end, stream)', {
+            stream: 'end',
+            path,
+            responseTime,
+          })
         } else {
-          logger.info('Response sent', {
+          logger.info('Response sent (res.end, chunk)', {
             status: res.statusCode,
             path,
             body: chunk,
@@ -70,7 +74,7 @@ export function createServer(): express.Express {
         }
       } else {
         // チャンクがない場合
-        logger.info('Response sent', {
+        logger.info('Response sent (res.end, no chunk)', {
           status: res.statusCode,
           path,
           body: null,
