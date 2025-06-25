@@ -1,6 +1,6 @@
 // モデル管理クラス
 import * as vscode from 'vscode';
-import { convertVSCodeResponseToOpenaiResponse } from './openaiConverter';
+import { convertVSCodeResponseToOpenAIResponse } from './openaiConverter';
 import { OpenAIChatCompletionResponse } from './types';
 import { limitsManager } from './limits';
 import { logger } from '../utils/logger';
@@ -18,9 +18,9 @@ class ModelManager {
   public setExtensionContext(context: vscode.ExtensionContext) {
     this.extensionContext = context;
     // 起動時に保存済みモデル情報があれば復元
-    const savedOpenaiModelId = context.globalState.get<string>('openaiModelId');
-    if (savedOpenaiModelId) {
-      this.openaiModelId = savedOpenaiModelId;
+    const savedOpenAIModelId = context.globalState.get<string>('openaiModelId');
+    if (savedOpenAIModelId) {
+      this.openaiModelId = savedOpenAIModelId;
     }
   }
   // 選択中のOpenAIモデルID
@@ -32,8 +32,8 @@ class ModelManager {
   ];
 
   // OpenAIモデル変更時のイベントエミッター
-  private readonly _onDidChangeOpenaiModelId = new vscode.EventEmitter<void>();
-  public readonly onDidChangeOpenaiModelId = this._onDidChangeOpenaiModelId.event;
+  private readonly _onDidChangeOpenAIModelId = new vscode.EventEmitter<void>();
+  public readonly onDidChangeOpenAIModelId = this._onDidChangeOpenAIModelId.event;
 
   /**
    * AsyncIterableなストリームを文字列に変換
@@ -113,7 +113,7 @@ class ModelManager {
           const selectedItem = quickPick.selectedItems[0] as any;
           if (selectedItem) {
             // 選択されたモデルのIDとモデル名を保存
-            this.setOpenaiModelId(selectedItem.model.id);
+            this.setOpenAIModelId(selectedItem.model.id);
             logger.info(`Selected model: ${this.openaiModelId}`);
             quickPick.dispose();
             resolve(this.openaiModelId as string);
@@ -140,7 +140,7 @@ class ModelManager {
    * 現在選択されているモデルIDを取得
    * @returns モデルID
    */
-  public getOpenaiModelId(): string | null {
+  public getOpenAIModelId(): string | null {
     return this.openaiModelId;
   }
   
@@ -148,14 +148,14 @@ class ModelManager {
    * モデルIDを直接設定する
    * @param modelId 設定するモデルID
    */
-  public setOpenaiModelId(modelId: string): void {
+  public setOpenAIModelId(modelId: string): void {
     this.openaiModelId = modelId;
     // 永続化
     if (this.extensionContext) {
       this.extensionContext.globalState.update('openaiModelId', this.openaiModelId);
     }
     // OpenAIモデル変更イベントを発火
-    this._onDidChangeOpenaiModelId.fire();
+    this._onDidChangeOpenAIModelId.fire();
   }
   
   /**
@@ -242,7 +242,7 @@ class ModelManager {
       const responseMessage = vscode.LanguageModelChatMessage.Assistant(responseText);
       const completionTokens = await model.countTokens(responseMessage);
       
-      const openAIResponse = convertVSCodeResponseToOpenaiResponse({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
+      const openAIResponse = convertVSCodeResponseToOpenAIResponse({ content: responseText, isComplete: true }, modelId) as OpenAIChatCompletionResponse;
       
       // トークン数情報を更新
       openAIResponse.usage = {
@@ -351,7 +351,7 @@ class ModelManager {
         accumulatedContent += chunk; // 累積コンテンツに追加
         
         // チャンクをOpenAI API形式に変換してコールバックに渡す
-        const openAIChunk = convertVSCodeResponseToOpenaiResponse(
+        const openAIChunk = convertVSCodeResponseToOpenAIResponse(
           { 
             content: firstChunk ? '' : chunk, 
             isComplete: false 
@@ -368,7 +368,7 @@ class ModelManager {
           
           // 続いて実際のコンテンツを含むチャンクを送信
           if (chunk) {
-            const contentChunk = convertVSCodeResponseToOpenaiResponse({ content: chunk, isComplete: false }, modelId, true);
+            const contentChunk = convertVSCodeResponseToOpenAIResponse({ content: chunk, isComplete: false }, modelId, true);
             callback(contentChunk);
             continue;
           }
@@ -391,7 +391,7 @@ class ModelManager {
       const completionTokens = await model.countTokens(responseMessage);
       
       // 完了チャンクを送信 - トークン数情報を含める
-      const finishChunk = convertVSCodeResponseToOpenaiResponse(
+      const finishChunk = convertVSCodeResponseToOpenAIResponse(
         { content: '', isComplete: true },
         modelId,
         true

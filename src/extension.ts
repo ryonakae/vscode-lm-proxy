@@ -33,7 +33,7 @@ export function activate(context: vscode.ExtensionContext) {
   LmApiHandler.initialize(context.globalState);
   
   // 選択中のOpenAIモデルとサーバー状態をログに出力
-  const openaiModel = modelManager.getOpenaiModelId() || 'Not selected';
+  const openaiModel = modelManager.getOpenAIModelId() || 'Not selected';
   const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped';
   logger.info(`LM Proxy extension activated (Model: ${openaiModel}, Server: ${serverStatus})`);
 
@@ -84,7 +84,7 @@ export function deactivate(): Promise<void> | undefined {
   logger.info('LM Proxy extension deactivated');
   
   // OpenAIモデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
-  const openaiModelId = modelManager.getOpenaiModelId();
+  const openaiModelId = modelManager.getOpenAIModelId();
   
   // グローバル状態へOpenAIモデル情報と実行状態を保存
   globalExtensionContext.globalState.update('openaiModelId', openaiModelId);

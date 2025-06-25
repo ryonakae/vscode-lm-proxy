@@ -2,7 +2,7 @@
 import express from 'express';
 import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
-import { convertVSCodeResponseToOpenaiResponse, convertOpenaiRequestToVSCodeRequest, validateAndConvertOpenaiRequest } from '../model/openaiConverter';
+import { convertVSCodeResponseToOpenAIResponse, convertOpenAIRequestToVSCodeRequest, validateAndConvertOpenAIRequest } from '../model/openaiConverter';
 import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 import { OpenAIChatCompletionResponse } from '../model/types';
@@ -11,7 +11,7 @@ import { OpenAIChatCompletionResponse } from '../model/types';
  * Sets up OpenAI-compatible Chat Completions API endpoint
  * @param app Express.js application
  */
-export function setupChatCompletionsEndpoint(app: express.Express): void {
+export function setupOpenAIChatCompletionsEndpoint(app: express.Express): void {
   // OpenAI API互換エンドポイントを登録
   app.post('/openai/chat/completions', handleOpenAIChatCompletions);
   app.post('/openai/v1/chat/completions', handleOpenAIChatCompletions);
@@ -21,7 +21,7 @@ export function setupChatCompletionsEndpoint(app: express.Express): void {
  * Sets up OpenAI-compatible Models API endpoints
  * @param app Express.js application
  */
-export function setupModelsEndpoints(app: express.Express): void {
+export function setupOpenAIModelsEndpoints(app: express.Express): void {
   // モデル一覧エンドポイント
   app.get('/openai/models', handleOpenAIModels);
   app.get('/openai/v1/models', handleOpenAIModels);
@@ -140,11 +140,11 @@ async function handleOpenAIModelInfo(req: express.Request, res: express.Response
 async function handleOpenAIChatCompletions(req: express.Request, res: express.Response) {
   try {
     // リクエストの検証
-    const { messages, model, stream } = validateAndConvertOpenaiRequest(req.body);
+    const { messages, model, stream } = validateAndConvertOpenAIRequest(req.body);
     logger.info(`OpenAI Chat completions request: model=${model}, messages=${messages.length}, stream=${stream}`);
     
     // OpenAI形式のリクエストをVSCode LM API形式に変換
-    const vscodeLmRequest = convertOpenaiRequestToVSCodeRequest(req.body);
+    const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);
     
     // トークン制限チェック（元のメッセージに対して実行）
     const tokenLimitError = await limitsManager.validateTokenLimit(messages, model);
@@ -173,7 +173,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
           model,
           (chunk) => {
             // OpenAI形式に変換してレスポンス
-            const openAIChunk = convertVSCodeResponseToOpenaiResponse(chunk, model, true);
+            const openAIChunk = convertVSCodeResponseToOpenAIResponse(chunk, model, true);
             const data = JSON.stringify(openAIChunk);
             // // チャンクをログに記録
             // logger.logStreamChunk(req.originalUrl || req.url, openAIChunk, chunkIndex++);
@@ -190,7 +190,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
           model
         );
         // OpenAI形式に変換
-        const completion = convertVSCodeResponseToOpenaiResponse(
+        const completion = convertVSCodeResponseToOpenAIResponse(
           { content: result.responseText, isComplete: true }, 
           model
         ) as OpenAIChatCompletionResponse;

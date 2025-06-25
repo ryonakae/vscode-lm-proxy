@@ -33,7 +33,7 @@ class ServerManager {
 
     // モデルが選択されているか確認
     const modelManager = require('../extension').getModelManager();
-    if (!modelManager.getOpenaiModelId()) {
+    if (!modelManager.getOpenAIModelId()) {
       return Promise.reject(new Error('No OpenAI model selected. Please select a model first.'));
     }
 

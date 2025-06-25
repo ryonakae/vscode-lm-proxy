@@ -32,7 +32,7 @@ class StatusBarManager {
     
     // モデル変更イベントをリッスン
     context.subscriptions.push(
-      modelManager.onDidChangeOpenaiModelId(() => {
+      modelManager.onDidChangeOpenAIModelId(() => {
         // OpenAIモデルが変更されたらステータスバーを更新
         this.updateStatus(serverManager.isRunning());
       })
@@ -101,11 +101,11 @@ class StatusBarManager {
     }
     
     // モデル選択メニュー項目を追加
-    const currentModelId = modelManager.getOpenaiModelId();
+    const currentModelId = modelManager.getOpenAIModelId();
     items.push({
       label: '$(gear) OpenAI API Model',
       description: currentModelId ? `${currentModelId}` : 'No model selected',
-      command: 'vscode-lm-proxy.selectOpenaiModel'
+      command: 'vscode-lm-proxy.selectOpenAIModel'
     });
     
     // メニューを表示

@@ -1,6 +1,6 @@
 // Express.jsサーバーの設定とAPIエンドポイントの実装
 import express from 'express';
-import { setupChatCompletionsEndpoint, setupModelsEndpoints } from './openaiHandlers';
+import { setupOpenAIChatCompletionsEndpoint, setupOpenAIModelsEndpoints } from './openaiHandlers';
 import { setupStatusEndpoint } from './handlers';
 import { logger } from '../utils/logger';
 
@@ -94,8 +94,8 @@ export function createServer(): express.Express {
   setupStatusEndpoint(app);
   
   // OpenAI互換エンドポイントのセットアップ
-  setupChatCompletionsEndpoint(app);
-  setupModelsEndpoints(app);
+  setupOpenAIChatCompletionsEndpoint(app);
+  setupOpenAIModelsEndpoints(app);
   
   // エラーハンドラーの設定
   app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

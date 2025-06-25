@@ -10,7 +10,7 @@ import { serverManager } from '../server/manager';
  */
 export function registerModelCommands(context: vscode.ExtensionContext): void {
   // OpenAI APIモデル選択コマンド
-  const selectOpenaiModelCommand = vscode.commands.registerCommand('vscode-lm-proxy.selectOpenaiModel', async () => {
+  const selectOpenAIModelCommand = vscode.commands.registerCommand('vscode-lm-proxy.selectOpenAIModel', async () => {
     try {
       const openaiModelId = await modelManager.selectModel();
       
@@ -46,13 +46,13 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   });
 
   // コンテキストにコマンドを登録
-  context.subscriptions.push(selectOpenaiModelCommand);
+  context.subscriptions.push(selectOpenAIModelCommand);
   
   // 前回選択されたOpenAIモデルを復元
-  const previouslySelectedOpenaiModelId = context.globalState.get<string>('openaiModelId');
-  if (previouslySelectedOpenaiModelId) {
+  const previouslySelectedOpenAIModelId = context.globalState.get<string>('openaiModelId');
+  if (previouslySelectedOpenAIModelId) {
     // OpenAIモデル選択状態を復元
-    modelManager.setOpenaiModelId(previouslySelectedOpenaiModelId);
+    modelManager.setOpenAIModelId(previouslySelectedOpenAIModelId);
     // ステータスバーも更新
     statusBarManager.updateStatus(serverManager.isRunning());
   }

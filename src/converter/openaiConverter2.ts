@@ -13,7 +13,7 @@ import { generateRandomId } from '../utils';
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
-export function convertOpenaiRequestToVSCodeRequest2(openaiRequest: OpenAI.ChatCompletionCreateParams): {
+export function convertOpenAIRequestToVSCodeRequest2(openaiRequest: OpenAI.ChatCompletionCreateParams): {
   messages: vscode.LanguageModelChatMessage[],
   options: vscode.LanguageModelChatRequestOptions
 } {
@@ -222,7 +222,7 @@ async function convertVSCodeTextToOpenAICompletion(
  * @param opts 追加情報（model名など）
  * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
  */
-export function convertVSCodeResponseToOpenaiResponse2(
+export function convertVSCodeResponseToOpenAIResponse2(
   vscodeResponse: vscode.LanguageModelChatResponse,
   model: string
 ): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {

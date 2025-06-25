@@ -15,7 +15,7 @@ import { generateRandomId } from '../utils';
  * @param openaiRequest OpenAI形式のリクエスト
  * @returns VSCode LM API形式のリクエスト
  */
-export function convertOpenaiRequestToVSCodeRequest(openaiRequest: OpenAIChatCompletionRequest): {
+export function convertOpenAIRequestToVSCodeRequest(openaiRequest: OpenAIChatCompletionRequest): {
   messages: vscode.LanguageModelChatMessage[];
 } {
   // OpenAIのroleをVSCodeのAPIに合わせて変換
@@ -47,7 +47,7 @@ export function convertOpenaiRequestToVSCodeRequest(openaiRequest: OpenAIChatCom
  * @param isStreaming ストリーミングモードかどうか
  * @returns OpenAI API形式のレスポンス
  */
-export function convertVSCodeResponseToOpenaiResponse(
+export function convertVSCodeResponseToOpenAIResponse(
   response: { content: string | null; isComplete?: boolean; tool_calls?: OpenAIToolCall[]; name?: string },
   modelId: string,
   isStreaming: boolean = false
@@ -122,7 +122,7 @@ export function convertVSCodeResponseToOpenaiResponse(
  * @param body リクエストボディ
  * @returns 検証済みのリクエストパラメータ
  */
-export function validateAndConvertOpenaiRequest(body: any): {
+export function validateAndConvertOpenAIRequest(body: any): {
   messages: vscode.LanguageModelChatMessage[];
   model: string;
   stream?: boolean;
@@ -147,7 +147,7 @@ export function validateAndConvertOpenaiRequest(body: any): {
 
   // モデルが'vscode-lm-proxy'の場合、選択中のOpenAIモデルがあるか確認し、modelを書き換える
   if (model === 'vscode-lm-proxy') {
-    const openaiModelId = modelManager.getOpenaiModelId();
+    const openaiModelId = modelManager.getOpenAIModelId();
     if (!openaiModelId) {
       const error: any = new Error('No valid OpenAI model selected. Please select a model first.');
       error.statusCode = 400;
@@ -158,7 +158,7 @@ export function validateAndConvertOpenaiRequest(body: any): {
   }
 
   // OpenAIリクエストをVSCodeリクエストに変換
-  const { messages } = convertOpenaiRequestToVSCodeRequest(body as OpenAIChatCompletionRequest);
+  const { messages } = convertOpenAIRequestToVSCodeRequest(body as OpenAIChatCompletionRequest);
   return {
     messages,
     model,
