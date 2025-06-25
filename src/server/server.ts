@@ -3,6 +3,7 @@ import express from 'express';
 import { setupOpenAIChatCompletionsEndpoints, setupOpenAIEndpoints, setupOpenAIModelsEndpoints } from './openaiHandlers';
 import { setupStatusEndpoint } from './handlers';
 import { logger } from '../utils/logger';
+import { log } from 'console';
 
 /**
  * Express.jsサーバーのインスタンスを作成する
@@ -21,7 +22,7 @@ export function createServer(): express.Express {
     const method = req.method;
     
     // リクエストをログ出力
-    logger.logRequest(method, path, req.body);
+    logger.info('Request received', { method, path, body: req.body });
     
     // レスポンスを捕捉するための元のメソッドを保持
     const originalSend = res.send;
@@ -29,16 +30,16 @@ export function createServer(): express.Express {
     const originalEnd = res.end;
     
     // カスタムのsendメソッド
-    res.send = function(_body: any): express.Response {
+    res.send = function(body: any): express.Response {
       const responseTime = Date.now() - startTime;
-      // logger.logResponse(res.statusCode, path, body, responseTime);
+      logger.info('Response sent', { status: res.statusCode, path, body, responseTime });
       return originalSend.apply(res, arguments as any);
     };
     
     // カスタムのjsonメソッド
     res.json = function(body: any): express.Response {
       const responseTime = Date.now() - startTime;
-      logger.logResponse(res.statusCode, path, body, responseTime);
+      logger.info('Response sent', { status: res.statusCode, path, body, responseTime });
       return originalJson.apply(res, arguments as any);
     };
     
@@ -48,13 +49,13 @@ export function createServer(): express.Express {
       if (chunk) {
         // Content-Typeがevent-streamの場合はストリーミング終了として記録
         if (res.getHeader('Content-Type') === 'text/event-stream') {
-          logger.logStreamEnd(path, responseTime);
+          logger.info('Response sent', { stream: 'end', path, responseTime });
         } else {
-          // logger.logResponse(res.statusCode, path, chunk, responseTime);
+          logger.info('Response sent', { status: res.statusCode, path, body: chunk, responseTime });
         }
       } else {
         // チャンクがない場合
-        // logger.logResponse(res.statusCode, path, null, responseTime);
+        logger.info('Response sent', { status: res.statusCode, path, body: null, responseTime });
       }
       return originalEnd.apply(res, arguments as any);
     };

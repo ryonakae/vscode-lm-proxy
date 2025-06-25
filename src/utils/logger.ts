@@ -58,7 +58,8 @@ export class Logger {
    * @returns フォーマットされたメッセージ
    */
   private formatMessage(level: string, message: string): string {
-    return `[${this.getTimestamp()}] [${level}] ${message}`;
+    // 日付の括弧をトルツメ（例: 2025-06-25T06:00:00.000Z [INFO] ...）
+    return `${this.getTimestamp()} [${level}] ${message}`;
   }
 
   /**
@@ -71,44 +72,68 @@ export class Logger {
 
   /**
    * DEBUGレベルのログを出力
-   * @param message ログメッセージ
+   * @param message ログメッセージまたはオブジェクト
    */
-  public debug(message: string): void {
+  public debug(...args: any[]): void {
     if (this.currentLogLevel <= LogLevel.DEBUG) {
-      this.outputChannel.appendLine(this.formatMessage('DEBUG', message));
+      const msg = args.map(arg =>
+        typeof arg === 'string'
+          ? arg
+          : this.formatJSONForLog(arg)
+      ).join(' ');
+      this.outputChannel.appendLine(this.formatMessage('DEBUG', msg));
     }
   }
 
   /**
    * INFOレベルのログを出力
-   * @param message ログメッセージ
+   * @param message ログメッセージまたはオブジェクト
    */
-  public info(message: string): void {
+  public info(...args: any[]): void {
     if (this.currentLogLevel <= LogLevel.INFO) {
-      this.outputChannel.appendLine(this.formatMessage('INFO', message));
+      const msg = args.map(arg =>
+        typeof arg === 'string'
+          ? arg
+          : this.formatJSONForLog(arg)
+      ).join(' ');
+      this.outputChannel.appendLine(this.formatMessage('INFO', msg));
     }
   }
 
   /**
    * WARNレベルのログを出力
-   * @param message ログメッセージ
+   * @param message ログメッセージまたはオブジェクト
    */
-  public warn(message: string): void {
+  public warn(...args: any[]): void {
     if (this.currentLogLevel <= LogLevel.WARN) {
-      this.outputChannel.appendLine(this.formatMessage('WARN', message));
+      const msg = args.map(arg =>
+        typeof arg === 'string'
+          ? arg
+          : this.formatJSONForLog(arg)
+      ).join(' ');
+      this.outputChannel.appendLine(this.formatMessage('WARN', msg));
     }
   }
 
   /**
    * ERRORレベルのログを出力
-   * @param message ログメッセージ
+   * @param message ログメッセージまたはオブジェクト
    * @param error エラーオブジェクト（オプション）
    */
-  public error(message: string, error?: Error): void {
+  public error(...args: any[]): void {
+    let errorObj: Error | undefined;
+    if (args.length > 0 && args[args.length - 1] instanceof Error) {
+      errorObj = args.pop();
+    }
     if (this.currentLogLevel <= LogLevel.ERROR) {
-      this.outputChannel.appendLine(this.formatMessage('ERROR', message));
-      if (error && error.stack) {
-        this.outputChannel.appendLine(this.formatMessage('ERROR', `Stack: ${error.stack}`));
+      const msg = args.map(arg =>
+        typeof arg === 'string'
+          ? arg
+          : this.formatJSONForLog(arg)
+      ).join(' ');
+      this.outputChannel.appendLine(this.formatMessage('ERROR', msg));
+      if (errorObj && errorObj.stack) {
+        this.outputChannel.appendLine(this.formatMessage('ERROR', `Stack: ${errorObj.stack}`));
       }
     }
   }
@@ -118,103 +143,6 @@ export class Logger {
    */
   public clear(): void {
     this.outputChannel.clear();
-  }
-
-  /**
-   * APIリクエストをログ出力
-   * @param method HTTPメソッド
-   * @param path エンドポイントのパス
-   * @param body リクエストボディ
-   */
-  public logRequest(method: string, path: string, body?: any): void {
-    // リクエストの概要情報はINFOレベルで出力
-    if (this.currentLogLevel <= LogLevel.INFO) {
-      this.outputChannel.appendLine(this.formatMessage('REQUEST', `${method} ${path}`));
-      
-      // 詳細なボディ情報はDEBUGレベルでのみ出力
-      if (body && this.currentLogLevel <= LogLevel.DEBUG) {
-        // ヘッダー行を追加して見やすくする
-        this.outputChannel.appendLine(this.formatMessage('REQUEST', '=============== Request Body ==============='));
-        // リクエストボディを整形して表示
-        const bodyStr = this.formatJSONForLog(body);
-        this.outputChannel.appendLine(bodyStr);
-        this.outputChannel.appendLine(this.formatMessage('REQUEST', '=========================================='));
-      }
-    }
-  }
-
-  /**
-   * APIレスポンスをログ出力
-   * @param status ステータスコード
-   * @param path エンドポイントのパス
-   * @param body レスポンスボディ
-   * @param responseTime レスポンス時間（ms）
-   */
-  public logResponse(status: number, path: string, body?: any, responseTime?: number): void {
-    // レスポンスの概要情報はINFOレベルで出力
-    if (this.currentLogLevel <= LogLevel.INFO) {
-      const timeInfo = responseTime ? ` (${responseTime}ms)` : '';
-      this.outputChannel.appendLine(this.formatMessage('RESPONSE', `${status} ${path}${timeInfo}`));
-      
-      // 詳細なボディ情報はDEBUGレベルでのみ出力
-      if (body && this.currentLogLevel <= LogLevel.DEBUG) {
-        // ヘッダー行を追加して見やすくする
-        this.outputChannel.appendLine(this.formatMessage('RESPONSE', '=============== Response Body ==============='));
-        // レスポンスボディを整形して表示
-        const bodyStr = this.formatJSONForLog(body);
-        this.outputChannel.appendLine(bodyStr);
-        this.outputChannel.appendLine(this.formatMessage('RESPONSE', '==========================================='));
-      }
-    }
-  }
-
-  /**
-   * ストリーミングレスポンスの開始をログ出力
-   * @param path エンドポイントのパス
-   */
-  public logStreamStart(path: string): void {
-    if (this.currentLogLevel <= LogLevel.INFO) {
-      this.outputChannel.appendLine(this.formatMessage('STREAM', `Started streaming response for ${path}`));
-    }
-  }
-
-  /**
-   * ストリーミングレスポンスのチャンクをログ出力
-   * @param path エンドポイントのパス
-   * @param chunk ストリーミングチャンク
-   * @param index チャンクのインデックス
-   */
-  public logStreamChunk(path: string, chunk: any, index: number): void {
-    if (this.currentLogLevel <= LogLevel.DEBUG) {
-      // ストリーミングの詳細データはデバッグレベルでのみ表示
-      this.outputChannel.appendLine(this.formatMessage('STREAM', `Chunk #${index} for ${path}`));
-      
-      // チャンクの内容を整形して表示（インデントなし、簡潔に）
-      const chunkStr = this.formatJSONForLog(chunk, 1000, false);
-      
-      // ストリーミングデータの内容を表示
-      if (chunk.choices && chunk.choices[0] && chunk.choices[0].delta && chunk.choices[0].delta.content) {
-        const content = chunk.choices[0].delta.content;
-        this.outputChannel.appendLine(this.formatMessage('STREAM_CONTENT', `"${content}"`));
-      } else {
-        this.outputChannel.appendLine(this.formatMessage('STREAM_DATA', chunkStr));
-      }
-    } else if (this.currentLogLevel <= LogLevel.INFO && index % 10 === 0) {
-      // INFO レベルでは10チャンクごとにカウントのみ表示
-      this.outputChannel.appendLine(this.formatMessage('STREAM', `Processing chunk #${index} for ${path}`));
-    }
-  }
-
-  /**
-   * ストリーミングレスポンスの終了をログ出力
-   * @param path エンドポイントのパス
-   * @param responseTime 合計レスポンス時間（ms）
-   */
-  public logStreamEnd(path: string, responseTime?: number): void {
-    if (this.currentLogLevel <= LogLevel.INFO) {
-      const timeInfo = responseTime ? ` (total: ${responseTime}ms)` : '';
-      this.outputChannel.appendLine(this.formatMessage('STREAM', `Completed streaming response for ${path}${timeInfo}`));
-    }
   }
 
   /**

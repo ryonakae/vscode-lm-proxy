@@ -7,6 +7,8 @@ import { LmApiHandler } from './handlers';
 import { limitsManager } from '../model/limits';
 import { OpenAIChatCompletionResponse } from '../model/types';
 import OpenAI from 'openai';
+import * as vscode from 'vscode';
+import { convertOpenAIRequestToVSCodeRequest2, convertVSCodeResponseToOpenAIResponse2 } from '../converter/openaiConverter2';
 
 export function setupOpenAIEndpoints(app: express.Express): void {
   app.get('/openai', handleOpenAIRootResponse);
@@ -20,8 +22,8 @@ export function setupOpenAIEndpoints(app: express.Express): void {
  */
 export function setupOpenAIChatCompletionsEndpoints(app: express.Express): void {
   // OpenAI API互換エンドポイントを登録
-  app.post('/openai/chat/completions', handleOpenAIChatCompletions);
-  app.post('/openai/v1/chat/completions', handleOpenAIChatCompletions);
+  app.post('/openai/chat/completions', handleOpenAIChatCompletions2);
+  app.post('/openai/v1/chat/completions', handleOpenAIChatCompletions2);
 }
 
 /**
@@ -60,6 +62,104 @@ function handleOpenAIRootResponse(_req: express.Request, res: express.Response) 
   });
 };
 
+async function handleOpenAIChatCompletions2(req: express.Request, res: express.Response) {
+  try {
+    const body = req.body as OpenAI.ChatCompletionCreateParams;
+
+    // 必須フィールドのチェック
+    if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+      const error: any = new Error('The messages field is required');
+      error.statusCode = 400;
+      error.type = 'invalid_request_error';
+      throw error;
+    }
+    if (!body.model) {
+      const error: any = new Error('The model field is required');
+      error.statusCode = 400;
+      error.type = 'invalid_request_error';
+      throw error;
+    }
+
+    // モデルが'vscode-lm-proxy'の場合、選択中のOpenAIモデルがあるか確認し、modelを書き換える
+    let modelId = body.model;
+    if (modelId === 'vscode-lm-proxy') {
+      const openaiModelId = modelManager.getOpenAIModelId();
+      if (!openaiModelId) {
+        const error: any = new Error('No valid OpenAI model selected. Please select a model first.');
+        error.statusCode = 400;
+        error.type = 'invalid_request_error';
+        throw error;
+      }
+      modelId = openaiModelId;
+    }
+
+    // LM APIのモデルを取得
+    const [model] = await vscode.lm.selectChatModels({ id: modelId });
+    if (!model) {
+      const error: any = new Error(`Model ${modelId} not found`);
+      error.statusCode = 404;
+      error.type = 'model_not_found_error';
+      throw error;
+    }
+
+    // ストリーミングモードのチェック
+    const isStreaming = body.stream === true;
+
+    // OpenAI形式のリクエストをVSCode LM API形式に変換
+    const { messages, options } = convertOpenAIRequestToVSCodeRequest2(body);
+    logger.info('OpenAI Chat completions request', {model, messages, options});
+
+    // キャンセラレーショントークンを作成
+    const cancellationToken = new vscode.CancellationTokenSource().token;
+
+    // LM APIにリクエストを送りレスポンスを取得
+    const response = await model.sendRequest(messages, options, cancellationToken);
+    logger.info('Received response from LM API', response);
+
+    // レスポンスをOpenAI形式に変換
+    const openAIResponseOrStream = convertVSCodeResponseToOpenAIResponse2(response, modelId);
+
+    if (isStreaming) {
+      // ストリーミング: AsyncIterableの場合
+      // ストリーミングレスポンスの設定
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      // ストリーミング開始をログに記録
+      logger.info('Streaming started', { stream: 'start', path: req.originalUrl || req.url });
+      // チャンクのカウントを追跡
+      let chunkIndex = 0;
+
+      for await (const chunk of openAIResponseOrStream as AsyncIterable<OpenAI.ChatCompletionChunk>) {
+        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        // チャンクをログに記録
+        logger.info('Streaming chunk', { stream: 'chunk', path: req.originalUrl || req.url, chunk, index: chunkIndex++ });
+      }
+      res.write('data: [DONE]\n\n');
+      res.end();
+    } else {
+      // 非ストリーミング: Promiseの場合
+      const completion = await (openAIResponseOrStream as Promise<OpenAI.ChatCompletion>);
+      res.json(completion);
+    }
+  } catch (error) {
+    logger.error('OpenAI Chat completions API error', { message: (error as Error).message, error: error as Error });
+    
+    // エラーレスポンスの作成
+    const apiError = error as any;
+    const statusCode = apiError.statusCode || 500;
+    const errorResponse = {
+      error: {
+        message: apiError.message || 'An unknown error has occurred',
+        type: apiError.type || 'api_error',
+        code: apiError.code || 'internal_error'
+      }
+    };
+    
+    res.status(statusCode).json(errorResponse);
+  }
+}
+
 /**
  * Chat Completions request handler
  */
@@ -67,7 +167,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
   try {
     // リクエストの検証
     const { messages, model, stream } = validateAndConvertOpenAIRequest(req.body);
-    logger.info(`OpenAI Chat completions request: model=${model}, messages=${messages.length}, stream=${stream}`);
+    logger.info('OpenAI Chat completions request', {messages, model, stream});
     
     // OpenAI形式のリクエストをVSCode LM API形式に変換
     const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);
@@ -90,7 +190,7 @@ async function handleOpenAIChatCompletions(req: express.Request, res: express.Re
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
         // ストリーミング開始をログに記録
-        logger.logStreamStart(req.originalUrl || req.url);
+        logger.info({ stream: 'start', path: req.originalUrl || req.url });
         // チャンクのカウントを追跡
         let chunkIndex = 0;
         // 共通ハンドラーを使用してストリーミングレスポンスを送信

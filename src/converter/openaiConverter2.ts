@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import OpenAI from 'openai';
 import { generateRandomId } from '../utils';
+import { logger } from '../utils/logger';
 
 /**
  * OpenAI APIのChatCompletionCreateParamsリクエストをVSCode拡張APIのチャットリクエスト形式に変換する。
@@ -17,6 +18,8 @@ export function convertOpenAIRequestToVSCodeRequest2(openaiRequest: OpenAI.ChatC
   messages: vscode.LanguageModelChatMessage[],
   options: vscode.LanguageModelChatRequestOptions
 } {
+  logger.info('Converting OpenAI request to VSCode request', openaiRequest);
+
   // OpenAIのmessagesをVSCodeのLanguageModelChatMessage[]に変換
   const messages: vscode.LanguageModelChatMessage[] = (openaiRequest.messages || []).map((msg: any) => {
     let role: vscode.LanguageModelChatMessageRole;
@@ -98,6 +101,9 @@ export function convertOpenAIRequestToVSCodeRequest2(openaiRequest: OpenAI.ChatC
     options.modelOptions = modelOptions;
   }
 
+  // ログ表示
+  logger.info('Converted OpenAI request to VSCode request', messages, options);
+
   return { messages, options };
 }
 
@@ -157,6 +163,10 @@ async function* convertVSCodeStreamToOpenAIChunks(
       // unknownパートは無視
       continue;
     }
+
+    // ログ出力
+    logger.debug('Streaming chunk', chunk);
+
     yield chunk;
   }
   // 終了チャンク
