@@ -1,6 +1,6 @@
 // Express.jsサーバーの設定とAPIエンドポイントの実装
 import express from 'express';
-import { setupOpenAIChatCompletionsEndpoint, setupOpenAIModelsEndpoints } from './openaiHandlers';
+import { setupOpenAIChatCompletionsEndpoints, setupOpenAIEndpoints, setupOpenAIModelsEndpoints } from './openaiHandlers';
 import { setupStatusEndpoint } from './handlers';
 import { logger } from '../utils/logger';
 
@@ -61,40 +61,13 @@ export function createServer(): express.Express {
     
     next();
   });
-  
-  // OpenAI API互換性向上のためのルートパス
-  app.get('/openai', sendOpenAIRootResponse);
-  app.get('/openai/v1', sendOpenAIRootResponse);
-  app.get('/openai/v1/', sendOpenAIRootResponse);
-  
-  // OpenAIルートエンドポイントのハンドラー関数
-  function sendOpenAIRootResponse(_req: express.Request, res: express.Response) {
-    res.json({
-      status: 'ok',
-      message: 'OpenAI API compatible endpoints',
-      version: '0.0.1',
-      endpoints: {
-        'chat/completions': {
-          method: 'POST',
-          description: 'Chat Completions API'
-        },
-        'models': {
-          method: 'GET',
-          description: 'List available models'
-        },
-        'models/:model': {
-          method: 'GET',
-          description: 'Get model information'
-        }
-      }
-    });
-  };
 
   // サーバーステータスエンドポイントのセットアップ
   setupStatusEndpoint(app);
   
   // OpenAI互換エンドポイントのセットアップ
-  setupOpenAIChatCompletionsEndpoint(app);
+  setupOpenAIEndpoints(app);
+  setupOpenAIChatCompletionsEndpoints(app);
   setupOpenAIModelsEndpoints(app);
   
   // エラーハンドラーの設定
