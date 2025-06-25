@@ -31,10 +31,10 @@
   "main": "./out/extension.js",
   "scripts": {
     "check": "biome check",
-    "compile": "tsc -p ./",
+    "compile": "tsup src/extension.ts --out-dir out --format cjs --external vscode",
     "prepare": "husky",
     "vscode:prepublish": "npm run compile",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsup src/extension.ts --out-dir out --format cjs --external vscode --watch"
   },
   "contributes": {
     "commands": [
@@ -173,6 +173,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.2",
     "openai": "^5.7.0",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.2"
   },
   "extensionDependencies": [],
