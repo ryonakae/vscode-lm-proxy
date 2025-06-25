@@ -1,9 +1,5 @@
 // OpenAI APIとVSCode LM API関連の型定義
 
-/**
- * OpenAI Chat Completion APIのレスポンス型
- */
-// tool_calls型の明示化
 export interface OpenAIToolCall {
   id: string;
   type: 'function';
@@ -65,9 +61,6 @@ export interface OpenAIChatCompletionResponse {
   metadata?: Record<string, any>;
 }
 
-/**
- * OpenAI Chat Completion Stream APIのチャンク型
- */
 export interface OpenAIChatCompletionChunk {
   id: string;
   object: 'chat.completion.chunk';
@@ -86,73 +79,41 @@ export interface OpenAIChatCompletionChunk {
   system_fingerprint?: string;
 }
 
-/**
- * OpenAI Chat Completion APIのリクエスト型
- */
-export interface OpenAIChatCompletionRequest {
-  model: string;
-  messages: Array<{
-    role: string;
-    content: string;
-    name?: string;
-    function_call?: any; // 非推奨
-    tool_calls?: any[];
-    tool_call_id?: string;
-  }>;
-  audio?: {
-    format: string;
-    voice: string;
-  } | null;
-  frequency_penalty?: number | null;
-  function_call?: 'none' | 'auto' | {
-    name: string;
-  }; // 非推奨
-  functions?: {
-    name: string;
-    description?: string;
-    parameters: Record<string, any>;
-  }[]; // 非推奨
-  logit_bias?: Record<string, number> | null;
-  logprobs?: boolean | null;
-  max_completion_tokens?: number | null;
-  max_tokens?: number | null; // 非推奨
-  metadata?: Record<string, any>;
-  modalities?: string[] | null;
-  n?: number | null;
-  parallel_tool_calls?: boolean;
-  prediction?: {
-    type: 'content';
-    content: string | {
-      type: string; // 例: 'text'
-      text: string;
-    }[];
-  };
-  presence_penalty?: number | null;
-  reasoning_effort?: 'low' | 'medium' | 'high' | null;
-  response_format?: ResponseFormat;
-  seed?: number | null;
-  service_tier?: string | null;
-  stop?: string | string[] | null;
-  store?: boolean | null;
-  stream?: boolean | null;
-  stream_options?: {
-    include_usage?: boolean;
-  } | null;
-  temperature?: number | null;
-  tool_choice?: 'none' | 'auto' | {
-    type: 'function',
-    function: {
-      name: string;
-    };
-  };
-  tools?: Tool[];
-  top_logprobs?: number | null;
-  top_p?: number | null;
-  user?: string;
-  web_search_options?: WebSearchOptions;
+export interface Message {
+  role: string;
+  content: string;
+  name?: string;
+  function_call?: FunctionCall; // 非推奨
+  tool_calls?: FunctionCall[];
+  tool_call_id?: string;
 }
 
-// Tool型（現状 function のみ）
+export interface Prediction {
+  type: 'content';
+  content: string | { type: string; text: string }[];
+}
+
+export interface FunctionCall {
+  name: string;
+  arguments: string;
+}
+
+export interface Function {
+  name: string;
+  description?: string;
+  parameters: Record<string, any>;
+}
+
+export type ToolChoice =
+  | 'none'
+  | 'auto'
+  | {
+      type: 'function';
+      function: {
+        name: string;
+      };
+    };
+
 export interface Tool {
   type: 'function';
   function: {
@@ -163,7 +124,6 @@ export interface Tool {
   };
 }
 
-// レスポンスフォーマット指定型
 export type ResponseFormat =
   | { type: 'text' }
   | {
@@ -177,7 +137,6 @@ export type ResponseFormat =
     }
   | { type: 'json_object' };
 
-// Web検索オプション型
 export interface WebSearchOptions {
   search_context_size?: 'low' | 'medium' | 'high';
   user_location?: {
@@ -189,4 +148,45 @@ export interface WebSearchOptions {
       timezone?: string;
     };
   } | null;
+}
+
+export interface OpenAIChatCompletionRequest {
+  model: string;
+  messages: Message[];
+  audio?: {
+    format: string;
+    voice: string;
+  } | null;
+  frequency_penalty?: number | null;
+  function_call?: 'none' | 'auto' | {
+    name: string;
+  }; // 非推奨
+  functions?: Function[]; // 非推奨
+  logit_bias?: Record<string, number> | null;
+  logprobs?: boolean | null;
+  max_completion_tokens?: number | null;
+  max_tokens?: number | null; // 非推奨
+  metadata?: Record<string, any>;
+  modalities?: string[] | null;
+  n?: number | null;
+  parallel_tool_calls?: boolean;
+  prediction?: Prediction;
+  presence_penalty?: number | null;
+  reasoning_effort?: 'low' | 'medium' | 'high' | null;
+  response_format?: ResponseFormat;
+  seed?: number | null;
+  service_tier?: string | null;
+  stop?: string | string[] | null;
+  store?: boolean | null;
+  stream?: boolean | null;
+  stream_options?: {
+    include_usage?: boolean;
+  } | null;
+  temperature?: number | null;
+  tool_choice?: ToolChoice;
+  tools?: Tool[];
+  top_logprobs?: number | null;
+  top_p?: number | null;
+  user?: string;
+  web_search_options?: WebSearchOptions;
 }

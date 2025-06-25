@@ -53,7 +53,12 @@
         },
         "vscode-lm-proxy.logLevel": {
           "type": "number",
-          "enum": [0, 1, 2, 3],
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
           "enumDescriptions": [
             "DEBUG: Output all logs including detailed information (default)",
             "INFO: Output information, warnings, and errors only",
@@ -166,6 +171,7 @@
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
     "eslint": "^8.57.1",
+    "openai": "^5.7.0",
     "typescript": "^5.8.2"
   },
   "dependencies": {
