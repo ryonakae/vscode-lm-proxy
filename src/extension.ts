@@ -13,11 +13,19 @@ let globalExtensionContext: vscode.ExtensionContext;
 let modelManager: any;
 
 // モデルマネージャーを取得する関数をエクスポート
+/**
+ * モデルマネージャーのインスタンスを取得します。
+ * @returns {any} モデルマネージャーのインスタンス
+ */
 export function getModelManager() {
   return modelManager;
 }
 
-// 拡張機能が有効化された時に実行される関数
+/**
+ * VSCode拡張機能が有効化された際に呼び出されるエントリーポイントです。
+ * グローバル変数や各種マネージャーの初期化、コマンド登録、設定監視、サーバー自動起動などを行います。
+ * @param {vscode.ExtensionContext} context 拡張機能のグローバルコンテキスト
+ */
 export function activate(context: vscode.ExtensionContext) {
   // グローバル変数にコンテキストを保存
   globalExtensionContext = context;
@@ -79,7 +87,11 @@ export function activate(context: vscode.ExtensionContext) {
   }
 }
 
-// 拡張機能が無効化された時に実行される関数
+/**
+ * VSCode拡張機能が無効化された際に呼び出されるクリーンアップ関数です。
+ * モデル情報やサーバー状態の保存、サーバー停止処理を行います。
+ * @returns {Promise<void> | undefined} サーバー停止時はPromise、不要な場合はundefined
+ */
 export function deactivate(): Promise<void> | undefined {
   logger.info('LM Proxy extension deactivated');
   

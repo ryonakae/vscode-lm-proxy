@@ -5,8 +5,8 @@ import { statusBarManager } from '../ui/statusbar';
 import { serverManager } from '../server/manager';
 
 /**
- * モデル選択関連のコマンドを登録
- * @param context 拡張機能のコンテキスト
+ * モデル選択関連のコマンド（選択・再起動）をVSCodeに登録します。
+ * @param {vscode.ExtensionContext} context 拡張機能のグローバルコンテキスト
  */
 export function registerModelCommands(context: vscode.ExtensionContext): void {
   // OpenAI APIモデル選択コマンド

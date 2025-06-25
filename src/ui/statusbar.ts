@@ -5,7 +5,7 @@ import { modelManager } from '../model/manager';
 
 /**
  * ステータスバー管理クラス
- * サーバーの状態とモデル情報をVS Codeステータスバーに表示
+ * サーバーの状態とモデル情報をVS Codeステータスバーに表示します。
  */
 class StatusBarManager {
   private statusBarItem: vscode.StatusBarItem | undefined;

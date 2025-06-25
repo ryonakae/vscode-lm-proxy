@@ -6,8 +6,9 @@ import { logger } from '../utils/logger';
 import { log } from 'console';
 
 /**
- * Express.jsサーバーのインスタンスを作成する
- * @returns 設定済みのExpressアプリケーション
+ * Express.jsサーバーのインスタンスを作成します。
+ * OpenAI互換APIやステータスエンドポイントなどを含むルーティングを設定します。
+ * @returns {express.Express} 設定済みのExpressアプリケーション
  */
 export function createServer(): express.Express {
   const app = express();

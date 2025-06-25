@@ -4,7 +4,7 @@ import { logger } from '../utils/logger';
 
 /**
  * モデル管理クラス
- * VSCode Language Model APIへのアクセスとモデル選択を管理
+ * VSCode Language Model APIへのアクセスとモデル選択を管理します。
  */
 class ModelManager {
   // VSCode ExtensionContext（グローバルState用）

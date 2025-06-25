@@ -3,8 +3,8 @@ import * as vscode from 'vscode';
 import { logger } from '../utils/logger';
 
 /**
- * 出力パネル関連のコマンドを登録
- * @param context 拡張機能のコンテキスト
+ * 出力パネル関連のコマンド（表示・クリア・ログレベル変更）をVSCodeに登録します。
+ * @param {vscode.ExtensionContext} context 拡張機能のグローバルコンテキスト
  */
 export function registerOutputCommands(context: vscode.ExtensionContext): void {
   // 出力パネルを表示するコマンド

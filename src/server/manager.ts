@@ -7,7 +7,7 @@ import { logger } from '../utils/logger';
 
 /**
  * サーバーマネージャークラス
- * Express.jsサーバーの起動・停止・状態管理を行う
+ * Express.jsサーバーの起動・停止・状態管理を行います。
  */
 class ServerManager {
   private server: http.Server | null = null;

@@ -3,7 +3,10 @@ import * as vscode from 'vscode';
 import { serverManager } from '../server/manager';
 import { statusBarManager } from '../ui/statusbar';
 
-// サーバー関連のコマンドを登録
+/**
+ * サーバー関連のコマンド（起動・停止・状態取得）をVSCodeに登録します。
+ * @param {vscode.ExtensionContext} context 拡張機能のグローバルコンテキスト
+ */
 export function registerServerCommands(context: vscode.ExtensionContext): void {
   // サーバー起動コマンド
   const startServerCommand = vscode.commands.registerCommand('vscode-lm-proxy.startServer', async () => {

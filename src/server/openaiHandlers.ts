@@ -6,6 +6,10 @@ import OpenAI from 'openai';
 import * as vscode from 'vscode';
 import { convertOpenAIRequestToVSCodeRequest, convertVSCodeResponseToOpenAIResponse } from '../converter/openaiConverter';
 
+/**
+ * OpenAI互換APIのルートエンドポイントを設定します。
+ * @param {express.Express} app Express.jsアプリケーション
+ */
 export function setupOpenAIEndpoints(app: express.Express): void {
   app.get('/openai', handleOpenAIRootResponse);
   app.get('/openai/v1', handleOpenAIRootResponse);

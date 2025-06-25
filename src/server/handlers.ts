@@ -143,15 +143,17 @@ export class LmApiHandler {
 }
 
 /**
- * Sets up server status endpoint
- * @param app Express.js application
+ * サーバーのステータス確認用エンドポイントを設定します。
+ * @param {express.Express} app Express.jsアプリケーション
  */
 export function setupStatusEndpoint(app: express.Express): void {
   app.get('/', handleServerStatus);
 }
 
 /**
- * Server status request handler
+ * サーバーのステータスリクエストを処理します。
+ * @param {express.Request} _req リクエスト（未使用）
+ * @param {express.Response} res レスポンス
  */
 export function handleServerStatus(_req: express.Request, res: express.Response) {
   res.json({

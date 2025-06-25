@@ -4,13 +4,11 @@ import { generateRandomId } from '../utils';
 import { logger } from '../utils/logger';
 
 /**
- * OpenAI APIのChatCompletionCreateParamsリクエストをVSCode拡張APIのチャットリクエスト形式に変換する。
- *
+ * OpenAI APIのChatCompletionCreateParamsリクエストをVSCode拡張APIのチャットリクエスト形式に変換します。
  * OpenAIのmessages, tools, tool_choice等をVSCodeの型にマッピングし、
- * VSCode APIがサポートしないパラメータはmodelOptionsに集約して将来の拡張性を確保する。
- * OpenAI独自のroleやtool指定など、API間の仕様差異を吸収するための変換ロジックを含む。
- *
- * @param {ChatCompletionCreateParams} openaiRequest - OpenAIのチャットリクエストパラメータ
+ * VSCode APIがサポートしないパラメータはmodelOptionsに集約して将来の拡張性を確保します。
+ * OpenAI独自のroleやtool指定など、API間の仕様差異を吸収するための変換ロジックを含みます。
+ * @param {OpenAI.ChatCompletionCreateParams} openaiRequest OpenAIのチャットリクエストパラメータ
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
@@ -43,15 +41,18 @@ export function convertOpenAIRequestToVSCodeRequest(openaiRequest: OpenAI.ChatCo
       // textのみ連結
       content = prefix + msg.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n');
     }
+
     let name: string | undefined = undefined;
     if (msg.role === 'tool' || msg.role === 'function') {
       name = msg.name;
     }
+
     return new vscode.LanguageModelChatMessage(role, content, name);
   });
 
   // options生成
   const options: vscode.LanguageModelChatRequestOptions = {};
+
   // tools, tool_choiceはAPI仕様に従いマッピング
   // tools: OpenAIのtools配列をVSCodeのLanguageModelChatTool[]に変換
   if ('tools' in openaiRequest && Array.isArray(openaiRequest.tools)) {
@@ -65,6 +66,7 @@ export function convertOpenAIRequestToVSCodeRequest(openaiRequest: OpenAI.ChatCo
         : base;
     });
   }
+
   // tool_choice: OpenAIのtool_choiceをVSCodeのtoolModeに変換
   if ('tool_choice' in openaiRequest && openaiRequest.tool_choice !== undefined) {
     // OpenAI: 'none'|'auto'|'required'|{type:'function', function:{name}}
@@ -87,6 +89,7 @@ export function convertOpenAIRequestToVSCodeRequest(openaiRequest: OpenAI.ChatCo
     }
     // function.name指定は現状サポート外
   }
+
   // その他のパラメータはmodelOptionsにまとめて渡す
   const modelOptions: { [name: string]: any } = {};
   const modelOptionKeys = [
@@ -102,12 +105,16 @@ export function convertOpenAIRequestToVSCodeRequest(openaiRequest: OpenAI.ChatCo
   }
 
   // ログ表示
-  logger.info('Converted OpenAI request to VSCode request', {messages, options});
+  logger.info('Converted OpenAI request to VSCode request', { messages, options });
 
   return { messages, options };
 }
 
-// VSCodeのLanguageModelTextPart/LanguageModelToolCallPart型ガード
+/**
+ * VSCodeのLanguageModelTextPart型ガード
+ * @param part 判定対象
+ * @returns {boolean} partがLanguageModelTextPart型ならtrue
+ */
 function isTextPart(part: any): part is vscode.LanguageModelTextPart {
   return part instanceof vscode.LanguageModelTextPart;
 }
