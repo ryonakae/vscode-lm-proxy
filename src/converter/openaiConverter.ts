@@ -14,7 +14,7 @@ import { logger } from '../utils/logger';
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
-export function convertOpenAIRequestToVSCodeRequest2(openaiRequest: OpenAI.ChatCompletionCreateParams): {
+export function convertOpenAIRequestToVSCodeRequest(openaiRequest: OpenAI.ChatCompletionCreateParams): {
   messages: vscode.LanguageModelChatMessage[],
   options: vscode.LanguageModelChatRequestOptions
 } {
@@ -102,7 +102,7 @@ export function convertOpenAIRequestToVSCodeRequest2(openaiRequest: OpenAI.ChatC
   }
 
   // ログ表示
-  logger.info('Converted OpenAI request to VSCode request', messages, options);
+  logger.info('Converted OpenAI request to VSCode request', {messages, options});
 
   return { messages, options };
 }
@@ -137,6 +137,7 @@ async function* convertVSCodeStreamToOpenAIChunks(
   const created = Math.floor(Date.now() / 1000);
   let roleSent = false;
   let toolCallIndex = 0;
+  let toolCallSeen = false; // tool_callが出現したかどうか
   for await (const part of stream) {
     const chunk: OpenAI.ChatCompletionChunk = {
       id: randomId,
@@ -159,13 +160,11 @@ async function* convertVSCodeStreamToOpenAIChunks(
       chunk.choices[0].delta.content = part.value;
     } else if (isToolCallPart(part)) {
       chunk.choices[0].delta.tool_calls = [convertToolCall(part, toolCallIndex++)];
+      toolCallSeen = true;
     } else {
       // unknownパートは無視
       continue;
     }
-
-    // ログ出力
-    logger.debug('Streaming chunk', chunk);
 
     yield chunk;
   }
@@ -179,7 +178,7 @@ async function* convertVSCodeStreamToOpenAIChunks(
       {
         index: 0,
         delta: {},
-        finish_reason: 'stop',
+        finish_reason: toolCallSeen ? 'tool_calls' : 'stop',
       },
     ],
   };
@@ -206,13 +205,15 @@ async function convertVSCodeTextToOpenAICompletion(
       }
     }
   }
-  const choice: any = {
+  const choice: OpenAI.Chat.Completions.ChatCompletion.Choice = {
     index: 0,
     message: {
       role: 'assistant',
       content,
+      refusal: null,
     },
-    finish_reason: 'stop',
+    logprobs: null,
+    finish_reason: toolCalls.length > 0 ? 'tool_calls' : 'stop',
   };
   if (toolCalls.length > 0) {
     choice.message.tool_calls = toolCalls;
@@ -232,7 +233,7 @@ async function convertVSCodeTextToOpenAICompletion(
  * @param opts 追加情報（model名など）
  * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
  */
-export function convertVSCodeResponseToOpenAIResponse2(
+export function convertVSCodeResponseToOpenAIResponse(
   vscodeResponse: vscode.LanguageModelChatResponse,
   model: string
 ): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {

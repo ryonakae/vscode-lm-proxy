@@ -2,13 +2,9 @@
 import express from 'express';
 import { modelManager } from '../model/manager';
 import { logger } from '../utils/logger';
-import { convertVSCodeResponseToOpenAIResponse, convertOpenAIRequestToVSCodeRequest, validateAndConvertOpenAIRequest } from '../model/openaiConverter';
-import { LmApiHandler } from './handlers';
-import { limitsManager } from '../model/limits';
-import { OpenAIChatCompletionResponse } from '../model/types';
 import OpenAI from 'openai';
 import * as vscode from 'vscode';
-import { convertOpenAIRequestToVSCodeRequest2, convertVSCodeResponseToOpenAIResponse2 } from '../converter/openaiConverter2';
+import { convertOpenAIRequestToVSCodeRequest, convertVSCodeResponseToOpenAIResponse } from '../converter/openaiConverter';
 
 export function setupOpenAIEndpoints(app: express.Express): void {
   app.get('/openai', handleOpenAIRootResponse);
@@ -106,8 +102,7 @@ async function handleOpenAIChatCompletions2(req: express.Request, res: express.R
     const isStreaming = body.stream === true;
 
     // OpenAI形式のリクエストをVSCode LM API形式に変換
-    const { messages, options } = convertOpenAIRequestToVSCodeRequest2(body);
-    logger.info('OpenAI Chat completions request', {model, messages, options});
+    const { messages, options } = convertOpenAIRequestToVSCodeRequest(body);
 
     // キャンセラレーショントークンを作成
     const cancellationToken = new vscode.CancellationTokenSource().token;
@@ -117,7 +112,7 @@ async function handleOpenAIChatCompletions2(req: express.Request, res: express.R
     logger.info('Received response from LM API', response);
 
     // レスポンスをOpenAI形式に変換
-    const openAIResponseOrStream = convertVSCodeResponseToOpenAIResponse2(response, modelId);
+    const openAIResponseOrStream = convertVSCodeResponseToOpenAIResponse(response, modelId);
 
     if (isStreaming) {
       // ストリーミング: AsyncIterableの場合
@@ -131,11 +126,14 @@ async function handleOpenAIChatCompletions2(req: express.Request, res: express.R
       let chunkIndex = 0;
 
       for await (const chunk of openAIResponseOrStream as AsyncIterable<OpenAI.ChatCompletionChunk>) {
-        res.write(`data: ${JSON.stringify(chunk)}\n\n`);
+        const data = JSON.stringify(chunk);
+        // ストリーミングチャンクをレスポンスに書き込み
+        res.write(`data: ${data}\n\n`);
         // チャンクをログに記録
-        logger.info('Streaming chunk', { stream: 'chunk', path: req.originalUrl || req.url, chunk, index: chunkIndex++ });
+        logger.info(`Streaming chunk: ${JSON.stringify({ stream: 'chunk', chunk, index: chunkIndex++ })}`);
       }
       res.write('data: [DONE]\n\n');
+      logger.info('Streaming ended', { stream: 'end', path: req.originalUrl || req.url, chunkCount: chunkIndex });
       res.end();
     } else {
       // 非ストリーミング: Promiseの場合
@@ -158,102 +156,6 @@ async function handleOpenAIChatCompletions2(req: express.Request, res: express.R
     
     res.status(statusCode).json(errorResponse);
   }
-}
-
-/**
- * Chat Completions request handler
- */
-async function handleOpenAIChatCompletions(req: express.Request, res: express.Response) {
-  try {
-    // リクエストの検証
-    const { messages, model, stream } = validateAndConvertOpenAIRequest(req.body);
-    logger.info('OpenAI Chat completions request', {messages, model, stream});
-    
-    // OpenAI形式のリクエストをVSCode LM API形式に変換
-    const vscodeLmRequest = convertOpenAIRequestToVSCodeRequest(req.body);
-    
-    // トークン制限チェック（元のメッセージに対して実行）
-    const tokenLimitError = await limitsManager.validateTokenLimit(messages, model);
-    if (tokenLimitError) {
-      const error = new Error(tokenLimitError.message);
-      (error as any).statusCode = 400; // Bad Request
-      (error as any).type = 'token_limit_error';
-      throw error;
-    }
-    
-    // ストリーミングモードのチェック
-    const isStreaming = stream === true;
-    
-    if (isStreaming) {
-        // ストリーミングレスポンスの設定
-        res.setHeader('Content-Type', 'text/event-stream');
-        res.setHeader('Cache-Control', 'no-cache');
-        res.setHeader('Connection', 'keep-alive');
-        // ストリーミング開始をログに記録
-        logger.info({ stream: 'start', path: req.originalUrl || req.url });
-        // チャンクのカウントを追跡
-        let chunkIndex = 0;
-        // 共通ハンドラーを使用してストリーミングレスポンスを送信
-        await LmApiHandler.streamChatCompletionFromLmApi(
-          vscodeLmRequest.messages, 
-          model,
-          (chunk) => {
-            // OpenAI形式に変換してレスポンス
-            const openAIChunk = convertVSCodeResponseToOpenAIResponse(chunk, model, true);
-            const data = JSON.stringify(openAIChunk);
-            // // チャンクをログに記録
-            // logger.logStreamChunk(req.originalUrl || req.url, openAIChunk, chunkIndex++);
-            res.write(`data: ${data}\n\n`);
-          }
-        );
-        // ストリーミング終了
-        res.write('data: [DONE]\n\n');
-        res.end();
-      } else {
-        // 非ストリーミングモードでレスポンスを取得
-        const result = await LmApiHandler.getChatCompletionFromLmApi(
-          vscodeLmRequest.messages, 
-          model
-        );
-        // OpenAI形式に変換
-        const completion = convertVSCodeResponseToOpenAIResponse(
-          { content: result.responseText, isComplete: true }, 
-          model
-        ) as OpenAIChatCompletionResponse;
-        // トークン使用量情報を更新
-        completion.usage = {
-          prompt_tokens: result.promptTokens,
-          completion_tokens: result.completionTokens,
-          total_tokens: result.promptTokens + result.completionTokens,
-          prompt_tokens_details: {
-            cached_tokens: 0,
-            audio_tokens: 0
-          },
-          completion_tokens_details: {
-            reasoning_tokens: result.completionTokens,
-            audio_tokens: 0,
-            accepted_prediction_tokens: 0,
-            rejected_prediction_tokens: 0
-          }
-        };
-        res.json(completion);
-      }
-    } catch (error) {
-      logger.error(`OpenAI Chat completions API error: ${(error as Error).message}`, error as Error);
-      
-      // エラーレスポンスの作成
-      const apiError = error as any;
-      const statusCode = apiError.statusCode || 500;
-      const errorResponse = {
-        error: {
-          message: apiError.message || 'An unknown error has occurred',
-          type: apiError.type || 'api_error',
-          code: apiError.code || 'internal_error'
-        }
-      };
-      
-      res.status(statusCode).json(errorResponse);
-    }
 }
 
 /**
@@ -358,6 +260,3 @@ async function handleOpenAIModelInfo(req: express.Request, res: express.Response
     res.status(statusCode).json(errorResponse);
   }
 }
-
-
-
