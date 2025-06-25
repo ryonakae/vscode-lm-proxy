@@ -24,65 +24,15 @@ export function createServer(): express.Express {
     const startTime = Date.now()
     const path = req.originalUrl || req.url
 
-    // レスポンスを捕捉するための元のメソッドを保持
-    const originalSend = res.send
-    const originalJson = res.json
-    const originalEnd = res.end
-
-    // カスタムのsendメソッド
-    res.send = (body: any): express.Response => {
+    res.on('finish', () => {
       const responseTime = Date.now() - startTime
-      logger.info('Response sent (res.send)', {
+      // 必要に応じてbodyは省略（Express標準ではbodyはここで取得できません）
+      logger.info('Response sent', {
         status: res.statusCode,
         path,
-        body,
         responseTime,
       })
-      return originalSend.apply(res, arguments as any)
-    }
-
-    // カスタムのjsonメソッド
-    res.json = (body: any): express.Response => {
-      const responseTime = Date.now() - startTime
-      logger.info('Response sent (res.json)', {
-        status: res.statusCode,
-        path,
-        body,
-        responseTime,
-      })
-      return originalJson.apply(res, arguments as any)
-    }
-
-    // カスタムのendメソッド
-    res.end = (chunk?: any): express.Response => {
-      const responseTime = Date.now() - startTime
-      if (chunk) {
-        // Content-Typeがevent-streamの場合はストリーミング終了として記録
-        if (res.getHeader('Content-Type') === 'text/event-stream') {
-          logger.info('Response sent (res.end, stream)', {
-            stream: 'end',
-            path,
-            responseTime,
-          })
-        } else {
-          logger.info('Response sent (res.end, chunk)', {
-            status: res.statusCode,
-            path,
-            body: chunk,
-            responseTime,
-          })
-        }
-      } else {
-        // チャンクがない場合
-        logger.info('Response sent (res.end, no chunk)', {
-          status: res.statusCode,
-          path,
-          body: null,
-          responseTime,
-        })
-      }
-      return originalEnd.apply(res, arguments as any)
-    }
+    })
 
     next()
   })

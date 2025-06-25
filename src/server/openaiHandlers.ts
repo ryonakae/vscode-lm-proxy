@@ -161,8 +161,8 @@ async function handleOpenAIChatCompletions(
       isStreaming,
     )
 
+    // ストリーミング: AsyncIterableの場合
     if (isStreaming) {
-      // ストリーミング: AsyncIterableの場合
       // ストリーミングレスポンスの設定
       res.setHeader('Content-Type', 'text/event-stream')
       res.setHeader('Cache-Control', 'no-cache')
@@ -191,13 +191,14 @@ async function handleOpenAIChatCompletions(
         chunkCount: chunkIndex,
       })
       res.end()
-    } else {
-      // 非ストリーミング: Promiseの場合
-      const completion =
-        await (openAIResponseOrStream as Promise<OpenAI.ChatCompletion>)
-      res.json(completion)
       return
     }
+
+    // 非ストリーミング: Promiseの場合
+    const completion =
+      await (openAIResponseOrStream as Promise<OpenAI.ChatCompletion>)
+    res.json(completion)
+    return
   } catch (error) {
     logger.error('OpenAI Chat completions API error', {
       message: (error as Error).message,
