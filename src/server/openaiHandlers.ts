@@ -112,7 +112,7 @@ async function handleOpenAIChatCompletions2(req: express.Request, res: express.R
     logger.info('Received response from LM API', response);
 
     // レスポンスをOpenAI形式に変換
-    const openAIResponseOrStream = convertVSCodeResponseToOpenAIResponse(response, modelId);
+    const openAIResponseOrStream = convertVSCodeResponseToOpenAIResponse(response, modelId, isStreaming);
 
     if (isStreaming) {
       // ストリーミング: AsyncIterableの場合

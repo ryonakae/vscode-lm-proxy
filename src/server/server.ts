@@ -19,10 +19,6 @@ export function createServer(): express.Express {
   app.use((req, res, next) => {
     const startTime = Date.now();
     const path = req.originalUrl || req.url;
-    const method = req.method;
-    
-    // リクエストをログ出力
-    logger.info('Request received', { method, path, body: req.body });
     
     // レスポンスを捕捉するための元のメソッドを保持
     const originalSend = res.send;

@@ -235,9 +235,10 @@ async function convertVSCodeTextToOpenAICompletion(
  */
 export function convertVSCodeResponseToOpenAIResponse(
   vscodeResponse: vscode.LanguageModelChatResponse,
-  model: string
+  model: string,
+  isStreaming: boolean
 ): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {
-  if (vscodeResponse && typeof vscodeResponse.stream === 'object' && Symbol.asyncIterator in vscodeResponse.stream) {
+  if (isStreaming) {
     // ストリーミング: ChatCompletionChunkのAsyncIterableを返す
     return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, model);
   } else {
