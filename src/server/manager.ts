@@ -32,14 +32,6 @@ class ServerManager {
       return Promise.resolve()
     }
 
-    // モデルが選択されているか確認
-    const modelManager = require('../extension').getModelManager()
-    if (!modelManager.getOpenAIModelId()) {
-      return Promise.reject(
-        new Error('No OpenAI model selected. Please select a model first.'),
-      )
-    }
-
     try {
       const app = createServer()
       const port = this.getPort()
