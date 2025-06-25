@@ -1,8 +1,8 @@
 // コマンド定義のインデックスファイル
 import type * as vscode from 'vscode'
-import { registerModelCommands } from './model'
-import { registerOutputCommands } from './output'
-import { registerServerCommands } from './server'
+import { registerModelCommands } from '@/commands/model'
+import { registerOutputCommands } from '@/commands/output'
+import { registerServerCommands } from '@/commands/server'
 
 /**
  * 拡張機能で利用する全コマンドを一括登録します。

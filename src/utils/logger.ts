@@ -176,7 +176,7 @@ export class Logger {
 
       // 文字列が長すぎる場合は切り詰める
       if (jsonStr.length > maxLength) {
-        jsonStr = jsonStr.substring(0, maxLength) + '...(truncated)'
+        jsonStr = `${jsonStr.substring(0, maxLength)}...(truncated)`
       }
 
       return jsonStr
@@ -235,7 +235,7 @@ export class Logger {
                 typeof msgCopy.content === 'string' &&
                 msgCopy.content.length > 100
               ) {
-                msgCopy.content = msgCopy.content.substring(0, 100) + '...'
+                msgCopy.content = `${msgCopy.content.substring(0, 100)}...`
               }
               return msgCopy
             }

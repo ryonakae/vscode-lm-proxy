@@ -1,10 +1,10 @@
 // VSCode拡張機能のエントリーポイント
 import * as vscode from 'vscode'
-import { registerCommands } from './commands'
-import { LmApiHandler } from './server/handlers'
-import { serverManager } from './server/manager'
-import { statusBarManager } from './ui/statusbar'
-import { logger } from './utils/logger'
+import { registerCommands } from '@/commands'
+import { initializeLmApiHandler } from '@/server/handlers'
+import { serverManager } from '@/server/manager'
+import { statusBarManager } from '@/ui/statusbar'
+import { logger } from '@/utils/logger'
 
 // グローバルコンテキストの保存用変数
 let globalExtensionContext: vscode.ExtensionContext
@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
 
   // LmApiHandlerにグローバル状態をセット
   // VSCodeのグローバルストレージをAPIハンドラで利用可能にする
-  LmApiHandler.initialize(context.globalState)
+  initializeLmApiHandler(context.globalState)
 
   // 選択中のOpenAIモデルとサーバー状態をログに出力
   const openaiModel = modelManager.getOpenAIModelId() || 'Not selected'

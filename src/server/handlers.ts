@@ -2,8 +2,8 @@
 
 import type express from 'express'
 import * as vscode from 'vscode'
-import { limitsManager } from '../model/limits'
-import { logger } from '../utils/logger'
+import { limitsManager } from '@/model/limits'
+import { logger } from '@/utils/logger'
 
 // モジュールスコープでglobalStateを管理
 let globalState: vscode.Memento | undefined

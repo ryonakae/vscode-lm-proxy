@@ -5,9 +5,9 @@ import * as vscode from 'vscode'
 import {
   convertOpenAIRequestToVSCodeRequest,
   convertVSCodeResponseToOpenAIResponse,
-} from '../converter/openaiConverter'
-import { modelManager } from '../model/manager'
-import { logger } from '../utils/logger'
+} from '@/converter/openaiConverter'
+import { modelManager } from '@/model/manager'
+import { logger } from '@/utils/logger'
 
 /**
  * OpenAI互換APIのルートエンドポイントを設定する

@@ -2,9 +2,9 @@
 
 import type * as http from 'http'
 import * as vscode from 'vscode'
-import { statusBarManager } from '../ui/statusbar'
-import { logger } from '../utils/logger'
-import { createServer } from './server'
+import { createServer } from '@/server/server'
+import { statusBarManager } from '@/ui/statusbar'
+import { logger } from '@/utils/logger'
 
 /**
  * サーバーマネージャークラス

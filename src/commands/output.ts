@@ -1,6 +1,6 @@
 // 出力パネル関連のコマンド
 import * as vscode from 'vscode'
-import { logger } from '../utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * 出力パネル関連のコマンド（表示・クリア・ログレベル変更）をVSCodeに登録します。

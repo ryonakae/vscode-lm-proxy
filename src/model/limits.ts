@@ -1,6 +1,6 @@
 // トークン制限とレート制限の管理
 import * as vscode from 'vscode'
-import { logger } from '../utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * モデルごとのトークン上限の設定

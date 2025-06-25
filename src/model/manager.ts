@@ -1,6 +1,6 @@
 // モデル管理クラス
 import * as vscode from 'vscode'
-import { logger } from '../utils/logger'
+import { logger } from '@/utils/logger'
 
 /**
  * モデル管理クラス
