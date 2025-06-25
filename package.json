@@ -165,12 +165,15 @@
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.0.5",
     "@types/express": "^4.17.21",
     "@types/node": "20.x",
     "@types/vscode": "^1.93.0",
     "@typescript-eslint/eslint-plugin": "^7.7.0",
     "@typescript-eslint/parser": "^7.7.0",
     "eslint": "^8.57.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
     "openai": "^5.7.0",
     "typescript": "^5.8.2"
   },

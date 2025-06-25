@@ -29,17 +29,19 @@ export function getModelManager() {
 export function activate(context: vscode.ExtensionContext) {
   // グローバル変数にコンテキストを保存
   globalExtensionContext = context;
-  
+
   // モデル管理クラスのインポートと初期化（グローバル変数に格納）
+  // activate内でrequireすることで循環依存を回避
   modelManager = require('./model/manager').modelManager;
-  
+
   // モデルマネージャーにExtensionContextを設定
   // これにより内部で保存されたモデル情報が復元される
   modelManager.setExtensionContext(context);
 
   // LmApiHandlerにグローバル状態をセット
+  // VSCodeのグローバルストレージをAPIハンドラで利用可能にする
   LmApiHandler.initialize(context.globalState);
-  
+
   // 選択中のOpenAIモデルとサーバー状態をログに出力
   const openaiModel = modelManager.getOpenAIModelId() || 'Not selected';
   const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped';
@@ -54,16 +56,17 @@ export function activate(context: vscode.ExtensionContext) {
 
   // コンテキスト変数の初期化
   vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', false);
-  
+
   // ステータスバーの初期化
   statusBarManager.initialize(context);
 
   // コマンドの登録
   registerCommands(context);
-  
+
   // 設定変更の監視
   context.subscriptions.push(
     vscode.workspace.onDidChangeConfiguration(e => {
+      // ポート番号変更時、サーバーが起動中なら再起動を促す
       if (e.affectsConfiguration('vscode-lm-proxy.port') && serverManager.isRunning()) {
         vscode.window.showInformationMessage(
           'Port number setting has been changed. Please restart the server to apply the change.'

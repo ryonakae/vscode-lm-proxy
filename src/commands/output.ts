@@ -12,13 +12,13 @@ export function registerOutputCommands(context: vscode.ExtensionContext): void {
     logger.show(false); // フォーカスを出力パネルに移す
     logger.info('Output panel displayed');
   });
-  
+
   // 出力パネルをクリアするコマンド
   const clearOutputCommand = vscode.commands.registerCommand('vscode-lm-proxy.clearOutput', () => {
     logger.clear();
     logger.info('Output panel cleared');
   });
-  
+
   // DEBUGレベルに設定するコマンド
   const setDebugLevelCommand = vscode.commands.registerCommand('vscode-lm-proxy.setDebugLogLevel', async () => {
     const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
@@ -26,7 +26,7 @@ export function registerOutputCommands(context: vscode.ExtensionContext): void {
     logger.info('Log level set to DEBUG. Detailed request/response logs will be shown.');
     logger.show(false);
   });
-  
+
   // INFOレベルに設定するコマンド
   const setInfoLevelCommand = vscode.commands.registerCommand('vscode-lm-proxy.setInfoLogLevel', async () => {
     const config = vscode.workspace.getConfiguration('vscode-lm-proxy');
@@ -34,10 +34,10 @@ export function registerOutputCommands(context: vscode.ExtensionContext): void {
     logger.info('Log level set to INFO. Basic request/response logs will be shown.');
     logger.show(false);
   });
-  
+
   // コンテキストに登録
   context.subscriptions.push(
-    showOutputCommand, 
+    showOutputCommand,
     clearOutputCommand,
     setDebugLevelCommand,
     setInfoLevelCommand

@@ -12,9 +12,11 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   // OpenAI APIモデル選択コマンド
   const selectOpenAIModelCommand = vscode.commands.registerCommand('vscode-lm-proxy.selectOpenAIModel', async () => {
     try {
+      // モデル選択ダイアログを表示
       const openaiModelId = await modelManager.selectModel();
-      
+
       if (openaiModelId) {
+        // サーバーの実行状態を記録
         const wasRunning = serverManager.isRunning();
         context.globalState.update('openaiModelId', openaiModelId);
         vscode.window.showInformationMessage(`OpenAI Model selected: ${openaiModelId}`);
@@ -25,6 +27,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
         }, 10);
 
         // サーバーが実行中だった場合は再起動
+        // モデル変更後にサーバーを再起動しないとAPIリクエストが新モデルに反映されないため
         if (wasRunning) {
           vscode.window.showInformationMessage('Restarting server with new model...');
           await serverManager.stop();
@@ -47,7 +50,7 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
 
   // コンテキストにコマンドを登録
   context.subscriptions.push(selectOpenAIModelCommand);
-  
+
   // 前回選択されたOpenAIモデルを復元
   const previouslySelectedOpenAIModelId = context.globalState.get<string>('openaiModelId');
   if (previouslySelectedOpenAIModelId) {

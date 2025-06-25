@@ -12,12 +12,13 @@ export function registerServerCommands(context: vscode.ExtensionContext): void {
   const startServerCommand = vscode.commands.registerCommand('vscode-lm-proxy.startServer', async () => {
     try {
       // モデルマネージャーからモデルの選択状態を確認
+      // サーバー起動時にモデル未選択だとAPIリクエストが失敗するため、ここでチェック
       const modelManager = require('../model/manager').modelManager;
       if (!modelManager.getOpenAIModelId()) {
         vscode.window.showErrorMessage('Cannot start server: No OpenAI model selected. Please select a model first.');
         return;
       }
-      
+
       await serverManager.start();
       context.globalState.update('serverRunning', true);
       vscode.commands.executeCommand('setContext', 'vscode-lm-proxy.serverRunning', true);

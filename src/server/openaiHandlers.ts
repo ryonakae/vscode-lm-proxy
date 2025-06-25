@@ -68,12 +68,15 @@ async function handleOpenAIChatCompletions2(req: express.Request, res: express.R
 
     // 必須フィールドのチェック
     if (!body.messages || !Array.isArray(body.messages) || body.messages.length === 0) {
+      // messagesフィールドが無い場合は400エラー
       const error: any = new Error('The messages field is required');
       error.statusCode = 400;
       error.type = 'invalid_request_error';
       throw error;
     }
+
     if (!body.model) {
+      // modelフィールドが無い場合は400エラー
       const error: any = new Error('The model field is required');
       error.statusCode = 400;
       error.type = 'invalid_request_error';
