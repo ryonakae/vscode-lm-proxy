@@ -5,144 +5,159 @@ import * as vscode from 'vscode'
 import { limitsManager } from '../model/limits'
 import { logger } from '../utils/logger'
 
+// モジュールスコープでglobalStateを管理
+let globalState: vscode.Memento | undefined
+
+/**
+ * globalStateを初期化する
+ * @param {vscode.Memento} state VSCodeのグローバルステート
+ */
+export function initializeLmApiHandler(state: vscode.Memento) {
+  globalState = state
+}
+
 /**
  * LM APIとの通信を行う共通クラス
  * OpenAIとAnthropicの両方で使用する共通のロジックを提供
  */
-export class LmApiHandler {
-  /**
-   * AsyncIterableなストリームを文字列に変換
-   * @param stream 文字列のAsyncIterable
-   * @returns 連結された文字列
-   */
-  public static async streamToString(
-    stream: AsyncIterable<string>,
-  ): Promise<string> {
-    let result = ''
-    for await (const chunk of stream) {
-      result += chunk
-    }
-    return result
+
+/**
+ * AsyncIterableなストリームを文字列に変換する
+ * @param {AsyncIterable<string>} stream 文字列のストリーム
+ * @returns {Promise<string>} 連結された文字列
+ */
+export async function streamToString(
+  stream: AsyncIterable<string>,
+): Promise<string> {
+  let result = ''
+  for await (const chunk of stream) {
+    result += chunk
   }
+  return result
+}
 
-  // globalStateをstaticプロパティとして保持
-  public static globalState: vscode.Memento
-
-  public static initialize(globalState: vscode.Memento) {
-    LmApiHandler.globalState = globalState
+/**
+ * モデルIDを解決する
+ * @param {string} modelId モデルID
+ * @returns {string | null} 解決済みモデルIDまたはnull
+ */
+function resolveModelId(modelId: string): string | null {
+  if (modelId === 'vscode-lm-api') {
+    return globalState?.get<string>('openaiModelId') ?? null
   }
+  return modelId
+}
 
-  private static resolveModelId(modelId: string): string | null {
-    if (modelId === 'vscode-lm-api') {
-      return LmApiHandler.globalState?.get<string>('openaiModelId') ?? null
+/**
+ * チャット完了のレスポンスを取得する（共通処理）
+ * @param {vscode.LanguageModelChatMessage[]} messages LM API形式のメッセージ配列
+ * @param {string} modelId 使用するモデルのID
+ * @returns {Promise<{responseText: string, promptTokens: number, completionTokens: number, model: vscode.LanguageModelChat}>} LM APIからの生レスポンスとトークン情報
+ */
+export async function getChatCompletionFromLmApi(
+  messages: vscode.LanguageModelChatMessage[],
+  modelId: string,
+): Promise<{
+  responseText: string
+  promptTokens: number
+  completionTokens: number
+  model: vscode.LanguageModelChat
+}> {
+  try {
+    const actualModelId = resolveModelId(modelId)
+    if (!actualModelId) {
+      throw new Error('No model selected. Please select a model first.')
     }
-    return modelId
+    // レート制限チェック
+    const rateLimitError = limitsManager.checkRateLimit(actualModelId)
+    if (rateLimitError) {
+      throw new RateLimitError(rateLimitError.message)
+    }
+    // VSCode LM APIを呼び出し
+    const [model] = await vscode.lm.selectChatModels({ id: actualModelId })
+    if (!model) {
+      throw new Error(`Model ${actualModelId} not found`)
+    }
+    // プロンプトのトークン数を計算
+    let promptTokens = 0
+    for (const message of messages) {
+      promptTokens += await model.countTokens(message)
+    }
+    const response = await model.sendRequest(
+      messages,
+      {},
+      new vscode.CancellationTokenSource().token,
+    )
+    const responseText = await streamToString(response.text)
+    const responseMessage =
+      vscode.LanguageModelChatMessage.Assistant(responseText)
+    const completionTokens = await model.countTokens(responseMessage)
+    return {
+      responseText,
+      promptTokens,
+      completionTokens,
+      model,
+    }
+  } catch (error) {
+    logger.error('Chat completion error:', error as Error)
+    throw error
   }
+}
 
-  /**
-   * チャット完了のレスポンスを取得（共通処理）
-   * @param messages LM API形式のメッセージ配列
-   * @param modelId 使用するモデルのID
-   * @returns LM APIからの生レスポンスとトークン情報
-   */
-  public static async getChatCompletionFromLmApi(
-    messages: vscode.LanguageModelChatMessage[],
-    modelId: string,
-  ): Promise<{
-    responseText: string
-    promptTokens: number
-    completionTokens: number
-    model: vscode.LanguageModelChat
-  }> {
-    try {
-      const actualModelId = LmApiHandler.resolveModelId(modelId)
-      if (!actualModelId) {
-        throw new Error('No model selected. Please select a model first.')
-      }
-      // レート制限チェック
-      const rateLimitError = limitsManager.checkRateLimit(actualModelId)
-      if (rateLimitError) {
-        const error = new Error(rateLimitError.message)
-        ;(error as any).statusCode = 429 // Too Many Requests
-        ;(error as any).type = 'rate_limit_error'
-        throw error
-      }
-      // VSCode LM APIを呼び出し
-      const [model] = await vscode.lm.selectChatModels({ id: actualModelId })
-      if (!model) {
-        throw new Error(`Model ${actualModelId} not found`)
-      }
-      // プロンプトのトークン数を計算
-      let promptTokens = 0
-      for (const message of messages) {
-        promptTokens += await model.countTokens(message)
-      }
-      const response = await model.sendRequest(
-        messages,
-        {},
-        new vscode.CancellationTokenSource().token,
-      )
-      const responseText = await LmApiHandler.streamToString(response.text)
-      const responseMessage =
-        vscode.LanguageModelChatMessage.Assistant(responseText)
-      const completionTokens = await model.countTokens(responseMessage)
-      return {
-        responseText,
-        promptTokens,
-        completionTokens,
-        model,
-      }
-    } catch (error) {
-      logger.error('Chat completion error:', error as Error)
-      throw error
+/**
+ * ストリーミングチャット完了を行う共通処理
+ * @param {vscode.LanguageModelChatMessage[]} messages LM API形式のメッセージ配列
+ * @param {string} modelId 使用するモデルのID
+ * @param {(chunk: { content: string; isComplete?: boolean }) => void} onChunk チャンク受信時のコールバック関数
+ * @returns {Promise<void>}
+ */
+export async function streamChatCompletionFromLmApi(
+  messages: vscode.LanguageModelChatMessage[],
+  modelId: string,
+  onChunk: (chunk: { content: string; isComplete?: boolean }) => void,
+): Promise<void> {
+  try {
+    const actualModelId = resolveModelId(modelId)
+    if (!actualModelId) {
+      throw new Error('No model selected. Please select a model first.')
     }
+    const rateLimitError = limitsManager.checkRateLimit(actualModelId)
+    if (rateLimitError) {
+      throw new RateLimitError(rateLimitError.message)
+    }
+    const [model] = await vscode.lm.selectChatModels({ id: actualModelId })
+    if (!model) {
+      throw new Error(`Model ${actualModelId} not found`)
+    }
+    const response = await model.sendRequest(
+      messages,
+      {},
+      new vscode.CancellationTokenSource().token,
+    )
+    onChunk({ content: '', isComplete: false })
+    for await (const chunk of response.text) {
+      onChunk({ content: chunk, isComplete: false })
+    }
+    onChunk({ content: '', isComplete: true })
+    return
+  } catch (error) {
+    logger.error('Stream chat completion error:', error as Error)
+    throw error
   }
+}
 
-  /**
-   * ストリーミングチャット完了を行う共通処理
-   * @param messages LM API形式のメッセージ配列
-   * @param modelId 使用するモデルのID
-   * @param openaiModelId 選択中のOpenAIモデルID（vscode-lm-proxyの場合）
-   * @param onChunk チャンク受信時のコールバック関数
-   */
-  public static async streamChatCompletionFromLmApi(
-    messages: vscode.LanguageModelChatMessage[],
-    modelId: string,
-    onChunk: (chunk: { content: string; isComplete?: boolean }) => void,
-  ): Promise<void> {
-    try {
-      const actualModelId = LmApiHandler.resolveModelId(modelId)
-      if (!actualModelId) {
-        throw new Error('No model selected. Please select a model first.')
-      }
-      const rateLimitError = limitsManager.checkRateLimit(actualModelId)
-      if (rateLimitError) {
-        const error = new Error(rateLimitError.message)
-        ;(error as any).statusCode = 429 // Too Many Requests
-        ;(error as any).type = 'rate_limit_error'
-        throw error
-      }
-      const [model] = await vscode.lm.selectChatModels({ id: actualModelId })
-      if (!model) {
-        throw new Error(`Model ${actualModelId} not found`)
-      }
-      const response = await model.sendRequest(
-        messages,
-        {},
-        new vscode.CancellationTokenSource().token,
-      )
-      onChunk({ content: '', isComplete: false })
-      let fullContent = ''
-      for await (const chunk of response.text) {
-        fullContent += chunk
-        onChunk({ content: chunk, isComplete: false })
-      }
-      onChunk({ content: '', isComplete: true })
-      return
-    } catch (error) {
-      logger.error('Stream chat completion error:', error as Error)
-      throw error
-    }
+/**
+ * レートリミット用のError拡張型（any回避用）
+ * @extends {Error}
+ */
+class RateLimitError extends Error {
+  statusCode: number
+  type: string
+  constructor(message: string) {
+    super(message)
+    this.statusCode = 429
+    this.type = 'rate_limit_error'
+    Object.setPrototypeOf(this, RateLimitError.prototype)
   }
 }
 

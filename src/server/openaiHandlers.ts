@@ -10,8 +10,9 @@ import { modelManager } from '../model/manager'
 import { logger } from '../utils/logger'
 
 /**
- * OpenAI互換APIのルートエンドポイントを設定します。
+ * OpenAI互換APIのルートエンドポイントを設定する
  * @param {express.Express} app Express.jsアプリケーション
+ * @returns {void}
  */
 export function setupOpenAIEndpoints(app: express.Express): void {
   app.get('/openai', handleOpenAIRootResponse)
@@ -20,20 +21,22 @@ export function setupOpenAIEndpoints(app: express.Express): void {
 }
 
 /**
- * Sets up OpenAI-compatible Chat Completions API endpoint
- * @param app Express.js application
+ * OpenAI互換のChat Completions APIエンドポイントを設定する
+ * @param {express.Express} app Express.jsアプリケーション
+ * @returns {void}
  */
 export function setupOpenAIChatCompletionsEndpoints(
   app: express.Express,
 ): void {
   // OpenAI API互換エンドポイントを登録
-  app.post('/openai/chat/completions', handleOpenAIChatCompletions2)
-  app.post('/openai/v1/chat/completions', handleOpenAIChatCompletions2)
+  app.post('/openai/chat/completions', handleOpenAIChatCompletions)
+  app.post('/openai/v1/chat/completions', handleOpenAIChatCompletions)
 }
 
 /**
- * Sets up OpenAI-compatible Models API endpoints
- * @param app Express.js application
+ * OpenAI互換のModels APIエンドポイントを設定する
+ * @param {express.Express} app Express.jsアプリケーション
+ * @returns {void}
  */
 export function setupOpenAIModelsEndpoints(app: express.Express): void {
   // モデル一覧エンドポイント
@@ -45,6 +48,12 @@ export function setupOpenAIModelsEndpoints(app: express.Express): void {
   app.get('/openai/v1/models/:model', handleOpenAIModelInfo)
 }
 
+/**
+ * OpenAI互換APIのルートエンドポイントのレスポンスを返す
+ * @param {express.Request} _req リクエスト（未使用）
+ * @param {express.Response} res レスポンス
+ * @returns {void}
+ */
 function handleOpenAIRootResponse(
   _req: express.Request,
   res: express.Response,
@@ -70,7 +79,13 @@ function handleOpenAIRootResponse(
   })
 }
 
-async function handleOpenAIChatCompletions2(
+/**
+ * OpenAI互換のChat Completions APIリクエストを処理する
+ * @param {express.Request} req リクエスト
+ * @param {express.Response} res レスポンス
+ * @returns {Promise<void>}
+ */
+async function handleOpenAIChatCompletions(
   req: express.Request,
   res: express.Response,
 ) {
@@ -204,7 +219,10 @@ async function handleOpenAIChatCompletions2(
 }
 
 /**
- * Models list request handler
+ * OpenAI互換のモデル一覧リクエストを処理する
+ * @param {express.Request} _req リクエスト（未使用）
+ * @param {express.Response} res レスポンス
+ * @returns {Promise<void>}
  */
 async function handleOpenAIModels(
   _req: express.Request,
@@ -259,7 +277,10 @@ async function handleOpenAIModels(
 }
 
 /**
- * Single model info request handler
+ * OpenAI互換の単一モデル情報リクエストを処理する
+ * @param {express.Request} req リクエスト
+ * @param {express.Response} res レスポンス
+ * @returns {Promise<void>}
  */
 async function handleOpenAIModelInfo(
   req: express.Request,
