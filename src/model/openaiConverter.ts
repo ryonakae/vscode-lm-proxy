@@ -7,17 +7,8 @@ import {
   OpenAIChatMessage,
   OpenAIToolCall
 } from './types';
-
-// モデルマネージャーをインポート
 import { modelManager } from './manager';
-
-/**
- * ランダムなIDを生成
- * @returns ランダム文字列
- */
-function generateRandomId(): string {
-  return Math.random().toString(36).substring(2, 12);
-}
+import { generateRandomId } from '../utils';
 
 /**
  * OpenAI API形式のリクエストをVSCode LM API形式に変換

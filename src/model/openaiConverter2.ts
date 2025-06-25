@@ -122,25 +122,6 @@ function convertToolCall(part: vscode.LanguageModelToolCallPart, index: number):
   };
 }
 
-/**
- * VSCode LanguageModelChatResponseをOpenAI ChatCompletion/ChatCompletionChunk形式に変換
- * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param opts 追加情報（model名など）
- * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
- */
-export function convertVSCodeResponseToOpenaiResponse2(
-  vscodeResponse: vscode.LanguageModelChatResponse,
-  opts?: { model?: string }
-): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {
-  if (vscodeResponse && typeof vscodeResponse.stream === 'object' && Symbol.asyncIterator in vscodeResponse.stream) {
-    // ストリーミング: ChatCompletionChunkのAsyncIterableを返す
-    return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, opts?.model || 'unknown');
-  } else {
-    // 非ストリーミング: 全文をOpenAI ChatCompletionに変換
-    return convertVSCodeTextToOpenAICompletion(vscodeResponse, opts?.model || 'unknown');
-  }
-}
-
 // ストリーミング: VSCode stream → OpenAI ChatCompletionChunk[]
 async function* convertVSCodeStreamToOpenAIChunks(
   stream: AsyncIterable<vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown>,
@@ -234,3 +215,23 @@ async function convertVSCodeTextToOpenAICompletion(
     choices: [choice],
   };
 }
+
+/**
+ * VSCode LanguageModelChatResponseをOpenAI ChatCompletion/ChatCompletionChunk形式に変換
+ * @param vscodeResponse VSCodeのLanguageModelChatResponse
+ * @param opts 追加情報（model名など）
+ * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
+ */
+export function convertVSCodeResponseToOpenaiResponse2(
+  vscodeResponse: vscode.LanguageModelChatResponse,
+  model: string
+): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {
+  if (vscodeResponse && typeof vscodeResponse.stream === 'object' && Symbol.asyncIterator in vscodeResponse.stream) {
+    // ストリーミング: ChatCompletionChunkのAsyncIterableを返す
+    return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, model);
+  } else {
+    // 非ストリーミング: 全文をOpenAI ChatCompletionに変換
+    return convertVSCodeTextToOpenAICompletion(vscodeResponse, model);
+  }
+}
+
