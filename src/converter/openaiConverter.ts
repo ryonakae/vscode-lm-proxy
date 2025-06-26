@@ -61,20 +61,6 @@ export function convertOpenAIRequestToVSCodeRequest(
   // options生成
   const options: vscode.LanguageModelChatRequestOptions = {}
 
-  // tools, tool_choiceはAPI仕様に従いマッピング
-  // tools: OpenAIのtools配列をVSCodeのLanguageModelChatTool[]に変換
-  if ('tools' in openaiRequest && Array.isArray(openaiRequest.tools)) {
-    options.tools = openaiRequest.tools.map(tool => {
-      const base = {
-        name: tool.function.name,
-        description: tool.function.description ?? '',
-      }
-      return tool.function.parameters !== undefined
-        ? { ...base, inputSchema: tool.function.parameters }
-        : base
-    })
-  }
-
   // tool_choice: OpenAIのtool_choiceをVSCodeのtoolModeに変換
   if (
     'tool_choice' in openaiRequest &&
@@ -101,25 +87,49 @@ export function convertOpenAIRequestToVSCodeRequest(
     // function.name指定は現状サポート外
   }
 
+  // tools: OpenAIのtools配列をVSCodeのLanguageModelChatTool[]に変換
+  if ('tools' in openaiRequest && Array.isArray(openaiRequest.tools)) {
+    options.tools = openaiRequest.tools.map(tool => {
+      const base = {
+        name: tool.function.name,
+        description: tool.function.description ?? '',
+      }
+      return tool.function.parameters !== undefined
+        ? { ...base, inputSchema: tool.function.parameters }
+        : base
+    })
+  }
+
   // その他のパラメータはmodelOptionsにまとめて渡す
   const modelOptions: { [name: string]: any } = {}
   const modelOptionKeys = [
-    'max_tokens',
-    'temperature',
-    'top_p',
-    'stop',
-    'presence_penalty',
+    'audio',
     'frequency_penalty',
-    'seed',
-    'logit_bias',
-    'user',
-    'n',
-    'stream',
-    'response_format',
     'function_call',
     'functions',
-    'tools',
-    'tool_choice',
+    'logit_bias',
+    'logprobs',
+    'max_completion_tokens',
+    'max_tokens',
+    'metadata',
+    'modalities',
+    'n',
+    'parallel_tool_calls',
+    'prediction',
+    'presence_penalty',
+    'reasoning_effort',
+    'response_format',
+    'seed',
+    'service_tier',
+    'stop',
+    'store',
+    'stream',
+    'stream_options',
+    'temperature',
+    'top_logprobs',
+    'top_p',
+    'user',
+    'web_search_options',
   ]
   for (const key of modelOptionKeys) {
     if (key in openaiRequest && (openaiRequest as any)[key] !== undefined) {
