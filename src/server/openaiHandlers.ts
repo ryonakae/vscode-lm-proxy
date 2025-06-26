@@ -9,6 +9,7 @@ import {
 } from '../converter/openaiConverter'
 import { modelManager } from '../model/manager'
 import { logger } from '../utils/logger'
+import { getVSCodeModel } from './handlers'
 
 /**
  * OpenAI互換APIのルートエンドポイントを設定する
@@ -83,8 +84,11 @@ async function handleOpenAIChatCompletions(
     // 必須フィールドのバリデーション
     validateChatCompletionRequest(body)
 
-    // モデル取得（'vscode-lm-proxy'対応含む）
-    const { model, modelId } = await getVSCodeModel(body)
+    // モデル取得
+    const { vsCodeModel, vsCodeModelId } = await getVSCodeModel(
+      body.model,
+      'openai',
+    )
 
     // ストリーミングモード判定
     const isStreaming = body.stream === true
@@ -96,7 +100,7 @@ async function handleOpenAIChatCompletions(
     const cancellationToken = new vscode.CancellationTokenSource().token
 
     // LM APIへリクエスト送信
-    const response = await model.sendRequest(
+    const response = await vsCodeModel.sendRequest(
       messages,
       options,
       cancellationToken,
@@ -106,7 +110,7 @@ async function handleOpenAIChatCompletions(
     // レスポンスをOpenAI形式に変換
     const openAIResponseOrStream = convertVSCodeResponseToOpenAIResponse(
       response,
-      modelId,
+      vsCodeModelId,
       isStreaming,
     )
 
@@ -163,46 +167,6 @@ function validateChatCompletionRequest(
     }
     throw error
   }
-}
-
-/**
- * VSCode LM APIのモデルを取得する（'vscode-lm-proxy'時は選択中のOpenAIモデルに変換）
- * @param {OpenAI.ChatCompletionCreateParams} body
- * @returns {Promise<{ model: any, modelId: string }>}
- * @throws エラー時は例外をスロー
- */
-async function getVSCodeModel(
-  body: OpenAI.ChatCompletionCreateParams,
-): Promise<{ model: any; modelId: string }> {
-  let modelId = body.model
-
-  // 'vscode-lm-proxy'の場合は選択中のOpenAIモデルIDに変換
-  if (modelId === 'vscode-lm-proxy') {
-    const openaiModelId = modelManager.getOpenAIModelId()
-    if (!openaiModelId) {
-      const error: vscode.LanguageModelError = {
-        ...new Error(
-          'No valid OpenAI model selected. Please select a model first.',
-        ),
-        name: 'NotFound',
-        code: 'model_not_found',
-      }
-      throw error
-    }
-    modelId = openaiModelId
-  }
-
-  // モデル取得
-  const [model] = await vscode.lm.selectChatModels({ id: modelId })
-  if (!model) {
-    const error: vscode.LanguageModelError = {
-      ...new Error(`Model ${modelId} not found`),
-      name: 'NotFound',
-      code: 'model_not_found',
-    }
-    throw error
-  }
-  return { model, modelId }
 }
 
 /**

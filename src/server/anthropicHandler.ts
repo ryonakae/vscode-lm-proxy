@@ -1,4 +1,9 @@
+import type { MessageCreateParams } from '@anthropic-ai/sdk/resources'
 import type express from 'express'
+import * as vscode from 'vscode'
+import { convertAnthropicRequestToVSCodeRequest } from '../converter/anthropicConverter'
+import { logger } from '../utils/logger'
+import { getVSCodeModel } from './handlers'
 
 /**
  * Anthropic互換APIのルートエンドポイントを設定する
@@ -61,7 +66,35 @@ function handleAnthropicRootResponse(
  * @param {express.Response} res レスポンス
  * @returns {Promise<void>}
  */
-async function handleAnthropicMessages() {}
+async function handleAnthropicMessages(
+  req: express.Request,
+  res: express.Response,
+) {
+  try {
+    const body = req.body as MessageCreateParams
+
+    // モデル取得
+    const { vsCodeModel, vsCodeModelId } = await getVSCodeModel(
+      body.model,
+      'anthropic',
+    )
+
+    //Anthropicリクエスト→VSCode LM API形式変換
+    const { messages, options } = convertAnthropicRequestToVSCodeRequest(body)
+
+    // キャンセラレーショントークン作成
+    const cancellationToken = new vscode.CancellationTokenSource().token
+
+    // LM APIへリクエスト送信
+    const response = await vsCodeModel.sendRequest(
+      messages,
+      options,
+      cancellationToken,
+    )
+    logger.info('Received response from LM API', response)
+    res.json(response)
+  } catch (error) {}
+}
 
 /**
  * Anthropic互換のモデル一覧リクエストを処理する
@@ -78,3 +111,17 @@ async function handleAnthropicModels() {}
  * @returns {Promise<void>}
  */
 async function handleAnthropicModelInfo() {}
+
+// // sample
+// import Anthropic from '@anthropic-ai/sdk'
+
+// const anthropic = new Anthropic({
+//   apiKey: 'my_api_key', // defaults to process.env["ANTHROPIC_API_KEY"]
+// })
+
+// const msg = await anthropic.messages.create({
+//   model: 'claude-sonnet-4-20250514',
+//   max_tokens: 1024,
+//   messages: [{ role: 'user', content: 'Hello, Claude' }],
+// })
+// console.log(msg)
