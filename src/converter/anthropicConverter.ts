@@ -12,6 +12,8 @@ import type {
 } from '@anthropic-ai/sdk/resources'
 import type { ComputerTool } from 'openai/resources/responses/responses.js'
 import * as vscode from 'vscode'
+import { isTextPart, isToolCallPart } from '../server/handlers'
+import { generateRandomId } from '../utils'
 import { logger } from '../utils/logger'
 
 /**
@@ -196,8 +198,78 @@ export function convertAnthropicRequestToVSCodeRequest(
   return { messages, options }
 }
 
-// export function convertVSCodeResponseToAnthropicResponse(
-//   vscodeResponse: vscode.LanguageModelChatResponse,
-//   model: string,
-//   isStreaming: boolean,
-// ): APIPromise<Message> | APIPromise<Stream<RawMessageStreamEvent>> {}
+/**
+ * VSCodeのLanguageModelChatResponseをAnthropicのMessageまたはAsyncIterable<RawMessageStreamEvent>形式に変換します。
+ * ストリーミングの場合はRawMessageStreamEventのAsyncIterableを返し、
+ * 非ストリーミングの場合は全文をMessage形式で返します。
+ * @param vscodeResponse VSCodeのLanguageModelChatResponse
+ * @param modelId モデルID
+ * @param isStreaming ストリーミングかどうか
+ * @returns Message または AsyncIterable<RawMessageStreamEvent>
+ */
+export function convertVSCodeResponseToAnthropicResponse(
+  vscodeResponse: vscode.LanguageModelChatResponse,
+  model: string,
+  isStreaming: boolean,
+): Promise<Message> | AsyncIterable<RawMessageStreamEvent> {
+  if (isStreaming) {
+    // ストリーミング: VSCode stream → Anthropic RawMessageStreamEvent列に変換
+    return convertVSCodeStreamToAnthropicStream(vscodeResponse.stream, model)
+  }
+
+  // 非ストリーミング: VSCode text → Anthropic Message
+  return convertVSCodeTextToAnthropicMessage(vscodeResponse, model)
+}
+
+// VSCode stream → Anthropic RawMessageStreamEvent[] 変換
+async function* convertVSCodeStreamToAnthropicStream(
+  stream: AsyncIterable<
+    vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
+  >,
+  model: string,
+): AsyncIterable<RawMessageStreamEvent> {}
+
+// VSCode text → Anthropic Message 変換
+async function convertVSCodeTextToAnthropicMessage(
+  vscodeResponse: vscode.LanguageModelChatResponse,
+  model: string,
+): Promise<Message> {
+  const id = `msg_${generateRandomId()}`
+
+  // content
+  let content = ''
+  if (
+    vscodeResponse &&
+    typeof vscodeResponse.text === 'object' &&
+    Symbol.asyncIterator in vscodeResponse.text
+  ) {
+    for await (const part of vscodeResponse.text) {
+      content += part
+    }
+  }
+
+  return {
+    id,
+    type: 'message',
+    role: 'assistant',
+    content: [
+      {
+        type: 'text',
+        text: content,
+        citations: [],
+      },
+    ],
+    model,
+    stop_reason: 'end_turn',
+    stop_sequence: null,
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+      server_tool_use: null,
+      service_tier: null,
+    },
+    // createdはAnthropicのMessage型には含まれないが、必要なら追加可能
+  }
+}

@@ -80,3 +80,23 @@ export async function getVSCodeModel(
   // モデルが見つかった場合はそのまま返す
   return { vsCodeModel, vsCodeModelId }
 }
+
+/**
+ * VSCodeのLanguageModelTextPart型ガード
+ * @param part 判定対象
+ * @returns {boolean} partがLanguageModelTextPart型ならtrue
+ */
+export function isTextPart(part: any): part is vscode.LanguageModelTextPart {
+  return part instanceof vscode.LanguageModelTextPart
+}
+
+/**
+ * VSCodeのLanguageModelToolCallPart型ガード
+ * @param part 判定対象
+ * @returns {boolean} partがLanguageModelToolCallPart型ならtrue
+ */
+export function isToolCallPart(
+  part: any,
+): part is vscode.LanguageModelToolCallPart {
+  return part instanceof vscode.LanguageModelToolCallPart
+}
