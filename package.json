@@ -1,29 +1,8 @@
 {
   "name": "vscode-lm-proxy",
   "displayName": "LM Proxy",
-  "description": "VSCode Language Model API Proxy with OpenAI API compatibility",
   "version": "0.0.1",
-  "publisher": "ryonakae",
-  "author": {
-    "name": "Ryo Nakae"
-  },
-  "license": "MIT",
-  "homepage": "https://github.com/ryo-nakae/vscode-lm-proxy",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/ryo-nakae/vscode-lm-proxy.git"
-  },
-  "bugs": {
-    "url": "https://github.com/ryo-nakae/vscode-lm-proxy/issues"
-  },
-  "icon": "icon.png",
-  "galleryBanner": {
-    "color": "#1E1E1E",
-    "theme": "dark"
-  },
-  "engines": {
-    "vscode": "^1.93.0"
-  },
+  "description": "VSCode Language Model API Proxy with OpenAI API compatibility",
   "categories": [
     "Other",
     "Machine Learning",
@@ -36,40 +15,28 @@
     "openai",
     "proxy"
   ],
-  "activationEvents": [
-    "onStartupFinished"
-  ],
+  "homepage": "https://github.com/ryo-nakae/vscode-lm-proxy",
+  "bugs": {
+    "url": "https://github.com/ryo-nakae/vscode-lm-proxy/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryo-nakae/vscode-lm-proxy.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Ryo Nakae"
+  },
+  "publisher": "ryonakae",
   "main": "./out/extension.js",
+  "scripts": {
+    "check": "biome check",
+    "compile": "tsc -p ./",
+    "prepare": "husky",
+    "vscode:prepublish": "npm run compile",
+    "watch": "tsc -watch -p ./"
+  },
   "contributes": {
-    "configuration": {
-      "title": "LM Proxy",
-      "properties": {
-        "vscode-lm-proxy.port": {
-          "type": "number",
-          "default": 4000,
-          "minimum": 1024,
-          "maximum": 65535,
-          "description": "Port number used by the LM Proxy server"
-        },
-        "vscode-lm-proxy.logLevel": {
-          "type": "number",
-          "enum": [0, 1, 2, 3],
-          "enumDescriptions": [
-            "DEBUG: Output all logs including detailed information (default)",
-            "INFO: Output information, warnings, and errors only",
-            "WARN: Output warnings and errors only",
-            "ERROR: Output errors only"
-          ],
-          "default": 0,
-          "description": "Log level (0:DEBUG, 1:INFO, 2:WARN, 3:ERROR)"
-        },
-        "vscode-lm-proxy.showOutputOnStartup": {
-          "type": "boolean",
-          "default": true,
-          "description": "Whether to display the output panel when the extension starts"
-        }
-      }
-    },
     "commands": [
       {
         "command": "vscode-lm-proxy.startServer",
@@ -82,8 +49,8 @@
         "category": "LM Proxy"
       },
       {
-        "command": "vscode-lm-proxy.selectModel",
-        "title": "Select Language Model",
+        "command": "vscode-lm-proxy.selectOpenAIModel",
+        "title": "Select OpenAI API Model",
         "category": "LM Proxy"
       },
       {
@@ -107,6 +74,40 @@
         "category": "LM Proxy"
       }
     ],
+    "configuration": {
+      "title": "LM Proxy",
+      "properties": {
+        "vscode-lm-proxy.port": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Port number used by the LM Proxy server"
+        },
+        "vscode-lm-proxy.logLevel": {
+          "type": "number",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "enumDescriptions": [
+            "DEBUG: Output all logs including detailed information (default)",
+            "INFO: Output information, warnings, and errors only",
+            "WARN: Output warnings and errors only",
+            "ERROR: Output errors only"
+          ],
+          "default": 0,
+          "description": "Log level (0:DEBUG, 1:INFO, 2:WARN, 3:ERROR)"
+        },
+        "vscode-lm-proxy.showOutputOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to display the output panel when the extension starts"
+        }
+      }
+    },
     "keybindings": [
       {
         "command": "vscode-lm-proxy.startServer",
@@ -121,7 +122,7 @@
         "when": "vscode-lm-proxy.serverRunning"
       },
       {
-        "command": "vscode-lm-proxy.selectModel",
+        "command": "vscode-lm-proxy.selectOpenAIModel",
         "key": "ctrl+shift+l m",
         "mac": "cmd+shift+l m"
       }
@@ -147,34 +148,43 @@
           "when": "vscode-lm-proxy.serverRunning"
         },
         {
-          "command": "vscode-lm-proxy.selectModel",
+          "command": "vscode-lm-proxy.selectOpenAIModel",
           "group": "1_model"
         }
       ]
     }
   },
-  "scripts": {
-    "vscode:prepublish": "npm run compile",
-    "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
-    "lint": "eslint src --ext ts"
-  },
-  "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/node": "20.x",
-    "@types/vscode": "^1.93.0",
-    "@typescript-eslint/eslint-plugin": "^7.7.0",
-    "@typescript-eslint/parser": "^7.7.0",
-    "eslint": "^8.57.1",
-    "typescript": "^5.8.2"
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,cjs,mjs,json}": [
+      "biome check --write"
+    ]
   },
   "dependencies": {
     "express": "^4.18.3"
   },
+  "devDependencies": {
+    "@biomejs/biome": "^2.0.5",
+    "@types/express": "^4.17.21",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.93.0",
+    "concurrently": "^9.2.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.2",
+    "openai": "^5.7.0",
+    "typescript": "^5.8.2"
+  },
   "extensionDependencies": [],
-  "extensionKind": [
-    "ui"
-  ],
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1E1E1E",
+    "theme": "dark"
+  },
   "capabilities": {
     "virtualWorkspaces": {
       "supported": false,
@@ -184,5 +194,8 @@
       "supported": false,
       "description": "This extension requires a trusted workspace as it uses VSCode's Language Model API"
     }
-  }
+  },
+  "extensionKind": [
+    "ui"
+  ]
 }
