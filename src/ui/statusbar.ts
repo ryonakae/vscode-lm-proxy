@@ -107,11 +107,22 @@ class StatusBarManager {
     }
 
     // モデル選択メニュー項目を追加
-    const currentModelId = modelManager.getOpenAIModelId()
+    const currentOpenAIModelId = modelManager.getOpenAIModelId()
     items.push({
       label: '$(gear) OpenAI API Model',
-      description: currentModelId ? `${currentModelId}` : 'No model selected',
+      description: currentOpenAIModelId
+        ? `${currentOpenAIModelId}`
+        : 'No model selected',
       command: 'vscode-lm-proxy.selectOpenAIModel',
+    })
+
+    const currentAnthropicModelId = modelManager.getAnthropicModelId()
+    items.push({
+      label: '$(gear) Anthropic API Model',
+      description: currentAnthropicModelId
+        ? `${currentAnthropicModelId}`
+        : 'No model selected',
+      command: 'vscode-lm-proxy.selectAnthropicModel',
     })
 
     // メニューを表示
