@@ -143,7 +143,10 @@ async function handleOpenAIChatCompletions(
       await (openAIResponseOrStream as Promise<OpenAI.ChatCompletion>)
     res.json(completion)
   } catch (error) {
-    handleChatCompletionError(res, error)
+    const { statusCode, apiError } = handleChatCompletionError(
+      error as vscode.LanguageModelError,
+    )
+    res.status(statusCode).json({ error: apiError })
   }
 }
 
@@ -155,20 +158,27 @@ async function handleOpenAIChatCompletions(
 function validateChatCompletionRequest(
   body: OpenAI.ChatCompletionCreateParams,
 ) {
+  // messagesフィールドの存在と配列チェック
   if (
     !body.messages ||
     !Array.isArray(body.messages) ||
     body.messages.length === 0
   ) {
-    const error: any = new Error('The messages field is required')
-    error.statusCode = 400
-    error.type = 'invalid_request_error'
+    const error: vscode.LanguageModelError = {
+      ...new Error('The messages field is required'),
+      name: 'InvalidMessageRequest',
+      code: 'invalid_message_format',
+    }
     throw error
   }
+
+  // modelフィールドの存在チェック
   if (!body.model) {
-    const error: any = new Error('The model field is required')
-    error.statusCode = 400
-    error.type = 'invalid_request_error'
+    const error: vscode.LanguageModelError = {
+      ...new Error('The model field is required'),
+      name: 'InvalidModelRequest',
+      code: 'invalid_model',
+    }
     throw error
   }
 }
@@ -188,11 +198,13 @@ async function getVSCodeModel(
   if (modelId === 'vscode-lm-proxy') {
     const openaiModelId = modelManager.getOpenAIModelId()
     if (!openaiModelId) {
-      const error: any = new Error(
-        'No valid OpenAI model selected. Please select a model first.',
-      )
-      error.statusCode = 400
-      error.type = 'invalid_request_error'
+      const error: vscode.LanguageModelError = {
+        ...new Error(
+          'No valid OpenAI model selected. Please select a model first.',
+        ),
+        name: 'NotFound',
+        code: 'model_not_found',
+      }
       throw error
     }
     modelId = openaiModelId
@@ -201,9 +213,11 @@ async function getVSCodeModel(
   // モデル取得
   const [model] = await vscode.lm.selectChatModels({ id: modelId })
   if (!model) {
-    const error: any = new Error(`Model ${modelId} not found`)
-    error.statusCode = 404
-    error.type = 'model_not_found_error'
+    const error: vscode.LanguageModelError = {
+      ...new Error(`Model ${modelId} not found`),
+      name: 'NotFound',
+      code: 'model_not_found',
+    }
     throw error
   }
   return { model, modelId }
@@ -221,88 +235,117 @@ async function handleStreamingResponse(
   stream: AsyncIterable<OpenAI.ChatCompletionChunk>,
   reqPath: string,
 ) {
-  // レスポンスヘッダー設定
   res.setHeader('Content-Type', 'text/event-stream')
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
 
-  // ストリーミング開始ログ
   logger.info('Streaming started', { stream: 'start', path: reqPath })
   let chunkIndex = 0
 
-  // チャンクごとに送信
-  for await (const chunk of stream) {
-    const data = JSON.stringify(chunk)
-    res.write(`data: ${data}\n\n`)
-    logger.info(
-      `Streaming chunk: ${JSON.stringify({ stream: 'chunk', chunk, index: chunkIndex++ })}`,
-    )
-  }
+  try {
+    // ストリーミングレスポンスを逐次送信
+    for await (const chunk of stream) {
+      const data = JSON.stringify(chunk)
+      res.write(`data: ${data}\n\n`)
+      logger.info(
+        `Streaming chunk: ${JSON.stringify({ stream: 'chunk', chunk, index: chunkIndex++ })}`,
+      )
+    }
 
-  // 終了通知
-  res.write('data: [DONE]\n\n')
-  logger.info('Streaming ended', {
-    stream: 'end',
-    path: reqPath,
-    chunkCount: chunkIndex,
-  })
-  res.end()
+    // 正常終了
+    res.write('data: [DONE]\n\n')
+    logger.info('Streaming ended', {
+      stream: 'end',
+      path: reqPath,
+      chunkCount: chunkIndex,
+    })
+  } catch (error) {
+    // エラー発生時はOpenAI互換エラーをSSEで送信し、ストリームを終了
+    const { apiError } = handleChatCompletionError(
+      error as vscode.LanguageModelError,
+    )
+    res.write(`data: ${JSON.stringify({ error: apiError })}\n\n`)
+    res.write('data: [DONE]\n\n')
+    logger.error('Streaming error', { error, path: reqPath })
+  } finally {
+    // ストリーム終了
+    res.end()
+  }
 }
 
 /**
- * Chat Completions APIのエラーハンドリング（OpenAI互換エラー形式で返す）
- * @param {express.Response} res
- * @param {unknown} error
+ * VSCode LanguageModelError を OpenAI API 互換エラー形式に変換し、ログ出力する
+ * @param {vscode.LanguageModelError} error
+ * @returns { statusCode: number, apiError: APIError }
  */
-function handleChatCompletionError(res: express.Response, error: unknown) {
-  const lmError = error as vscode.LanguageModelError
-
-  logger.error(
-    'OpenAI Chat completions API error',
-    lmError.cause,
-    lmError.code,
-    lmError.message,
-    lmError.name,
-    lmError.stack,
-  )
+function handleChatCompletionError(error: vscode.LanguageModelError): {
+  statusCode: number
+  apiError: APIError
+} {
+  logger.error('VSCode LM API error', {
+    cause: error.cause,
+    code: error.code,
+    message: error.message,
+    name: error.name,
+    stack: error.stack,
+  })
 
   // VSCodeのエラーをOpenAI互換のAPIエラーに変換
   let statusCode = 500
   let type = 'api_error'
-  let code = lmError.code || 'internal_error'
+  let code = error.code || 'internal_error'
+  let param: string | null = null
 
-  // LanguageModelError.code に応じてマッピング
-  if (code === 'NotFound') {
-    statusCode = 404
-    type = 'model_not_found_error'
-    code = 'model_not_found'
-  } else if (code === 'NoPermissions') {
-    statusCode = 403
-    type = 'permission_denied'
-    code = 'no_permissions'
-  } else if (code === 'Blocked') {
-    statusCode = 403
-    type = 'blocked'
-    code = 'blocked'
-  } else if (code === 'Unknown') {
-    statusCode = 500
-    type = 'api_error'
-    code = 'unknown'
+  // LanguageModelError.name に応じてマッピング
+  switch (error.name) {
+    case 'InvalidMessageFormat':
+    case 'InvalidModel':
+      statusCode = 400
+      type = 'invalid_request_error'
+      code =
+        error.name === 'InvalidMessageFormat'
+          ? 'invalid_message_format'
+          : 'invalid_model'
+      break
+    case 'NoPermissions':
+    case 'Blocked':
+      statusCode = 403
+      type = error.name === 'NoPermissions' ? 'access_terminated' : 'blocked'
+      code = error.name === 'NoPermissions' ? 'access_terminated' : 'blocked'
+      break
+    case 'NotFound':
+      statusCode = 404
+      type = 'not_found_error'
+      code = 'model_not_found'
+      param = 'model'
+      break
+    case 'ChatQuotaExceeded':
+      statusCode = 429
+      type = 'insufficient_quota'
+      code = 'quota_exceeded'
+      break
+    case 'Unknown':
+      statusCode = 500
+      type = 'server_error'
+      code = 'internal_server_error'
+      break
   }
 
   // OpenAI互換エラー形式で返却
   const apiError: APIError = {
     code,
-    message: lmError.message || 'An unknown error has occurred',
+    message: error.message || 'An unknown error has occurred',
     type,
     status: statusCode,
     headers: undefined,
     error: undefined,
-    param: undefined,
+    param,
     requestID: undefined,
-    name: lmError.name || 'LanguageModelError',
+    name: error.name || 'LanguageModelError',
   }
-  res.status(statusCode).json({ error: apiError })
+  logger.error(`OpenAI API error: ${apiError.message}`, apiError)
+
+  return { statusCode, apiError }
 }
 
 /**
