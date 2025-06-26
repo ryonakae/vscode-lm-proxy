@@ -238,13 +238,9 @@ async function convertVSCodeTextToAnthropicMessage(
 
   // content
   let content = ''
-  if (
-    vscodeResponse &&
-    typeof vscodeResponse.text === 'object' &&
-    Symbol.asyncIterator in vscodeResponse.text
-  ) {
-    for await (const part of vscodeResponse.text) {
-      content += part
+  for await (const part of vscodeResponse.stream) {
+    if (isTextPart(part)) {
+      content += part.value
     }
   }
 
@@ -263,13 +259,13 @@ async function convertVSCodeTextToAnthropicMessage(
     stop_reason: 'end_turn',
     stop_sequence: null,
     usage: {
-      input_tokens: 0,
-      output_tokens: 0,
       cache_creation_input_tokens: 0,
       cache_read_input_tokens: 0,
+      input_tokens: 0,
+      output_tokens: 0,
       server_tool_use: null,
       service_tier: null,
     },
-    // createdはAnthropicのMessage型には含まれないが、必要なら追加可能
+    // container: null
   }
 }

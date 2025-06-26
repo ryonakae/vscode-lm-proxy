@@ -309,29 +309,14 @@ async function convertVSCodeTextToOpenAICompletion(
   const id = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
 
-  // content
+  // content & toolCalls
   let content = ''
-  if (
-    vscodeResponse &&
-    typeof vscodeResponse.text === 'object' &&
-    Symbol.asyncIterator in vscodeResponse.text
-  ) {
-    for await (const part of vscodeResponse.text) {
-      content += part
-    }
-  }
-
-  // toolCalls
   const toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[] = []
-  if (
-    vscodeResponse &&
-    typeof vscodeResponse.stream === 'object' &&
-    Symbol.asyncIterator in vscodeResponse.stream
-  ) {
-    for await (const part of vscodeResponse.stream) {
-      if (isToolCallPart(part)) {
-        toolCalls.push(convertVSCodeToolCallToOpenAIToolCall(part))
-      }
+  for await (const part of vscodeResponse.stream) {
+    if (isTextPart(part)) {
+      content += part.value
+    } else if (isToolCallPart(part)) {
+      toolCalls.push(convertVSCodeToolCallToOpenAIToolCall(part))
     }
   }
 
