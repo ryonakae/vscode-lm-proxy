@@ -51,7 +51,7 @@ export function setupOpenAIModelsEndpoints(app: express.Express): void {
 
 /**
  * OpenAI互換APIのルートエンドポイントのレスポンスを返す
- * @param {express.Request} _req リクエスト（未使用）
+ * @param {express.Request} req リクエスト
  * @param {express.Response} res レスポンス
  * @returns {void}
  */
@@ -59,25 +59,7 @@ function handleOpenAIRootResponse(
   _req: express.Request,
   res: express.Response,
 ) {
-  res.json({
-    status: 'ok',
-    message: 'OpenAI API compatible endpoints',
-    version: '0.0.1',
-    endpoints: {
-      'chat/completions': {
-        method: 'POST',
-        description: 'Chat Completions API',
-      },
-      models: {
-        method: 'GET',
-        description: 'List available models',
-      },
-      'models/:model': {
-        method: 'GET',
-        description: 'Get model information',
-      },
-    },
-  })
+  res.json({ status: 'ok' })
 }
 
 /**
@@ -350,7 +332,7 @@ function handleChatCompletionError(error: vscode.LanguageModelError): {
 
 /**
  * OpenAI互換のモデル一覧リクエストを処理する
- * @param {express.Request} _req リクエスト（未使用）
+ * @param {express.Request} req リクエスト
  * @param {express.Response} res レスポンス
  * @returns {Promise<void>}
  */

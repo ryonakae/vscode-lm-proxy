@@ -280,9 +280,12 @@ async function convertVSCodeTextToOpenAICompletion(
 }
 
 /**
- * VSCode LanguageModelChatResponseをOpenAI ChatCompletion/ChatCompletionChunk形式に変換
+ * VSCodeのLanguageModelChatResponseをOpenAIのChatCompletionまたはChatCompletionChunk形式に変換します。
+ * ストリーミングの場合はChatCompletionChunkのAsyncIterableを返し、
+ * 非ストリーミングの場合は全文をChatCompletion形式で返します。
  * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param opts 追加情報（model名など）
+ * @param model モデル名
+ * @param isStreaming ストリーミングかどうか
  * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
  */
 export function convertVSCodeResponseToOpenAIResponse(
