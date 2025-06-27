@@ -1,7 +1,10 @@
+import type { PageResponse } from '@anthropic-ai/sdk/core/pagination.js'
 import type {
   ErrorObject,
   Message,
   MessageCreateParams,
+  Model,
+  ModelInfo,
   RawMessageStreamEvent,
 } from '@anthropic-ai/sdk/resources'
 import type express from 'express'
@@ -10,6 +13,7 @@ import {
   convertAnthropicRequestToVSCodeRequest,
   convertVSCodeResponseToAnthropicResponse,
 } from '../converter/anthropicConverter'
+import { modelManager } from '../model/manager'
 import { logger } from '../utils/logger'
 import { getVSCodeModel } from './handlers'
 
@@ -283,7 +287,59 @@ function handleMessageError(error: vscode.LanguageModelError): {
  * @param {express.Response} res レスポンス
  * @returns {Promise<void>}
  */
-async function handleAnthropicModels() {}
+async function handleAnthropicModels(
+  _req: express.Request,
+  res: express.Response,
+) {
+  try {
+    // 利用可能なモデルを取得
+    const availableModels = await modelManager.getAvailableModels()
+
+    // Anthropic API形式に変換
+    const now = Math.floor(Date.now() / 1000)
+    const modelsData: ModelInfo[] = availableModels.map(model => ({
+      created_at: now.toString(),
+      display_name: model.name,
+      id: model.id,
+      type: 'model',
+    }))
+
+    // プロキシモデルIDも追加
+    modelsData.push({
+      created_at: now.toString(),
+      display_name: 'VSCode LM Proxy',
+      id: 'vscode-lm-proxy',
+      type: 'model',
+    })
+
+    const anthropicModelsResponse: PageResponse<ModelInfo> = {
+      data: modelsData,
+      first_id: modelsData[0].id,
+      has_more: false,
+      last_id: modelsData[modelsData.length - 1].id,
+    }
+
+    res.json(anthropicModelsResponse)
+  } catch (error) {
+    logger.error(
+      `Anthropic Models API error: ${(error as Error).message}`,
+      error as Error,
+    )
+
+    // エラーレスポンスの作成
+    const apiError = error as any
+    const statusCode = apiError.statusCode || 500
+    const errorResponse = {
+      type: 'error',
+      error: {
+        message: apiError.message || 'An unknown error has occurred',
+        type: apiError.type || 'api_error',
+      } as ErrorObject,
+    }
+
+    res.status(statusCode).json(errorResponse)
+  }
+}
 
 /**
  * Anthropic互換の単一モデル情報リクエストを処理する
