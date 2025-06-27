@@ -320,7 +320,17 @@ async function* convertVSCodeStreamToAnthropicStream(
         },
       }
 
-      // ツールコールブロック即時終了
+      // input_json_deltaを送信
+      yield {
+        type: 'content_block_delta',
+        index: contentIndex,
+        delta: {
+          type: 'input_json_delta',
+          partial_json: JSON.stringify(part.input),
+        },
+      }
+
+      // ツールコールブロック終了
       yield { type: 'content_block_stop', index: contentIndex }
       contentIndex++
     }
@@ -367,7 +377,7 @@ async function convertVSCodeTextToAnthropicMessage(
   const id = `msg_${generateRandomId()}`
 
   const content: ContentBlock[] = []
-  let hasToolUse = false
+  let isToolCalled = false
   let textBuffer = ''
 
   // --- ストリームを順次処理 ---
@@ -388,7 +398,7 @@ async function convertVSCodeTextToAnthropicMessage(
         name: part.name,
         input: part.input,
       })
-      hasToolUse = true
+      isToolCalled = true
     }
   }
 
@@ -407,9 +417,9 @@ async function convertVSCodeTextToAnthropicMessage(
     id,
     type: 'message',
     role: 'assistant',
-    content: content as Message['content'],
+    content,
     model,
-    stop_reason: hasToolUse ? 'tool_use' : 'end_turn',
+    stop_reason: isToolCalled ? 'tool_use' : 'end_turn',
     stop_sequence: null,
     usage: {
       cache_creation_input_tokens: 0,

@@ -19,6 +19,7 @@ export function convertOpenAIRequestToVSCodeRequest(
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
 } {
+  // 変換開始ログ
   logger.info('Converting OpenAI request to VSCode request', openaiRequest)
 
   // OpenAIのmessagesをVSCodeのLanguageModelChatMessage[]に変換
@@ -27,6 +28,8 @@ export function convertOpenAIRequestToVSCodeRequest(
       let role: vscode.LanguageModelChatMessageRole
       let content = ''
       let prefix = ''
+
+      // ロール変換
       switch (msg.role) {
         case 'user':
           role = vscode.LanguageModelChatMessageRole.User
@@ -39,6 +42,8 @@ export function convertOpenAIRequestToVSCodeRequest(
           role = vscode.LanguageModelChatMessageRole.Assistant
           prefix = `[${msg.role?.toUpperCase()}] `
       }
+
+      // contentの変換
       if (typeof msg.content === 'string') {
         content = prefix + msg.content
       } else if (Array.isArray(msg.content)) {
@@ -51,6 +56,7 @@ export function convertOpenAIRequestToVSCodeRequest(
             .join('\n')
       }
 
+      // nameプロパティの取得
       let name: string | undefined
       if ('name' in msg) {
         name = msg.name
@@ -141,7 +147,7 @@ export function convertOpenAIRequestToVSCodeRequest(
     options.modelOptions = modelOptions
   }
 
-  // ログ表示
+  // 変換結果ログ
   logger.info('Converted OpenAI request to VSCode request', {
     messages,
     options,
@@ -164,51 +170,29 @@ export function convertVSCodeResponseToOpenAIResponse(
   modelId: string,
   isStreaming: boolean,
 ): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {
+  // ストリーミングの場合
   if (isStreaming) {
-    // ストリーミング: ChatCompletionChunkのAsyncIterableを返す
+    // ChatCompletionChunkのAsyncIterableを返す
     return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, modelId)
   }
-  // 非ストリーミング: 全文をOpenAI ChatCompletionに変換
+  // 非ストリーミングの場合
+  // 全文をOpenAI ChatCompletionに変換
   return convertVSCodeTextToOpenAICompletion(vscodeResponse, modelId)
 }
 
-// VSCode ToolCall → OpenAI tool_call 変換 (stream)
-function convertVSCodeToolCallToOpenAIChunkToolCall(
-  part: vscode.LanguageModelToolCallPart,
-  index: number,
-): OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall {
-  return {
-    index,
-    id: part.callId,
-    type: 'function',
-    function: {
-      name: part.name,
-      arguments: JSON.stringify(part.input),
-    },
-  }
-}
-
-// VSCode ToolCall → OpenAI tool_call 変換 (non-stream)
-function convertVSCodeToolCallToOpenAIToolCall(
-  part: vscode.LanguageModelToolCallPart,
-): OpenAI.Chat.Completions.ChatCompletionMessageToolCall {
-  return {
-    id: part.callId,
-    type: 'function',
-    function: {
-      name: part.name,
-      arguments: JSON.stringify(part.input),
-    },
-  }
-}
-
-// ストリーミング: VSCode stream → OpenAI ChatCompletionChunk[]
+/**
+ * VSCodeのストリームをOpenAIのChatCompletionChunkのAsyncIterableに変換します。
+ * @param stream VSCodeのストリーム
+ * @param model モデル名
+ * @returns AsyncIterable<OpenAI.ChatCompletionChunk>
+ */
 async function* convertVSCodeStreamToOpenAIChunks(
   stream: AsyncIterable<
     vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
   >,
   model: string,
 ): AsyncIterable<OpenAI.ChatCompletionChunk> {
+  // チャンクIDとタイムスタンプ生成
   const randomId = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
 
@@ -218,6 +202,7 @@ async function* convertVSCodeStreamToOpenAIChunks(
 
   // ストリーミングチャンクを生成
   for await (const part of stream) {
+    // チャンクの初期化
     const chunk: OpenAI.ChatCompletionChunk = {
       choices: [
         {
@@ -230,38 +215,50 @@ async function* convertVSCodeStreamToOpenAIChunks(
       id: randomId,
       model,
       object: 'chat.completion.chunk',
-      // service_tier: undefined,
-      // system_fingerprint: undefined,
-      // usage: {
-      //   completion_tokens: 0,
-      //   prompt_tokens: 0,
-      //   total_tokens: 0,
-      //   completion_tokens_details: {
-      //     accepted_prediction_tokens: 0,
-      //     audio_tokens: 0,
-      //     reasoning_tokens: 0,
-      //     rejected_prediction_tokens: 0,
-      //   },
-      //   prompt_tokens_details: {
-      //     audio_tokens: 0,
-      //     cached_tokens: 0,
-      //   },
-      // },
+      service_tier: undefined,
+      system_fingerprint: undefined,
+      usage: {
+        completion_tokens: 0,
+        prompt_tokens: 0,
+        total_tokens: 0,
+        completion_tokens_details: {
+          accepted_prediction_tokens: 0,
+          audio_tokens: 0,
+          reasoning_tokens: 0,
+          rejected_prediction_tokens: 0,
+        },
+        prompt_tokens_details: {
+          audio_tokens: 0,
+          cached_tokens: 0,
+        },
+      },
     }
 
+    // テキストパートの場合
     if (isTextPart(part)) {
       if (!isRoleSent) {
         chunk.choices[0].delta.role = 'assistant'
         isRoleSent = true
       }
       chunk.choices[0].delta.content = part.value
-    } else if (isToolCallPart(part)) {
+    }
+    // ツールコールパートの場合
+    else if (isToolCallPart(part)) {
       chunk.choices[0].delta.tool_calls = [
-        convertVSCodeToolCallToOpenAIChunkToolCall(part, toolCallIndex++),
+        {
+          index: toolCallIndex++,
+          id: part.callId,
+          type: 'function',
+          function: {
+            name: part.name,
+            arguments: JSON.stringify(part.input),
+          },
+        },
       ]
       isToolCalled = true
-    } else {
-      // unknownパートは無視
+    }
+    // 未知のパートは無視
+    else {
       continue
     }
 
@@ -281,46 +278,64 @@ async function* convertVSCodeStreamToOpenAIChunks(
     id: randomId,
     model,
     object: 'chat.completion.chunk',
-    // service_tier: undefined,
-    // system_fingerprint: undefined,
-    // usage: {
-    //   completion_tokens: 0,
-    //   prompt_tokens: 0,
-    //   total_tokens: 0,
-    //   completion_tokens_details: {
-    //     accepted_prediction_tokens: 0,
-    //     audio_tokens: 0,
-    //     reasoning_tokens: 0,
-    //     rejected_prediction_tokens: 0,
-    //   },
-    //   prompt_tokens_details: {
-    //     audio_tokens: 0,
-    //     cached_tokens: 0,
-    //   },
-    // },
+    service_tier: undefined,
+    system_fingerprint: undefined,
+    usage: {
+      completion_tokens: 0,
+      prompt_tokens: 0,
+      total_tokens: 0,
+      completion_tokens_details: {
+        accepted_prediction_tokens: 0,
+        audio_tokens: 0,
+        reasoning_tokens: 0,
+        rejected_prediction_tokens: 0,
+      },
+      prompt_tokens_details: {
+        audio_tokens: 0,
+        cached_tokens: 0,
+      },
+    },
   }
 }
 
-// 非ストリーミング: VSCode text → OpenAI ChatCompletion
+/**
+ * 非ストリーミング: VSCodeのLanguageModelChatResponseをOpenAIのChatCompletion形式に変換します。
+ * @param vscodeResponse VSCodeのLanguageModelChatResponse
+ * @param model モデル名
+ * @returns Promise<OpenAI.ChatCompletion>
+ */
 async function convertVSCodeTextToOpenAICompletion(
   vscodeResponse: vscode.LanguageModelChatResponse,
   model: string,
 ): Promise<OpenAI.ChatCompletion> {
+  // チャットIDとタイムスタンプ生成
   const id = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
 
-  // content & toolCalls
+  // contentとtoolCallsの初期化
   let content = ''
   const toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[] = []
+
+  // ストリームからパートを順次取得
   for await (const part of vscodeResponse.stream) {
+    // テキストパートの場合
     if (isTextPart(part)) {
       content += part.value
-    } else if (isToolCallPart(part)) {
-      toolCalls.push(convertVSCodeToolCallToOpenAIToolCall(part))
+    }
+    // ツールコールパートの場合
+    else if (isToolCallPart(part)) {
+      toolCalls.push({
+        id: part.callId,
+        type: 'function',
+        function: {
+          name: part.name,
+          arguments: JSON.stringify(part.input),
+        },
+      })
     }
   }
 
-  // choice
+  // choiceオブジェクトの生成
   const choice: OpenAI.Chat.Completions.ChatCompletion.Choice = {
     index: 0,
     message: {
@@ -331,32 +346,35 @@ async function convertVSCodeTextToOpenAICompletion(
     logprobs: null,
     finish_reason: toolCalls.length > 0 ? 'tool_calls' : 'stop',
   }
+
+  // toolCallsが存在する場合はmessageに追加
   if (toolCalls.length > 0) {
     choice.message.tool_calls = toolCalls
   }
 
+  // ChatCompletionオブジェクトを返却
   return {
     choices: [choice],
     created,
     id,
     model,
     object: 'chat.completion',
-    // service_tier: undefined,
-    // system_fingerprint: undefined,
-    // usage: {
-    //   completion_tokens: 0,
-    //   prompt_tokens: 0,
-    //   total_tokens: 0,
-    //   completion_tokens_details: {
-    //     accepted_prediction_tokens: 0,
-    //     audio_tokens: 0,
-    //     reasoning_tokens: 0,
-    //     rejected_prediction_tokens: 0,
-    //   },
-    //   prompt_tokens_details: {
-    //     audio_tokens: 0,
-    //     cached_tokens: 0,
-    //   },
-    // },
+    service_tier: undefined,
+    system_fingerprint: undefined,
+    usage: {
+      completion_tokens: 0,
+      prompt_tokens: 0,
+      total_tokens: 0,
+      completion_tokens_details: {
+        accepted_prediction_tokens: 0,
+        audio_tokens: 0,
+        reasoning_tokens: 0,
+        rejected_prediction_tokens: 0,
+      },
+      prompt_tokens_details: {
+        audio_tokens: 0,
+        cached_tokens: 0,
+      },
+    },
   }
 }
