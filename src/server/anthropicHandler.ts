@@ -1,9 +1,8 @@
-import type { PageResponse } from '@anthropic-ai/sdk/core/pagination.js'
+import type { PageResponse } from '@anthropic-ai/sdk/core/pagination'
 import type {
   ErrorObject,
   Message,
   MessageCreateParams,
-  Model,
   ModelInfo,
   RawMessageStreamEvent,
 } from '@anthropic-ai/sdk/resources'
@@ -320,20 +319,16 @@ async function handleAnthropicModels(
     }
 
     res.json(anthropicModelsResponse)
-  } catch (error) {
-    logger.error(
-      `Anthropic Models API error: ${(error as Error).message}`,
-      error as Error,
-    )
+  } catch (error: any) {
+    logger.error(`Anthropic Models API error: ${error.message}`, error as Error)
 
     // エラーレスポンスの作成
-    const apiError = error as any
-    const statusCode = apiError.statusCode || 500
+    const statusCode = error.statusCode || 500
     const errorResponse = {
       type: 'error',
       error: {
-        message: apiError.message || 'An unknown error has occurred',
-        type: apiError.type || 'api_error',
+        message: error.message || 'An unknown error has occurred',
+        type: error.type || 'api_error',
       } as ErrorObject,
     }
 

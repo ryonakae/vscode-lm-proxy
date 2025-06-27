@@ -1,7 +1,12 @@
-// OpenAI API互換ハンドラー
 import type express from 'express'
-import type OpenAI from 'openai'
 import type { APIError } from 'openai'
+import type { PageResponse } from 'openai/pagination'
+import type {
+  ChatCompletion,
+  ChatCompletionChunk,
+  ChatCompletionCreateParams,
+  Model,
+} from 'openai/resources'
 import * as vscode from 'vscode'
 import {
   convertOpenAIRequestToVSCodeRequest,
@@ -79,7 +84,7 @@ async function handleOpenAIChatCompletions(
   res: express.Response,
 ) {
   try {
-    const body = req.body as OpenAI.ChatCompletionCreateParams
+    const body = req.body as ChatCompletionCreateParams
 
     // 必須フィールドのバリデーション
     validateChatCompletionRequest(body)
@@ -118,14 +123,14 @@ async function handleOpenAIChatCompletions(
     if (isStreaming) {
       await handleStreamingResponse(
         res,
-        openAIResponse as AsyncIterable<OpenAI.ChatCompletionChunk>,
+        openAIResponse as AsyncIterable<ChatCompletionChunk>,
         req.originalUrl || req.url,
       )
       return
     }
 
     // 非ストリーミングレスポンス処理
-    const completion = await (openAIResponse as Promise<OpenAI.ChatCompletion>)
+    const completion = await (openAIResponse as Promise<ChatCompletion>)
     res.json(completion)
   } catch (error) {
     const { statusCode, apiError } = handleChatCompletionError(
@@ -137,12 +142,10 @@ async function handleOpenAIChatCompletions(
 
 /**
  * Chat Completions APIリクエストの必須フィールドをバリデーションする
- * @param {OpenAI.ChatCompletionCreateParams} body
+ * @param {ChatCompletionCreateParams} body
  * @throws エラー時は例外をスロー
  */
-function validateChatCompletionRequest(
-  body: OpenAI.ChatCompletionCreateParams,
-) {
+function validateChatCompletionRequest(body: ChatCompletionCreateParams) {
   // messagesフィールドの存在と配列チェック
   if (
     !body.messages ||
@@ -171,13 +174,13 @@ function validateChatCompletionRequest(
 /**
  * ストリーミングレスポンスを処理し、クライアントに送信する
  * @param {express.Response} res
- * @param {AsyncIterable<OpenAI.ChatCompletionChunk>} stream
+ * @param {AsyncIterable<ChatCompletionChunk>} stream
  * @param {string} reqPath
  * @returns {Promise<void>}
  */
 async function handleStreamingResponse(
   res: express.Response,
-  stream: AsyncIterable<OpenAI.ChatCompletionChunk>,
+  stream: AsyncIterable<ChatCompletionChunk>,
   reqPath: string,
 ) {
   res.setHeader('Content-Type', 'text/event-stream')
@@ -313,7 +316,7 @@ async function handleOpenAIModels(
 
     // OpenAI API形式に変換
     const now = Math.floor(Date.now() / 1000)
-    const modelsData: OpenAI.Model[] = availableModels.map(model => ({
+    const modelsData: Model[] = availableModels.map(model => ({
       id: model.id,
       object: 'model',
       created: now,
@@ -328,26 +331,22 @@ async function handleOpenAIModels(
       owned_by: 'vscode-lm-proxy',
     })
 
-    const openAIModelsResponse: OpenAI.PageResponse<OpenAI.Model> = {
+    const openAIModelsResponse: PageResponse<Model> = {
       object: 'list',
       data: modelsData,
     }
 
     res.json(openAIModelsResponse)
-  } catch (error) {
-    logger.error(
-      `OpenAI Models API error: ${(error as Error).message}`,
-      error as Error,
-    )
+  } catch (error: any) {
+    logger.error(`OpenAI Models API error: ${error.message}`, error as Error)
 
     // エラーレスポンスの作成
-    const apiError = error as any
-    const statusCode = apiError.statusCode || 500
+    const statusCode = error.statusCode || 500
     const errorResponse = {
       error: {
-        message: apiError.message || 'An unknown error has occurred',
-        type: apiError.type || 'api_error',
-        code: apiError.code || 'internal_error',
+        message: error.message || 'An unknown error has occurred',
+        type: error.type || 'api_error',
+        code: error.code || 'internal_error',
       },
     }
 
@@ -371,7 +370,7 @@ async function handleOpenAIModelInfo(
     if (modelId === 'vscode-lm-proxy') {
       // vscode-lm-proxyの場合、固定情報を返す
       const now = Math.floor(Date.now() / 1000)
-      const openAIModel: OpenAI.Model = {
+      const openAIModel: Model = {
         id: 'vscode-lm-proxy',
         object: 'model',
         created: now,
@@ -394,7 +393,7 @@ async function handleOpenAIModelInfo(
     }
 
     // OpenAI API形式に変換
-    const openAIModel: OpenAI.Model = {
+    const openAIModel: Model = {
       id: vsCodeModel.id,
       object: 'model',
       created: Math.floor(Date.now() / 1000),

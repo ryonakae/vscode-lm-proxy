@@ -1,4 +1,9 @@
-import type OpenAI from 'openai'
+import type {
+  Chat,
+  ChatCompletion,
+  ChatCompletionChunk,
+  ChatCompletionCreateParams,
+} from 'openai/resources'
 import * as vscode from 'vscode'
 import { isTextPart, isToolCallPart } from '../server/handlers'
 import { generateRandomId } from '../utils'
@@ -9,12 +14,12 @@ import { logger } from '../utils/logger'
  * OpenAIのmessages, tools, tool_choice等をVSCodeの型にマッピングし、
  * VSCode APIがサポートしないパラメータはmodelOptionsに集約して将来の拡張性を確保します。
  * OpenAI独自のroleやtool指定など、API間の仕様差異を吸収するための変換ロジックを含みます。
- * @param {OpenAI.ChatCompletionCreateParams} openaiRequest OpenAIのチャットリクエストパラメータ
+ * @param {ChatCompletionCreateParams} openaiRequest OpenAIのチャットリクエストパラメータ
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
 export function convertOpenAIRequestToVSCodeRequest(
-  openaiRequest: OpenAI.ChatCompletionCreateParams,
+  openaiRequest: ChatCompletionCreateParams,
 ): {
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
@@ -169,7 +174,7 @@ export function convertVSCodeResponseToOpenAIResponse(
   vscodeResponse: vscode.LanguageModelChatResponse,
   modelId: string,
   isStreaming: boolean,
-): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {
+): Promise<ChatCompletion> | AsyncIterable<ChatCompletionChunk> {
   // ストリーミングの場合
   if (isStreaming) {
     // ChatCompletionChunkのAsyncIterableを返す
@@ -184,14 +189,14 @@ export function convertVSCodeResponseToOpenAIResponse(
  * VSCodeのストリームをOpenAIのChatCompletionChunkのAsyncIterableに変換します。
  * @param stream VSCodeのストリーム
  * @param model モデル名
- * @returns AsyncIterable<OpenAI.ChatCompletionChunk>
+ * @returns AsyncIterable<ChatCompletionChunk>
  */
 async function* convertVSCodeStreamToOpenAIChunks(
   stream: AsyncIterable<
     vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
   >,
   model: string,
-): AsyncIterable<OpenAI.ChatCompletionChunk> {
+): AsyncIterable<ChatCompletionChunk> {
   // チャンクIDとタイムスタンプ生成
   const randomId = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
@@ -203,7 +208,7 @@ async function* convertVSCodeStreamToOpenAIChunks(
   // ストリーミングチャンクを生成
   for await (const part of stream) {
     // チャンクの初期化
-    const chunk: OpenAI.ChatCompletionChunk = {
+    const chunk: ChatCompletionChunk = {
       choices: [
         {
           index: 0,
@@ -302,19 +307,19 @@ async function* convertVSCodeStreamToOpenAIChunks(
  * 非ストリーミング: VSCodeのLanguageModelChatResponseをOpenAIのChatCompletion形式に変換します。
  * @param vscodeResponse VSCodeのLanguageModelChatResponse
  * @param model モデル名
- * @returns Promise<OpenAI.ChatCompletion>
+ * @returns Promise<ChatCompletion>
  */
 async function convertVSCodeTextToOpenAICompletion(
   vscodeResponse: vscode.LanguageModelChatResponse,
   model: string,
-): Promise<OpenAI.ChatCompletion> {
+): Promise<ChatCompletion> {
   // チャットIDとタイムスタンプ生成
   const id = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
 
   // contentとtoolCallsの初期化
   let content = ''
-  const toolCalls: OpenAI.Chat.Completions.ChatCompletionMessageToolCall[] = []
+  const toolCalls: Chat.Completions.ChatCompletionMessageToolCall[] = []
 
   // ストリームからパートを順次取得
   for await (const part of vscodeResponse.stream) {
@@ -336,7 +341,7 @@ async function convertVSCodeTextToOpenAICompletion(
   }
 
   // choiceオブジェクトの生成
-  const choice: OpenAI.Chat.Completions.ChatCompletion.Choice = {
+  const choice: Chat.Completions.ChatCompletion.Choice = {
     index: 0,
     message: {
       role: 'assistant',
