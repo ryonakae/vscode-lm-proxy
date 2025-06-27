@@ -99,12 +99,15 @@ export function activate(context: vscode.ExtensionContext) {
       })
   }
 
-  // 選択中のOpenAIモデルとサーバー状態をログに出力
+  // 選択中のモデルとサーバー状態をログに出力
   const openaiModel = modelManager.getOpenAIModelId() || 'Not selected'
+  const anthropicModel = modelManager.getAnthropicModelId() || 'Not selected'
   const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped'
-  logger.info(
-    `LM Proxy extension activated (Model: ${openaiModel}, Server: ${serverStatus})`,
-  )
+  logger.info('LM Proxy extension activated', {
+    openaiModel,
+    anthropicModel,
+    serverStatus,
+  })
 }
 
 /**
