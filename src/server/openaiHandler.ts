@@ -17,17 +17,6 @@ import { logger } from '../utils/logger'
 import { getVSCodeModel } from './handler'
 
 /**
- * OpenAI互換APIのルートエンドポイントを設定する
- * @param {express.Express} app Express.jsアプリケーション
- * @returns {void}
- */
-export function setupOpenAIEndpoints(app: express.Express): void {
-  app.get('/openai', handleOpenAIRootResponse)
-  app.get('/openai/v1', handleOpenAIRootResponse)
-  app.get('/openai/v1/', handleOpenAIRootResponse)
-}
-
-/**
  * OpenAI互換のChat Completions APIエンドポイントを設定する
  * @param {express.Express} app Express.jsアプリケーション
  * @returns {void}
@@ -53,19 +42,6 @@ export function setupOpenAIModelsEndpoints(app: express.Express): void {
   // 特定モデル情報エンドポイント
   app.get('/openai/models/:model', handleOpenAIModelInfo)
   app.get('/openai/v1/models/:model', handleOpenAIModelInfo)
-}
-
-/**
- * OpenAI互換APIのルートエンドポイントのレスポンスを返す
- * @param {express.Request} req リクエスト
- * @param {express.Response} res レスポンス
- * @returns {void}
- */
-function handleOpenAIRootResponse(
-  _req: express.Request,
-  res: express.Response,
-) {
-  res.json({ status: 'ok' })
 }
 
 /**

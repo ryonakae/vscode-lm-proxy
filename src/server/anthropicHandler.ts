@@ -17,25 +17,18 @@ import { logger } from '../utils/logger'
 import { getVSCodeModel } from './handler'
 
 /**
- * Anthropic互換APIのルートエンドポイントを設定する
- * @param {express.Express} app Express.jsアプリケーション
- * @returns {void}
- */
-export function setupAnthropicEndpoints(app: express.Express): void {
-  app.get('/anthropic', handleAnthropicRootResponse)
-  app.get('/anthropic/v1', handleAnthropicRootResponse)
-  app.get('/anthropic/v1/', handleAnthropicRootResponse)
-}
-
-/**
  * Anthropic互換のMessages APIエンドポイントを設定する
  * @param {express.Express} app Express.jsアプリケーション
  * @returns {void}
  */
 export function setupAnthropicMessagesEndpoints(app: express.Express): void {
   // Anthropic API互換エンドポイントを登録
-  app.post('/anthropic/messages', handleAnthropicMessages)
-  app.post('/anthropic/v1/messages', handleAnthropicMessages)
+  app.post('/anthropic/messages', (req, res) =>
+    handleAnthropicMessages(req, res, 'anthropic'),
+  )
+  app.post('/anthropic/v1/messages', (req, res) =>
+    handleAnthropicMessages(req, res, 'anthropic'),
+  )
 }
 
 /**
@@ -54,19 +47,6 @@ export function setupAnthropicModelsEndpoints(app: express.Express): void {
 }
 
 /**
- * Anthropic互換APIのルートエンドポイントのレスポンスを返す
- * @param {express.Request} req リクエスト
- * @param {express.Response} res レスポンス
- * @returns {void}
- */
-function handleAnthropicRootResponse(
-  _req: express.Request,
-  res: express.Response,
-) {
-  res.json({ status: 'ok' })
-}
-
-/**
  * Anthropic互換のMessages APIリクエストを処理するメイン関数。
  * - リクエストバリデーション
  * - モデル取得
@@ -77,9 +57,10 @@ function handleAnthropicRootResponse(
  * @param {express.Response} res レスポンス
  * @returns {Promise<void>}
  */
-async function handleAnthropicMessages(
+export async function handleAnthropicMessages(
   req: express.Request,
   res: express.Response,
+  provider: 'anthropic' | 'claude-code',
 ) {
   try {
     const body = req.body as MessageCreateParams
@@ -90,7 +71,7 @@ async function handleAnthropicMessages(
     // モデル取得
     const { vsCodeModel, vsCodeModelId } = await getVSCodeModel(
       body.model,
-      'anthropic',
+      provider,
     )
 
     // ストリーミングモード判定
@@ -286,7 +267,7 @@ function handleMessageError(error: vscode.LanguageModelError): {
  * @param {express.Response} res レスポンス
  * @returns {Promise<void>}
  */
-async function handleAnthropicModels(
+export async function handleAnthropicModels(
   _req: express.Request,
   res: express.Response,
 ) {
@@ -342,7 +323,7 @@ async function handleAnthropicModels(
  * @param {express.Response} res レスポンス
  * @returns {Promise<void>}
  */
-async function handleAnthropicModelInfo(
+export async function handleAnthropicModelInfo(
   req: express.Request,
   res: express.Response,
 ) {

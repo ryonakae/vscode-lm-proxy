@@ -36,7 +36,7 @@ export function setupStatusEndpoint(app: express.Express): void {
  */
 export async function getVSCodeModel(
   modelId: string,
-  provider: 'openai' | 'anthropic',
+  provider: 'openai' | 'anthropic' | 'claude-code',
 ): Promise<{ vsCodeModel: vscode.LanguageModelChat; vsCodeModelId: string }> {
   let vsCodeModelId = modelId
 
@@ -47,7 +47,16 @@ export async function getVSCodeModel(
     if (provider === 'openai') {
       selectedModelId = modelManager.getOpenAIModelId()
     } else if (provider === 'anthropic') {
-      selectedModelId = modelManager.getAnthropicModelId?.()
+      selectedModelId = modelManager.getAnthropicModelId()
+    } else if (provider === 'claude-code') {
+      if (vsCodeModelId.includes('haiku')) {
+        selectedModelId = modelManager.getClaudeCodeBackgroundModelId()
+      } else if (
+        vsCodeModelId.includes('sonnet') ||
+        vsCodeModelId.includes('opus')
+      ) {
+        selectedModelId = modelManager.getClaudeCodeThinkingModelId()
+      }
     }
 
     if (!selectedModelId) {
@@ -86,7 +95,9 @@ export async function getVSCodeModel(
  * @param part 判定対象
  * @returns {boolean} partがLanguageModelTextPart型ならtrue
  */
-export function isTextPart(part: any): part is vscode.LanguageModelTextPart {
+export function isTextPart(
+  part: unknown,
+): part is vscode.LanguageModelTextPart {
   return part instanceof vscode.LanguageModelTextPart
 }
 
@@ -96,7 +107,7 @@ export function isTextPart(part: any): part is vscode.LanguageModelTextPart {
  * @returns {boolean} partがLanguageModelToolCallPart型ならtrue
  */
 export function isToolCallPart(
-  part: any,
+  part: unknown,
 ): part is vscode.LanguageModelToolCallPart {
   return part instanceof vscode.LanguageModelToolCallPart
 }

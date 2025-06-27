@@ -1,5 +1,3 @@
-import type { APIPromise } from '@anthropic-ai/sdk'
-import type { Stream } from '@anthropic-ai/sdk/core/streaming'
 import type {
   ContentBlock,
   Message,
@@ -7,12 +5,8 @@ import type {
   RawMessageStreamEvent,
   StopReason,
   Tool,
-  ToolBash20250124,
-  ToolTextEditor20250124,
-  ToolUnion,
   WebSearchTool20250305,
 } from '@anthropic-ai/sdk/resources'
-import type { ComputerTool } from 'openai/resources/responses/responses.js'
 import * as vscode from 'vscode'
 import { isTextPart, isToolCallPart } from '../server/handler'
 import { generateRandomId } from '../utils'

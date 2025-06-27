@@ -2,14 +2,16 @@
 import express from 'express'
 import { logger } from '../utils/logger'
 import {
-  setupAnthropicEndpoints,
   setupAnthropicMessagesEndpoints,
   setupAnthropicModelsEndpoints,
 } from './anthropicHandler'
+import {
+  setupClaudeCodeMessagesEndpoints,
+  setupClaudeCodeModelsEndpoints,
+} from './claudeCodeHandler'
 import { setupStatusEndpoint } from './handler'
 import {
   setupOpenAIChatCompletionsEndpoints,
-  setupOpenAIEndpoints,
   setupOpenAIModelsEndpoints,
 } from './openaiHandler'
 
@@ -46,14 +48,16 @@ export function createServer(): express.Express {
   setupStatusEndpoint(app)
 
   // OpenAI互換エンドポイントのセットアップ
-  setupOpenAIEndpoints(app)
   setupOpenAIChatCompletionsEndpoints(app)
   setupOpenAIModelsEndpoints(app)
 
   // Anthropic互換APIエンドポイントのセットアップ
-  setupAnthropicEndpoints(app)
   setupAnthropicMessagesEndpoints(app)
   setupAnthropicModelsEndpoints(app)
+
+  // ClaudeCode互換APIエンドポイントのセットアップ
+  setupClaudeCodeMessagesEndpoints(app)
+  setupClaudeCodeModelsEndpoints(app)
 
   // エラーハンドラーの設定
   app.use(
