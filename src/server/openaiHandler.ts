@@ -14,7 +14,7 @@ import {
 } from '../converter/openaiConverter'
 import { modelManager } from '../model/manager'
 import { logger } from '../utils/logger'
-import { getVSCodeModel } from './handlers'
+import { getVSCodeModel } from './handler'
 
 /**
  * OpenAI互換APIのルートエンドポイントを設定する

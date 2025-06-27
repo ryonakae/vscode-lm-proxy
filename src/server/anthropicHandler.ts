@@ -14,7 +14,7 @@ import {
 } from '../converter/anthropicConverter'
 import { modelManager } from '../model/manager'
 import { logger } from '../utils/logger'
-import { getVSCodeModel } from './handlers'
+import { getVSCodeModel } from './handler'
 
 /**
  * Anthropic互換APIのルートエンドポイントを設定する

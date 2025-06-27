@@ -14,7 +14,7 @@ import type {
 } from '@anthropic-ai/sdk/resources'
 import type { ComputerTool } from 'openai/resources/responses/responses.js'
 import * as vscode from 'vscode'
-import { isTextPart, isToolCallPart } from '../server/handlers'
+import { isTextPart, isToolCallPart } from '../server/handler'
 import { generateRandomId } from '../utils'
 import { logger } from '../utils/logger'
 

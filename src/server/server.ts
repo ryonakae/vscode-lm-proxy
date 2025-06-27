@@ -6,12 +6,12 @@ import {
   setupAnthropicMessagesEndpoints,
   setupAnthropicModelsEndpoints,
 } from './anthropicHandler'
-import { setupStatusEndpoint } from './handlers'
+import { setupStatusEndpoint } from './handler'
 import {
   setupOpenAIChatCompletionsEndpoints,
   setupOpenAIEndpoints,
   setupOpenAIModelsEndpoints,
-} from './openaiHandlers'
+} from './openaiHandler'
 
 /**
  * Express.jsサーバーのインスタンスを作成します。
