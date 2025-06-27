@@ -26,7 +26,7 @@ export function getModelManager() {
  * グローバル変数や各種マネージャーの初期化、コマンド登録、設定監視、サーバー自動起動などを行います。
  * @param {vscode.ExtensionContext} context 拡張機能のグローバルコンテキスト
  */
-export function activate(context: vscode.ExtensionContext) {
+export async function activate(context: vscode.ExtensionContext) {
   // グローバル変数にコンテキストを保存
   globalExtensionContext = context
 
@@ -84,19 +84,16 @@ export function activate(context: vscode.ExtensionContext) {
     false,
   )
   if (wasServerRunning) {
-    serverManager
-      .start()
-      .then(() => {
-        const serverUrl = serverManager.getServerUrl()
-        vscode.window.showInformationMessage(
-          `Language Model Proxy server started (${serverUrl})`,
-        )
-      })
-      .catch(err => {
-        vscode.window.showErrorMessage(
-          `Failed to auto-start server: ${err.message}`,
-        )
-      })
+    await serverManager.start().catch(err => {
+      vscode.window.showErrorMessage(
+        `Failed to auto-start server: ${err.message}`,
+      )
+    })
+
+    const serverUrl = serverManager.getServerUrl()
+    vscode.window.showInformationMessage(
+      `Language Model Proxy server started (${serverUrl})`,
+    )
   }
 
   // 選択中のモデルとサーバー状態をログに出力
