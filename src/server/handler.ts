@@ -56,7 +56,7 @@ export async function getVSCodeModel(
       }
     }
 
-    // providerが'claude'の場合は、モデルIDを変換
+    // providerが'claude'の場合は、モデルIDに含まれる文字列を元にモデルを分岐
     if (provider === 'claude') {
       if (modelId.includes('haiku')) {
         selectedModelId = modelManager.getClaudeCodeBackgroundModelId()
