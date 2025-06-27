@@ -225,16 +225,16 @@ export function convertAnthropicRequestToVSCodeRequest(
  */
 export function convertVSCodeResponseToAnthropicResponse(
   vscodeResponse: vscode.LanguageModelChatResponse,
-  model: string,
+  modelId: string,
   isStreaming: boolean,
 ): Promise<Message> | AsyncIterable<RawMessageStreamEvent> {
   if (isStreaming) {
     // ストリーミング: VSCode stream → Anthropic RawMessageStreamEvent列に変換
-    return convertVSCodeStreamToAnthropicStream(vscodeResponse.stream, model)
+    return convertVSCodeStreamToAnthropicStream(vscodeResponse.stream, modelId)
   }
 
   // 非ストリーミング: VSCode text → Anthropic Message
-  return convertVSCodeTextToAnthropicMessage(vscodeResponse, model)
+  return convertVSCodeTextToAnthropicMessage(vscodeResponse, modelId)
 }
 
 /**
@@ -243,14 +243,14 @@ export function convertVSCodeResponseToAnthropicResponse(
  * - ツールコールパートはtool_useブロックとして表現
  * - 最後にmessage_delta, message_stopを送信
  * @param stream VSCodeのストリーム
- * @param model モデルID
+ * @param modelId モデルID
  * @returns Anthropic RawMessageStreamEventのAsyncIterable
  */
 async function* convertVSCodeStreamToAnthropicStream(
   stream: AsyncIterable<
     vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
   >,
-  model: string,
+  modelId: string,
 ): AsyncIterable<RawMessageStreamEvent> {
   const messageId = `msg_${generateRandomId()}`
   let stopReason: StopReason = 'end_turn'
@@ -263,7 +263,7 @@ async function* convertVSCodeStreamToAnthropicStream(
       type: 'message',
       role: 'assistant',
       content: [],
-      model,
+      model: modelId,
       stop_reason: null,
       stop_sequence: null,
       usage: {
@@ -367,12 +367,12 @@ async function* convertVSCodeStreamToAnthropicStream(
  * - テキストパートはtextブロックとして連結
  * - ツールコールパートはtool_useブロックとして追加
  * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param model モデルID
+ * @param modelId モデルID
  * @returns Anthropic Message
  */
 async function convertVSCodeTextToAnthropicMessage(
   vscodeResponse: vscode.LanguageModelChatResponse,
-  model: string,
+  modelId: string,
 ): Promise<Message> {
   const id = `msg_${generateRandomId()}`
 
@@ -418,7 +418,7 @@ async function convertVSCodeTextToAnthropicMessage(
     type: 'message',
     role: 'assistant',
     content,
-    model,
+    model: modelId,
     stop_reason: isToolCalled ? 'tool_use' : 'end_turn',
     stop_sequence: null,
     usage: {

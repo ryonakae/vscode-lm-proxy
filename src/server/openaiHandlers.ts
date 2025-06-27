@@ -108,7 +108,7 @@ async function handleOpenAIChatCompletions(
     logger.info('Received response from LM API', response)
 
     // レスポンスをOpenAI形式に変換
-    const openAIResponseOrStream = convertVSCodeResponseToOpenAIResponse(
+    const openAIResponse = convertVSCodeResponseToOpenAIResponse(
       response,
       vsCodeModelId,
       isStreaming,
@@ -118,15 +118,14 @@ async function handleOpenAIChatCompletions(
     if (isStreaming) {
       await handleStreamingResponse(
         res,
-        openAIResponseOrStream as AsyncIterable<OpenAI.ChatCompletionChunk>,
+        openAIResponse as AsyncIterable<OpenAI.ChatCompletionChunk>,
         req.originalUrl || req.url,
       )
       return
     }
 
     // 非ストリーミングレスポンス処理
-    const completion =
-      await (openAIResponseOrStream as Promise<OpenAI.ChatCompletion>)
+    const completion = await (openAIResponse as Promise<OpenAI.ChatCompletion>)
     res.json(completion)
   } catch (error) {
     const { statusCode, apiError } = handleChatCompletionError(
@@ -206,7 +205,7 @@ async function handleStreamingResponse(
       chunkCount: chunkIndex,
     })
   } catch (error) {
-    // エラー発生時はOpenAI互換エラーをSSEで送信し、ストリームを終了
+    // エラー発生時はOpenAI互換エラーを送信し、ストリームを終了
     const { apiError } = handleChatCompletionError(
       error as vscode.LanguageModelError,
     )
@@ -236,7 +235,7 @@ function handleChatCompletionError(error: vscode.LanguageModelError): {
     stack: error.stack,
   })
 
-  // VSCodeのエラーをOpenAI互換のAPIエラーに変換
+  // 変数を定義
   let statusCode = 500
   let type = 'api_error'
   let code = error.code || 'internal_error'
@@ -254,10 +253,14 @@ function handleChatCompletionError(error: vscode.LanguageModelError): {
           : 'invalid_model'
       break
     case 'NoPermissions':
+      statusCode = 403
+      type = 'access_terminated'
+      code = 'access_terminated'
+      break
     case 'Blocked':
       statusCode = 403
-      type = error.name === 'NoPermissions' ? 'access_terminated' : 'blocked'
-      code = error.name === 'NoPermissions' ? 'access_terminated' : 'blocked'
+      type = 'blocked'
+      code = 'blocked'
       break
     case 'NotFound':
       statusCode = 404

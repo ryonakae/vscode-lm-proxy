@@ -1,7 +1,15 @@
-import type { MessageCreateParams } from '@anthropic-ai/sdk/resources'
+import type {
+  ErrorObject,
+  Message,
+  MessageCreateParams,
+  RawMessageStreamEvent,
+} from '@anthropic-ai/sdk/resources'
 import type express from 'express'
 import * as vscode from 'vscode'
-import { convertAnthropicRequestToVSCodeRequest } from '../converter/anthropicConverter'
+import {
+  convertAnthropicRequestToVSCodeRequest,
+  convertVSCodeResponseToAnthropicResponse,
+} from '../converter/anthropicConverter'
 import { logger } from '../utils/logger'
 import { getVSCodeModel } from './handlers'
 
@@ -73,11 +81,17 @@ async function handleAnthropicMessages(
   try {
     const body = req.body as MessageCreateParams
 
+    // 必須フィールドのバリデーション
+    validateMessagesRequest(body)
+
     // モデル取得
     const { vsCodeModel, vsCodeModelId } = await getVSCodeModel(
       body.model,
       'anthropic',
     )
+
+    // ストリーミングモード判定
+    const isStreaming = body.stream === true
 
     //Anthropicリクエスト→VSCode LM API形式変換
     const { messages, options } = convertAnthropicRequestToVSCodeRequest(body)
@@ -92,8 +106,175 @@ async function handleAnthropicMessages(
       cancellationToken,
     )
     logger.info('Received response from LM API', response)
-    res.json(response)
-  } catch (error) {}
+
+    // レスポンスをAnthropic形式に変換
+    const anthropicResponse = convertVSCodeResponseToAnthropicResponse(
+      response,
+      vsCodeModelId,
+      isStreaming,
+    )
+
+    // ストリーミングレスポンス処理
+    if (isStreaming) {
+      await handleStreamingResponse(
+        res,
+        anthropicResponse as AsyncIterable<RawMessageStreamEvent>,
+        req.originalUrl || req.url,
+      )
+      return
+    }
+
+    // 非ストリーミングレスポンス処理
+    const message = await (anthropicResponse as Promise<Message>)
+    res.json(message)
+  } catch (error) {
+    const { statusCode, errorObject } = handleMessageError(
+      error as vscode.LanguageModelError,
+    )
+    res.status(statusCode).json({ type: 'error', error: errorObject })
+  }
+}
+
+/**
+ * Messages APIリクエストの必須フィールドをバリデーションする
+ * @param {MessageCreateParams} body
+ * @throws エラー時は例外をスロー
+ */
+function validateMessagesRequest(body: MessageCreateParams) {
+  // messagesフィールドの存在と配列チェック
+  if (
+    !body.messages ||
+    !Array.isArray(body.messages) ||
+    body.messages.length === 0
+  ) {
+    const error: vscode.LanguageModelError = {
+      ...new Error('The messages field is required'),
+      name: 'InvalidMessageRequest',
+      code: 'invalid_request_error',
+    }
+    throw error
+  }
+
+  // modelフィールドの存在チェック
+  if (!body.model) {
+    const error: vscode.LanguageModelError = {
+      ...new Error('The model field is required'),
+      name: 'InvalidModelRequest',
+      code: 'not_found_error',
+    }
+    throw error
+  }
+}
+
+/**
+ * ストリーミングレスポンスを処理し、クライアントに送信する
+ * @param {express.Response} res
+ * @param {AsyncIterable<RawMessageStreamEvent>} stream
+ * @param {string} reqPath
+ * @returns {Promise<void>}
+ */
+async function handleStreamingResponse(
+  res: express.Response,
+  stream: AsyncIterable<RawMessageStreamEvent>,
+  reqPath: string,
+): Promise<void> {
+  res.setHeader('Content-Type', 'text/event-stream')
+  res.setHeader('Cache-Control', 'no-cache')
+  res.setHeader('Connection', 'keep-alive')
+
+  logger.info('Streaming started', { stream: 'start', path: reqPath })
+  let chunkIndex = 0
+
+  try {
+    // ストリーミングレスポンスを逐次送信
+    for await (const chunk of stream) {
+      const data = JSON.stringify(chunk)
+      res.write(`data: ${data}\n\n`)
+      logger.info(
+        `Streaming chunk: ${JSON.stringify({ stream: 'chunk', chunk, index: chunkIndex++ })}`,
+      )
+    }
+
+    // 正常終了
+    res.write('data: [DONE]\n\n')
+    logger.info('Streaming ended', {
+      stream: 'end',
+      path: reqPath,
+      chunkCount: chunkIndex,
+    })
+  } catch (error) {
+    // エラー発生時はAnthropic互換エラーを送信し、ストリームを終了
+    const { errorObject } = handleMessageError(
+      error as vscode.LanguageModelError,
+    )
+    res.write(
+      `data: ${JSON.stringify({ type: 'error', error: errorObject })}\n\n`,
+    )
+    res.write('data: [DONE]\n\n')
+    logger.error('Streaming error', { error, path: reqPath })
+  } finally {
+    // ストリーム終了
+    res.end()
+  }
+}
+
+/**
+ * VSCode LanguageModelError を Anthropic 互換エラー形式に変換し、ログ出力する
+ * @param {vscode.LanguageModelError} error
+ * @returns { statusCode: number, errorObject: ErrorObject }
+ */
+function handleMessageError(error: vscode.LanguageModelError): {
+  statusCode: number
+  errorObject: ErrorObject
+} {
+  logger.error('VSCode LM API error', {
+    cause: error.cause,
+    code: error.code,
+    message: error.message,
+    name: error.name,
+    stack: error.stack,
+  })
+
+  // 変数を定義
+  let statusCode = 500
+  let type: ErrorObject['type'] = 'api_error'
+
+  // LanguageModelError.name に応じてマッピング
+  switch (error.name) {
+    case 'InvalidMessageFormat':
+    case 'InvalidModel':
+      statusCode = 400
+      type = 'invalid_request_error'
+      break
+    case 'NoPermissions':
+      statusCode = 403
+      type = 'permission_error'
+      break
+    case 'Blocked':
+      statusCode = 403
+      type = 'permission_error'
+      break
+    case 'NotFound':
+      statusCode = 404
+      type = 'not_found_error'
+      break
+    case 'ChatQuotaExceeded':
+      statusCode = 429
+      type = 'rate_limit_error'
+      break
+    case 'Unknown':
+      statusCode = 500
+      type = 'api_error'
+      break
+  }
+
+  // Anthropic互換エラー形式で返却
+  const errorObject: ErrorObject = {
+    type,
+    message: error.message || 'An unknown error has occurred',
+  }
+
+  return { statusCode, errorObject }
 }
 
 /**
@@ -111,17 +292,3 @@ async function handleAnthropicModels() {}
  * @returns {Promise<void>}
  */
 async function handleAnthropicModelInfo() {}
-
-// // sample
-// import Anthropic from '@anthropic-ai/sdk'
-
-// const anthropic = new Anthropic({
-//   apiKey: 'my_api_key', // defaults to process.env["ANTHROPIC_API_KEY"]
-// })
-
-// const msg = await anthropic.messages.create({
-//   model: 'claude-sonnet-4-20250514',
-//   max_tokens: 1024,
-//   messages: [{ role: 'user', content: 'Hello, Claude' }],
-// })
-// console.log(msg)
