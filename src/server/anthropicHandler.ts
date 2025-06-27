@@ -73,6 +73,10 @@ export async function handleAnthropicMessages(
       body.model,
       provider,
     )
+    logger.info('Used VSCode model', {
+      modelId: vsCodeModelId,
+      modelName: vsCodeModel.name,
+    })
 
     // ストリーミングモード判定
     const isStreaming = body.stream === true
