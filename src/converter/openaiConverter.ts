@@ -5,7 +5,7 @@ import type {
   ChatCompletionCreateParams,
 } from 'openai/resources'
 import * as vscode from 'vscode'
-import { isTextPart, isToolCallPart } from '../server/handlers'
+import { isTextPart, isToolCallPart } from '../server/handler'
 import { generateRandomId } from '../utils'
 import { logger } from '../utils/logger'
 

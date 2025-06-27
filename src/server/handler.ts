@@ -3,6 +3,7 @@
 import type express from 'express'
 import * as vscode from 'vscode'
 import { modelManager } from '../model/manager'
+import { logger } from '../utils/logger'
 
 // モジュールスコープでglobalStateを管理
 let _globalState: vscode.Memento | undefined
@@ -36,49 +37,54 @@ export function setupStatusEndpoint(app: express.Express): void {
  */
 export async function getVSCodeModel(
   modelId: string,
-  provider: 'openai' | 'anthropic',
+  provider: 'openai' | 'anthropic' | 'claude',
 ): Promise<{ vsCodeModel: vscode.LanguageModelChat; vsCodeModelId: string }> {
-  let vsCodeModelId = modelId
+  try {
+    let selectedModelId: string | null = ''
 
-  // 'vscode-lm-proxy'の場合は選択中のモデルIDに変換（providerごとに分岐）
-  if (vsCodeModelId === 'vscode-lm-proxy') {
-    let selectedModelId: string | null = null
-
-    if (provider === 'openai') {
-      selectedModelId = modelManager.getOpenAIModelId()
-    } else if (provider === 'anthropic') {
-      selectedModelId = modelManager.getAnthropicModelId?.()
-    }
-
-    if (!selectedModelId) {
-      const error: vscode.LanguageModelError = {
-        ...new Error(
-          `No valid ${provider} model selected. Please select a model first.`,
-        ),
-        name: 'NotFound',
-        code: 'model_not_found',
+    // modelIdが'vscode-lm-proxy'の場合は選択中のモデルIDに変換（providerごとに分岐）
+    if (modelId === 'vscode-lm-proxy') {
+      if (provider === 'openai') {
+        selectedModelId = modelManager.getOpenAIModelId()
+      } else if (provider === 'anthropic') {
+        selectedModelId = modelManager.getAnthropicModelId()
       }
-      throw error
+      logger.info('Selected model ID:', selectedModelId)
+
+      if (!selectedModelId) {
+        throw new Error(`No valid ${provider} model selected`)
+      }
     }
 
-    vsCodeModelId = selectedModelId
-  }
+    // providerが'claude'の場合は、モデルIDに含まれる文字列を元にモデルを分岐
+    if (provider === 'claude') {
+      if (modelId.includes('haiku')) {
+        selectedModelId = modelManager.getClaudeCodeBackgroundModelId()
+      } else if (modelId.includes('sonnet') || modelId.includes('opus')) {
+        selectedModelId = modelManager.getClaudeCodeThinkingModelId()
+      }
+    }
 
-  // モデル取得
-  const [vsCodeModel] = await vscode.lm.selectChatModels({ id: vsCodeModelId })
+    // モデル取得
+    const [vsCodeModel] = await vscode.lm.selectChatModels({
+      id: selectedModelId as string,
+    })
 
-  // モデルが見つからない場合はエラーをスロー
-  if (!vsCodeModel) {
+    if (!vsCodeModel) {
+      throw new Error(`Model ${selectedModelId} not found`)
+    }
+
+    // モデルが見つかった場合はそのまま返す
+    return { vsCodeModel, vsCodeModelId: vsCodeModel.id }
+  } catch (e: any) {
+    // VSCodeのLanguageModelError形式でラップしてスロー
     const error: vscode.LanguageModelError = {
-      ...new Error(`Model ${vsCodeModelId} not found`),
+      ...new Error(e?.message || 'Unknown error'),
       name: 'NotFound',
       code: 'model_not_found',
     }
     throw error
   }
-
-  // モデルが見つかった場合はそのまま返す
-  return { vsCodeModel, vsCodeModelId }
 }
 
 /**
@@ -86,7 +92,9 @@ export async function getVSCodeModel(
  * @param part 判定対象
  * @returns {boolean} partがLanguageModelTextPart型ならtrue
  */
-export function isTextPart(part: any): part is vscode.LanguageModelTextPart {
+export function isTextPart(
+  part: unknown,
+): part is vscode.LanguageModelTextPart {
   return part instanceof vscode.LanguageModelTextPart
 }
 
@@ -96,7 +104,7 @@ export function isTextPart(part: any): part is vscode.LanguageModelTextPart {
  * @returns {boolean} partがLanguageModelToolCallPart型ならtrue
  */
 export function isToolCallPart(
-  part: any,
+  part: unknown,
 ): part is vscode.LanguageModelToolCallPart {
   return part instanceof vscode.LanguageModelToolCallPart
 }

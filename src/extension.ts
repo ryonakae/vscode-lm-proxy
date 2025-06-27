@@ -1,7 +1,7 @@
 // VSCode拡張機能のエントリーポイント
 import * as vscode from 'vscode'
 import { registerCommands } from './commands'
-import { initializeLmApiHandler } from './server/handlers'
+import { initializeLmApiHandler } from './server/handler'
 import { serverManager } from './server/manager'
 import { statusBarManager } from './ui/statusbar'
 import { logger } from './utils/logger'
@@ -99,10 +99,16 @@ export async function activate(context: vscode.ExtensionContext) {
   // 選択中のモデルとサーバー状態をログに出力
   const openaiModel = modelManager.getOpenAIModelId() || 'Not selected'
   const anthropicModel = modelManager.getAnthropicModelId() || 'Not selected'
+  const claudeCodeBackgroundModel =
+    modelManager.getClaudeCodeBackgroundModelId() || 'Not selected'
+  const claudeCodeThinkingModel =
+    modelManager.getClaudeCodeThinkingModelId() || 'Not selected'
   const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped'
   logger.info('LM Proxy extension activated', {
     openaiModel,
     anthropicModel,
+    claudeCodeBackgroundModel,
+    claudeCodeThinkingModel,
     serverStatus,
   })
 }
@@ -117,9 +123,25 @@ export function deactivate(): Promise<void> | undefined {
 
   // OpenAIモデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
   const openaiModelId = modelManager.getOpenAIModelId()
+  const anthropicModelId = modelManager.getAnthropicModelId()
+  const claudeCodeBackgroundModelId =
+    modelManager.getClaudeCodeBackgroundModelId()
+  const claudeCodeThinkingModelId = modelManager.getClaudeCodeThinkingModelId()
 
-  // グローバル状態へOpenAIモデル情報と実行状態を保存
+  // グローバル状態へモデル情報と実行状態を保存
   globalExtensionContext.globalState.update('openaiModelId', openaiModelId)
+  globalExtensionContext.globalState.update(
+    'anthropicModelId',
+    anthropicModelId,
+  )
+  globalExtensionContext.globalState.update(
+    'claudeCodeBackgroundModelId',
+    claudeCodeBackgroundModelId,
+  )
+  globalExtensionContext.globalState.update(
+    'claudeCodeThinkingModelId',
+    claudeCodeThinkingModelId,
+  )
   globalExtensionContext.globalState.update(
     'serverRunning',
     serverManager.isRunning(),

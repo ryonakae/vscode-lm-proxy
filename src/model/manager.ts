@@ -24,12 +24,30 @@ class ModelManager {
     if (savedAnthropicModelId) {
       this.anthropicModelId = savedAnthropicModelId
     }
+    const savedClaudeCodeBackgroundModelId = context.globalState.get<string>(
+      'claudeCodeBackgroundModelId',
+    )
+    if (savedClaudeCodeBackgroundModelId) {
+      this.claudeCodeBackgroundModelId = savedClaudeCodeBackgroundModelId
+    }
+    const savedClaudeCodeThinkingModelId = context.globalState.get<string>(
+      'claudeCodeThinkingModelId',
+    )
+    if (savedClaudeCodeThinkingModelId) {
+      this.claudeCodeThinkingModelId = savedClaudeCodeThinkingModelId
+    }
   }
   // 選択中のOpenAIモデルID
   private openaiModelId: string | null = null
 
   // 選択中のAnthropicモデルID
   private anthropicModelId: string | null = null
+
+  // Claude Code Background Model
+  private claudeCodeBackgroundModelId: string | null = null
+
+  // Claude Code Thinking Model
+  private claudeCodeThinkingModelId: string | null = null
 
   // サポートするモデルファミリー
   private supportedFamilies = [
@@ -51,13 +69,29 @@ class ModelManager {
   public readonly onDidChangeAnthropicModelId =
     this._onDidChangeAnthropicModelId.event
 
+  // Claude Code Background Model変更時のイベントエミッター
+  private readonly _onDidChangeClaudeCodeBackgroundModelId =
+    new vscode.EventEmitter<void>()
+  public readonly onDidChangeClaudeCodeBackgroundModelId =
+    this._onDidChangeClaudeCodeBackgroundModelId.event
+
+  // Claude Code Thinking Model変更時のイベントエミッター
+  private readonly _onDidChangeClaudeCodeThinkingModelId =
+    new vscode.EventEmitter<void>()
+  public readonly onDidChangeClaudeCodeThinkingModelId =
+    this._onDidChangeClaudeCodeThinkingModelId.event
+
   /**
    * 利用可能なモデルからモデルを選択する
    * @param provider APIプロバイダー（'openAI' または 'anthropic'）
    * @returns 選択したモデルのID
    */
   public async selectModel(
-    provider: 'openAI' | 'anthropic',
+    provider:
+      | 'openAI'
+      | 'anthropic'
+      | 'claudeCodeBackground'
+      | 'claudeCodeThinking',
   ): Promise<string | undefined> {
     try {
       // サポートされているモデルが見つかるまで順番に試す
@@ -129,6 +163,16 @@ class ModelManager {
             } else if (provider === 'anthropic') {
               this.setAnthropicModelId(selectedItem.model.id)
               logger.info(`Selected Anthropic model: ${this.anthropicModelId}`)
+            } else if (provider === 'claudeCodeBackground') {
+              this.setClaudeCodeBackgroundModelId(selectedItem.model.id)
+              logger.info(
+                `Selected Claude Code Background model: ${this.claudeCodeBackgroundModelId}`,
+              )
+            } else if (provider === 'claudeCodeThinking') {
+              this.setClaudeCodeThinkingModelId(selectedItem.model.id)
+              logger.info(
+                `Selected Claude Code Thinking model: ${this.claudeCodeThinkingModelId}`,
+              )
             }
 
             // QuickPickを閉じて選択結果を返す
@@ -170,6 +214,14 @@ class ModelManager {
     return this.anthropicModelId
   }
 
+  public getClaudeCodeBackgroundModelId(): string | null {
+    return this.claudeCodeBackgroundModelId
+  }
+
+  public getClaudeCodeThinkingModelId(): string | null {
+    return this.claudeCodeThinkingModelId
+  }
+
   /**
    * モデルIDを直接設定する
    * @param modelId 設定するモデルID
@@ -201,6 +253,34 @@ class ModelManager {
     }
     // 必要ならイベント発火
     this._onDidChangeAnthropicModelId.fire()
+  }
+
+  /**
+   * Claude Code Background Model IDをセット・保存
+   */
+  public setClaudeCodeBackgroundModelId(modelId: string): void {
+    this.claudeCodeBackgroundModelId = modelId
+    if (this.extensionContext) {
+      this.extensionContext.globalState.update(
+        'claudeCodeBackgroundModelId',
+        this.claudeCodeBackgroundModelId,
+      )
+    }
+    this._onDidChangeClaudeCodeBackgroundModelId.fire()
+  }
+
+  /**
+   * Claude Code Thinking Model IDをセット・保存
+   */
+  public setClaudeCodeThinkingModelId(modelId: string): void {
+    this.claudeCodeThinkingModelId = modelId
+    if (this.extensionContext) {
+      this.extensionContext.globalState.update(
+        'claudeCodeThinkingModelId',
+        this.claudeCodeThinkingModelId,
+      )
+    }
+    this._onDidChangeClaudeCodeThinkingModelId.fire()
   }
 
   /**

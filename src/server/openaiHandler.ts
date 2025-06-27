@@ -14,18 +14,7 @@ import {
 } from '../converter/openaiConverter'
 import { modelManager } from '../model/manager'
 import { logger } from '../utils/logger'
-import { getVSCodeModel } from './handlers'
-
-/**
- * OpenAI互換APIのルートエンドポイントを設定する
- * @param {express.Express} app Express.jsアプリケーション
- * @returns {void}
- */
-export function setupOpenAIEndpoints(app: express.Express): void {
-  app.get('/openai', handleOpenAIRootResponse)
-  app.get('/openai/v1', handleOpenAIRootResponse)
-  app.get('/openai/v1/', handleOpenAIRootResponse)
-}
+import { getVSCodeModel } from './handler'
 
 /**
  * OpenAI互換のChat Completions APIエンドポイントを設定する
@@ -56,19 +45,6 @@ export function setupOpenAIModelsEndpoints(app: express.Express): void {
 }
 
 /**
- * OpenAI互換APIのルートエンドポイントのレスポンスを返す
- * @param {express.Request} req リクエスト
- * @param {express.Response} res レスポンス
- * @returns {void}
- */
-function handleOpenAIRootResponse(
-  _req: express.Request,
-  res: express.Response,
-) {
-  res.json({ status: 'ok' })
-}
-
-/**
  * OpenAI互換のChat Completions APIリクエストを処理するメイン関数。
  * - リクエストバリデーション
  * - モデル取得
@@ -85,6 +61,7 @@ async function handleOpenAIChatCompletions(
 ) {
   try {
     const body = req.body as ChatCompletionCreateParams
+    logger.info('Received request', { body })
 
     // 必須フィールドのバリデーション
     validateChatCompletionRequest(body)
@@ -94,6 +71,10 @@ async function handleOpenAIChatCompletions(
       body.model,
       'openai',
     )
+    logger.info('Used VSCode model', {
+      modelId: vsCodeModelId,
+      modelName: vsCodeModel.name,
+    })
 
     // ストリーミングモード判定
     const isStreaming = body.stream === true
