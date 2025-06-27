@@ -212,9 +212,9 @@ async function* convertVSCodeStreamToOpenAIChunks(
   const randomId = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
 
-  let roleSent = false
+  let isRoleSent = false
   let toolCallIndex = 0
-  let toolCallSeen = false // tool_callが出現したかどうか
+  let isToolCalled = false // tool_callが出現したかどうか
 
   // ストリーミングチャンクを生成
   for await (const part of stream) {
@@ -250,16 +250,16 @@ async function* convertVSCodeStreamToOpenAIChunks(
     }
 
     if (isTextPart(part)) {
-      if (!roleSent) {
+      if (!isRoleSent) {
         chunk.choices[0].delta.role = 'assistant'
-        roleSent = true
+        isRoleSent = true
       }
       chunk.choices[0].delta.content = part.value
     } else if (isToolCallPart(part)) {
       chunk.choices[0].delta.tool_calls = [
         convertVSCodeToolCallToOpenAIChunkToolCall(part, toolCallIndex++),
       ]
-      toolCallSeen = true
+      isToolCalled = true
     } else {
       // unknownパートは無視
       continue
@@ -274,7 +274,7 @@ async function* convertVSCodeStreamToOpenAIChunks(
       {
         index: 0,
         delta: {},
-        finish_reason: toolCallSeen ? 'tool_calls' : 'stop',
+        finish_reason: isToolCalled ? 'tool_calls' : 'stop',
       },
     ],
     created,

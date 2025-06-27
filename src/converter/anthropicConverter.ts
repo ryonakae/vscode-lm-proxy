@@ -1,9 +1,11 @@
 import type { APIPromise } from '@anthropic-ai/sdk'
 import type { Stream } from '@anthropic-ai/sdk/core/streaming'
 import type {
+  ContentBlock,
   Message,
   MessageCreateParams,
   RawMessageStreamEvent,
+  StopReason,
   Tool,
   ToolBash20250124,
   ToolTextEditor20250124,
@@ -25,6 +27,16 @@ import { logger } from '../utils/logger'
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
+/**
+ * Anthropic APIのChatCompletionCreateParamsリクエストを
+ * VSCode拡張APIのチャットリクエスト形式に変換する。
+ * - messages, tools, tool_choice等を型変換
+ * - VSCode APIが未対応のパラメータはmodelOptionsに集約
+ * - 仕様差異を吸収するための変換ロジックを含む
+ * @param {MessageCreateParams} anthropicRequest Anthropicのチャットリクエストパラメータ
+ * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
+ *   VSCode拡張API用のチャットメッセージ配列とオプション
+ */
 export function convertAnthropicRequestToVSCodeRequest(
   anthropicRequest: MessageCreateParams,
 ): {
@@ -36,11 +48,13 @@ export function convertAnthropicRequestToVSCodeRequest(
     anthropicRequest,
   )
 
-  // messages変換
+  // --- messages変換 ---
   const messages: vscode.LanguageModelChatMessage[] =
     anthropicRequest.messages.map(msg => {
       let role: vscode.LanguageModelChatMessageRole
       let content = ''
+
+      // ロール変換
       switch (msg.role) {
         case 'user':
           role = vscode.LanguageModelChatMessageRole.User
@@ -49,6 +63,8 @@ export function convertAnthropicRequestToVSCodeRequest(
           role = vscode.LanguageModelChatMessageRole.Assistant
           break
       }
+
+      // content変換（string or array）
       if (typeof msg.content === 'string') {
         content = msg.content
       } else if (Array.isArray(msg.content)) {
@@ -58,13 +74,14 @@ export function convertAnthropicRequestToVSCodeRequest(
           .map(c => c.text)
           .join('\n')
       }
+
       return new vscode.LanguageModelChatMessage(role, content)
     })
 
-  // options生成
+  // --- options生成 ---
   const options: vscode.LanguageModelChatRequestOptions = {}
 
-  // tool_choice
+  // tool_choice変換
   if (
     'tool_choice' in anthropicRequest &&
     anthropicRequest.tool_choice !== undefined
@@ -86,7 +103,7 @@ export function convertAnthropicRequestToVSCodeRequest(
     }
   }
 
-  // tools
+  // tools変換
   if ('tools' in anthropicRequest && Array.isArray(anthropicRequest.tools)) {
     options.tools = anthropicRequest.tools.map(tool => {
       switch (tool.name) {
@@ -107,7 +124,6 @@ export function convertAnthropicRequestToVSCodeRequest(
         // computer use
         case 'computer': {
           const computerTool = tool as any
-
           return {
             name: computerTool.name,
             description: `Computer use tool. type: ${tool.type}`,
@@ -135,7 +151,6 @@ export function convertAnthropicRequestToVSCodeRequest(
         // web search
         case 'web_search': {
           const webSearchTool = tool as WebSearchTool20250305
-
           return {
             name: tool.name,
             description: `Web search tool. type: ${tool.type}`,
@@ -150,7 +165,6 @@ export function convertAnthropicRequestToVSCodeRequest(
         // custom tool
         default: {
           const customTool = tool as Tool
-
           return {
             name: customTool.name,
             description: customTool.description ?? '',
@@ -161,7 +175,7 @@ export function convertAnthropicRequestToVSCodeRequest(
     })
   }
 
-  // その他パラメータはmodelOptionsに集約
+  // --- その他パラメータはmodelOptionsに集約 ---
   const modelOptionKeys = [
     'max_tokens',
     'container',
@@ -177,6 +191,7 @@ export function convertAnthropicRequestToVSCodeRequest(
     'top_p',
   ]
   const modelOptions: { [name: string]: any } = {}
+
   for (const key of modelOptionKeys) {
     if (
       key in anthropicRequest &&
@@ -185,11 +200,12 @@ export function convertAnthropicRequestToVSCodeRequest(
       modelOptions[key] = (anthropicRequest as any)[key]
     }
   }
+
   if (Object.keys(modelOptions).length > 0) {
     options.modelOptions = modelOptions
   }
 
-  // ログ表示
+  // --- 変換結果をログ出力 ---
   logger.info('Converted Anthropic request to VSCode request', {
     messages,
     options,
@@ -221,42 +237,179 @@ export function convertVSCodeResponseToAnthropicResponse(
   return convertVSCodeTextToAnthropicMessage(vscodeResponse, model)
 }
 
-// VSCode stream → Anthropic RawMessageStreamEvent[] 変換
+/**
+ * VSCodeのストリームをAnthropicのRawMessageStreamEvent列に変換する。
+ * - テキストパートはcontent_block_start, content_block_delta, content_block_stopで表現
+ * - ツールコールパートはtool_useブロックとして表現
+ * - 最後にmessage_delta, message_stopを送信
+ * @param stream VSCodeのストリーム
+ * @param model モデルID
+ * @returns Anthropic RawMessageStreamEventのAsyncIterable
+ */
 async function* convertVSCodeStreamToAnthropicStream(
   stream: AsyncIterable<
     vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
   >,
   model: string,
-): AsyncIterable<RawMessageStreamEvent> {}
+): AsyncIterable<RawMessageStreamEvent> {
+  const messageId = `msg_${generateRandomId()}`
+  let stopReason: StopReason = 'end_turn'
 
-// VSCode text → Anthropic Message 変換
+  // --- message_startイベント送信 ---
+  yield {
+    type: 'message_start',
+    message: {
+      id: messageId,
+      type: 'message',
+      role: 'assistant',
+      content: [],
+      model,
+      stop_reason: null,
+      stop_sequence: null,
+      usage: {
+        input_tokens: 0,
+        output_tokens: 0,
+        cache_creation_input_tokens: 0,
+        cache_read_input_tokens: 0,
+        server_tool_use: null,
+        service_tier: null,
+      },
+    },
+  }
+
+  let contentIndex = 0
+  let isInsideTextBlock = false
+
+  // --- ストリームを順次処理 ---
+  for await (const part of stream) {
+    if (isTextPart(part)) {
+      // テキストブロック開始
+      if (!isInsideTextBlock) {
+        yield {
+          type: 'content_block_start',
+          index: contentIndex,
+          content_block: { type: 'text', text: '', citations: [] },
+        }
+        isInsideTextBlock = true
+      }
+      // テキスト差分を送信
+      yield {
+        type: 'content_block_delta',
+        index: contentIndex,
+        delta: { type: 'text_delta', text: part.value },
+      }
+    } else if (isToolCallPart(part)) {
+      // テキストブロック終了
+      if (isInsideTextBlock) {
+        yield { type: 'content_block_stop', index: contentIndex }
+        isInsideTextBlock = false
+        contentIndex++
+      }
+      // ツールコール時はstopReasonを変更
+      stopReason = 'tool_use'
+
+      // ツールコールブロック開始
+      yield {
+        type: 'content_block_start',
+        index: contentIndex,
+        content_block: {
+          type: 'tool_use',
+          id: part.callId,
+          name: part.name,
+          input: part.input,
+        },
+      }
+
+      // ツールコールブロック即時終了
+      yield { type: 'content_block_stop', index: contentIndex }
+      contentIndex++
+    }
+  }
+
+  // --- 最後のテキストブロックが未終了なら閉じる ---
+  if (isInsideTextBlock) {
+    yield { type: 'content_block_stop', index: contentIndex }
+  }
+
+  // --- message_deltaイベント送信 ---
+  yield {
+    type: 'message_delta',
+    delta: {
+      stop_reason: stopReason,
+      stop_sequence: null,
+    },
+    usage: {
+      input_tokens: 0,
+      output_tokens: 0,
+      cache_creation_input_tokens: 0,
+      cache_read_input_tokens: 0,
+      server_tool_use: null,
+    },
+  }
+
+  // --- message_stopイベント送信 ---
+  yield { type: 'message_stop' }
+}
+
+/**
+ * VSCodeのLanguageModelChatResponse（非ストリーミング）を
+ * AnthropicのMessage形式に変換する。
+ * - テキストパートはtextブロックとして連結
+ * - ツールコールパートはtool_useブロックとして追加
+ * @param vscodeResponse VSCodeのLanguageModelChatResponse
+ * @param model モデルID
+ * @returns Anthropic Message
+ */
 async function convertVSCodeTextToAnthropicMessage(
   vscodeResponse: vscode.LanguageModelChatResponse,
   model: string,
 ): Promise<Message> {
   const id = `msg_${generateRandomId()}`
 
-  // content
-  let content = ''
+  const content: ContentBlock[] = []
+  let hasToolUse = false
+  let textBuffer = ''
+
+  // --- ストリームを順次処理 ---
   for await (const part of vscodeResponse.stream) {
     if (isTextPart(part)) {
-      content += part.value
+      // テキストはバッファに連結
+      textBuffer += part.value
+    } else if (isToolCallPart(part)) {
+      // テキストバッファがあればtextブロックとして追加
+      if (textBuffer) {
+        content.push({ type: 'text', text: textBuffer, citations: [] })
+        textBuffer = ''
+      }
+      // tool_useブロック追加
+      content.push({
+        type: 'tool_use',
+        id: part.callId,
+        name: part.name,
+        input: part.input,
+      })
+      hasToolUse = true
     }
   }
 
+  // 残りのテキストバッファをtextブロックとして追加
+  if (textBuffer) {
+    content.push({ type: 'text', text: textBuffer, citations: [] })
+  }
+
+  // contentが空なら空textブロックを追加
+  if (content.length === 0) {
+    content.push({ type: 'text', text: '', citations: [] })
+  }
+
+  // --- Anthropic Messageオブジェクトを返す ---
   return {
     id,
     type: 'message',
     role: 'assistant',
-    content: [
-      {
-        type: 'text',
-        text: content,
-        citations: [],
-      },
-    ],
+    content: content as Message['content'],
     model,
-    stop_reason: 'end_turn',
+    stop_reason: hasToolUse ? 'tool_use' : 'end_turn',
     stop_sequence: null,
     usage: {
       cache_creation_input_tokens: 0,
