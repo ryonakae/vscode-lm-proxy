@@ -125,6 +125,26 @@ class StatusBarManager {
       command: 'vscode-lm-proxy.selectAnthropicModel',
     })
 
+    const currentClaudeCodeBackgroundModelId =
+      modelManager.getClaudeCodeBackgroundModelId()
+    items.push({
+      label: '$(gear) Claude Code Background Model',
+      description: currentClaudeCodeBackgroundModelId
+        ? `${currentClaudeCodeBackgroundModelId}`
+        : 'No model selected',
+      command: 'vscode-lm-proxy.selectClaudeCodeBackgroundModel',
+    })
+
+    const currentClaudeCodeThinkingModelId =
+      modelManager.getClaudeCodeThinkingModelId()
+    items.push({
+      label: '$(gear) Claude Code Thinking Model',
+      description: currentClaudeCodeThinkingModelId
+        ? `${currentClaudeCodeThinkingModelId}`
+        : 'No model selected',
+      command: 'vscode-lm-proxy.selectClaudeCodeThinkingModel',
+    })
+
     // メニューを表示
     const selected = await vscode.window.showQuickPick(items, {
       placeHolder: 'Select LM Proxy Operation',
