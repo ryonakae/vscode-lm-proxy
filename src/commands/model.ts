@@ -65,19 +65,16 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
   const previouslySelectedOpenAIModelId =
     context.globalState.get<string>('openaiModelId')
   if (previouslySelectedOpenAIModelId) {
-    // モデル選択状態を復元
     modelManager.setOpenAIModelId(previouslySelectedOpenAIModelId)
-    // ステータスバーも更新
-    statusBarManager.updateStatus(serverManager.isRunning())
   }
 
   // 前回選択されたAnthropicモデルを復元
   const previouslySelectedAnthropicModelId =
     context.globalState.get<string>('anthropicModelId')
   if (previouslySelectedAnthropicModelId) {
-    // モデル選択状態を復元
     modelManager.setAnthropicModelId(previouslySelectedAnthropicModelId)
-    // ステータスバーも更新
-    statusBarManager.updateStatus(serverManager.isRunning())
   }
+
+  // ステータスバーを更新
+  statusBarManager.updateStatus(serverManager.isRunning())
 }
