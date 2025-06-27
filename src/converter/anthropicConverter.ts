@@ -320,7 +320,7 @@ async function* convertVSCodeStreamToAnthropicStream(
         index: contentIndex,
         delta: {
           type: 'input_json_delta',
-          partial_json: JSON.stringify(part.input),
+          partial_json: JSON.stringify(part.input ?? {}),
         },
       }
 
