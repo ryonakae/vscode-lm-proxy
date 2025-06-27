@@ -313,7 +313,7 @@ async function handleOpenAIModels(
 
     // OpenAI API形式に変換
     const now = Math.floor(Date.now() / 1000)
-    const modelsData = availableModels.map(model => ({
+    const modelsData: OpenAI.Model[] = availableModels.map(model => ({
       id: model.id,
       object: 'model',
       created: now,
@@ -328,7 +328,7 @@ async function handleOpenAIModels(
       owned_by: 'vscode-lm-proxy',
     })
 
-    const openAIModelsResponse = {
+    const openAIModelsResponse: OpenAI.PageResponse<OpenAI.Model> = {
       object: 'list',
       data: modelsData,
     }

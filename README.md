@@ -69,7 +69,7 @@ Send requests to either the `http://localhost:4000/anthropic/messages` or `http:
 curl -X POST http://localhost:4000/anthropic/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-3.5-sonnet",
+    "model": "vscode-lm-proxy",
     "system": "You are an excellent AI assistant.",
     "messages": [
       {"role": "user", "content": "Hello!"}
@@ -83,7 +83,7 @@ Anthropic Streaming mode:
 curl -X POST http://localhost:4000/anthropic/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-3.5-sonnet",
+    "model": "vscode-lm-proxy",
     "system": "You are an excellent AI assistant.",
     "messages": [
       {"role": "user", "content": "Hello!"}
