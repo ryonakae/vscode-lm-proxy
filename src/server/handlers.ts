@@ -1,7 +1,8 @@
 // 共通ハンドラー処理
 
 import type express from 'express'
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
+import { modelManager } from '../model/manager'
 
 // モジュールスコープでglobalStateを管理
 let _globalState: vscode.Memento | undefined
@@ -25,4 +26,77 @@ export function setupStatusEndpoint(app: express.Express): void {
       message: 'VSCode LM API Proxy server is running',
     })
   })
+}
+
+/**
+ * VSCode LM APIのモデルを取得する（'vscode-lm-proxy'時は選択中のOpenAIモデルに変換）
+ * @param {OpenAI.ChatCompletionCreateParams} body
+ * @returns {Promise<{ model: any, modelId: string }>}
+ * @throws エラー時は例外をスロー
+ */
+export async function getVSCodeModel(
+  modelId: string,
+  provider: 'openai' | 'anthropic',
+): Promise<{ vsCodeModel: vscode.LanguageModelChat; vsCodeModelId: string }> {
+  let vsCodeModelId = modelId
+
+  // 'vscode-lm-proxy'の場合は選択中のモデルIDに変換（providerごとに分岐）
+  if (vsCodeModelId === 'vscode-lm-proxy') {
+    let selectedModelId: string | null = null
+
+    if (provider === 'openai') {
+      selectedModelId = modelManager.getOpenAIModelId()
+    } else if (provider === 'anthropic') {
+      selectedModelId = modelManager.getAnthropicModelId?.()
+    }
+
+    if (!selectedModelId) {
+      const error: vscode.LanguageModelError = {
+        ...new Error(
+          `No valid ${provider} model selected. Please select a model first.`,
+        ),
+        name: 'NotFound',
+        code: 'model_not_found',
+      }
+      throw error
+    }
+
+    vsCodeModelId = selectedModelId
+  }
+
+  // モデル取得
+  const [vsCodeModel] = await vscode.lm.selectChatModels({ id: vsCodeModelId })
+
+  // モデルが見つからない場合はエラーをスロー
+  if (!vsCodeModel) {
+    const error: vscode.LanguageModelError = {
+      ...new Error(`Model ${vsCodeModelId} not found`),
+      name: 'NotFound',
+      code: 'model_not_found',
+    }
+    throw error
+  }
+
+  // モデルが見つかった場合はそのまま返す
+  return { vsCodeModel, vsCodeModelId }
+}
+
+/**
+ * VSCodeのLanguageModelTextPart型ガード
+ * @param part 判定対象
+ * @returns {boolean} partがLanguageModelTextPart型ならtrue
+ */
+export function isTextPart(part: any): part is vscode.LanguageModelTextPart {
+  return part instanceof vscode.LanguageModelTextPart
+}
+
+/**
+ * VSCodeのLanguageModelToolCallPart型ガード
+ * @param part 判定対象
+ * @returns {boolean} partがLanguageModelToolCallPart型ならtrue
+ */
+export function isToolCallPart(
+  part: any,
+): part is vscode.LanguageModelToolCallPart {
+  return part instanceof vscode.LanguageModelToolCallPart
 }

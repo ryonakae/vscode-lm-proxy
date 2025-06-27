@@ -19,9 +19,17 @@ class ModelManager {
     if (savedOpenAIModelId) {
       this.openaiModelId = savedOpenAIModelId
     }
+    const savedAnthropicModelId =
+      context.globalState.get<string>('anthropicModelId')
+    if (savedAnthropicModelId) {
+      this.anthropicModelId = savedAnthropicModelId
+    }
   }
   // 選択中のOpenAIモデルID
   private openaiModelId: string | null = null
+
+  // 選択中のAnthropicモデルID
+  private anthropicModelId: string | null = null
 
   // サポートするモデルファミリー
   private supportedFamilies = [
@@ -37,11 +45,20 @@ class ModelManager {
   public readonly onDidChangeOpenAIModelId =
     this._onDidChangeOpenAIModelId.event
 
+  // Anthropicモデル変更時のイベントエミッター
+  private readonly _onDidChangeAnthropicModelId =
+    new vscode.EventEmitter<void>()
+  public readonly onDidChangeAnthropicModelId =
+    this._onDidChangeAnthropicModelId.event
+
   /**
    * 利用可能なモデルからモデルを選択する
+   * @param provider APIプロバイダー（'openAI' または 'anthropic'）
    * @returns 選択したモデルのID
    */
-  public async selectModel(): Promise<string | undefined> {
+  public async selectModel(
+    provider: 'openAI' | 'anthropic',
+  ): Promise<string | undefined> {
     try {
       // サポートされているモデルが見つかるまで順番に試す
       let allModels: vscode.LanguageModelChat[] = []
@@ -105,11 +122,18 @@ class ModelManager {
         quickPick.onDidAccept(() => {
           const selectedItem = quickPick.selectedItems[0] as any
           if (selectedItem) {
-            // 選択されたモデルのIDとモデル名を保存
-            this.setOpenAIModelId(selectedItem.model.id)
-            logger.info(`Selected model: ${this.openaiModelId}`)
+            // providerによって保存先を分岐
+            if (provider === 'openAI') {
+              this.setOpenAIModelId(selectedItem.model.id)
+              logger.info(`Selected OpenAI model: ${this.openaiModelId}`)
+            } else if (provider === 'anthropic') {
+              this.setAnthropicModelId(selectedItem.model.id)
+              logger.info(`Selected Anthropic model: ${this.anthropicModelId}`)
+            }
+
+            // QuickPickを閉じて選択結果を返す
             quickPick.dispose()
-            resolve(this.openaiModelId as string)
+            resolve(selectedItem.model.id as string)
           } else {
             quickPick.dispose()
             resolve(undefined)
@@ -142,6 +166,10 @@ class ModelManager {
     return this.openaiModelId
   }
 
+  public getAnthropicModelId(): string | null {
+    return this.anthropicModelId
+  }
+
   /**
    * モデルIDを直接設定する
    * @param modelId 設定するモデルID
@@ -157,6 +185,22 @@ class ModelManager {
     }
     // OpenAIモデル変更イベントを発火
     this._onDidChangeOpenAIModelId.fire()
+  }
+
+  /**
+   * 選択中のAnthropicモデルIDをセット・保存
+   */
+  public setAnthropicModelId(modelId: string): void {
+    this.anthropicModelId = modelId
+    // 永続化
+    if (this.extensionContext) {
+      this.extensionContext.globalState.update(
+        'anthropicModelId',
+        this.anthropicModelId,
+      )
+    }
+    // 必要ならイベント発火
+    this._onDidChangeAnthropicModelId.fire()
   }
 
   /**

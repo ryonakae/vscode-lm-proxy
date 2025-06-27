@@ -1,5 +1,11 @@
-import type OpenAI from 'openai'
+import type {
+  Chat,
+  ChatCompletion,
+  ChatCompletionChunk,
+  ChatCompletionCreateParams,
+} from 'openai/resources'
 import * as vscode from 'vscode'
+import { isTextPart, isToolCallPart } from '../server/handlers'
 import { generateRandomId } from '../utils'
 import { logger } from '../utils/logger'
 
@@ -8,73 +14,64 @@ import { logger } from '../utils/logger'
  * OpenAIのmessages, tools, tool_choice等をVSCodeの型にマッピングし、
  * VSCode APIがサポートしないパラメータはmodelOptionsに集約して将来の拡張性を確保します。
  * OpenAI独自のroleやtool指定など、API間の仕様差異を吸収するための変換ロジックを含みます。
- * @param {OpenAI.ChatCompletionCreateParams} openaiRequest OpenAIのチャットリクエストパラメータ
+ * @param {ChatCompletionCreateParams} openaiRequest OpenAIのチャットリクエストパラメータ
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
 export function convertOpenAIRequestToVSCodeRequest(
-  openaiRequest: OpenAI.ChatCompletionCreateParams,
+  openaiRequest: ChatCompletionCreateParams,
 ): {
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
 } {
+  // 変換開始ログ
   logger.info('Converting OpenAI request to VSCode request', openaiRequest)
 
   // OpenAIのmessagesをVSCodeのLanguageModelChatMessage[]に変換
-  const messages: vscode.LanguageModelChatMessage[] = (
-    openaiRequest.messages || []
-  ).map((msg: any) => {
-    let role: vscode.LanguageModelChatMessageRole
-    let content = ''
-    let prefix = ''
-    switch (msg.role) {
-      case 'user':
-        role = vscode.LanguageModelChatMessageRole.User
-        break
-      case 'assistant':
-        role = vscode.LanguageModelChatMessageRole.Assistant
-        break
-      default:
-        // user/assistant以外はAssistant扱い、prefixで区別
-        role = vscode.LanguageModelChatMessageRole.Assistant
-        prefix = `[${msg.role?.toUpperCase()}] `
-    }
-    if (typeof msg.content === 'string') {
-      content = prefix + msg.content
-    } else if (Array.isArray(msg.content)) {
-      // textのみ連結
-      content =
-        prefix +
-        msg.content
-          .filter((c: any) => c.type === 'text')
-          .map((c: any) => c.text)
-          .join('\n')
-    }
+  const messages: vscode.LanguageModelChatMessage[] =
+    openaiRequest.messages.map(msg => {
+      let role: vscode.LanguageModelChatMessageRole
+      let content = ''
+      let prefix = ''
 
-    let name: string | undefined
-    if (msg.role === 'tool' || msg.role === 'function') {
-      name = msg.name
-    }
+      // ロール変換
+      switch (msg.role) {
+        case 'user':
+          role = vscode.LanguageModelChatMessageRole.User
+          break
+        case 'assistant':
+          role = vscode.LanguageModelChatMessageRole.Assistant
+          break
+        default:
+          // user/assistant以外はAssistant扱い、prefixで区別
+          role = vscode.LanguageModelChatMessageRole.Assistant
+          prefix = `[${msg.role?.toUpperCase()}] `
+      }
 
-    return new vscode.LanguageModelChatMessage(role, content, name)
-  })
+      // contentの変換
+      if (typeof msg.content === 'string') {
+        content = prefix + msg.content
+      } else if (Array.isArray(msg.content)) {
+        // textのみ連結
+        content =
+          prefix +
+          msg.content
+            .filter((c: any) => c.type === 'text')
+            .map((c: any) => c.text)
+            .join('\n')
+      }
+
+      // nameプロパティの取得
+      let name: string | undefined
+      if ('name' in msg) {
+        name = msg.name
+      }
+
+      return new vscode.LanguageModelChatMessage(role, content, name)
+    })
 
   // options生成
   const options: vscode.LanguageModelChatRequestOptions = {}
-
-  // tools, tool_choiceはAPI仕様に従いマッピング
-  // tools: OpenAIのtools配列をVSCodeのLanguageModelChatTool[]に変換
-  if ('tools' in openaiRequest && Array.isArray(openaiRequest.tools)) {
-    options.tools = openaiRequest.tools.map(tool => {
-      const base = {
-        name: tool.function.name,
-        description: tool.function.description ?? '',
-      }
-      return tool.function.parameters !== undefined
-        ? { ...base, inputSchema: tool.function.parameters }
-        : base
-    })
-  }
 
   // tool_choice: OpenAIのtool_choiceをVSCodeのtoolModeに変換
   if (
@@ -102,25 +99,49 @@ export function convertOpenAIRequestToVSCodeRequest(
     // function.name指定は現状サポート外
   }
 
+  // tools: OpenAIのtools配列をVSCodeのLanguageModelChatTool[]に変換
+  if ('tools' in openaiRequest && Array.isArray(openaiRequest.tools)) {
+    options.tools = openaiRequest.tools.map(tool => {
+      const base = {
+        name: tool.function.name,
+        description: tool.function.description ?? '',
+      }
+      return tool.function.parameters !== undefined
+        ? { ...base, inputSchema: tool.function.parameters }
+        : base
+    })
+  }
+
   // その他のパラメータはmodelOptionsにまとめて渡す
   const modelOptions: { [name: string]: any } = {}
   const modelOptionKeys = [
-    'max_tokens',
-    'temperature',
-    'top_p',
-    'stop',
-    'presence_penalty',
+    'audio',
     'frequency_penalty',
-    'seed',
-    'logit_bias',
-    'user',
-    'n',
-    'stream',
-    'response_format',
     'function_call',
     'functions',
-    'tools',
-    'tool_choice',
+    'logit_bias',
+    'logprobs',
+    'max_completion_tokens',
+    'max_tokens',
+    'metadata',
+    'modalities',
+    'n',
+    'parallel_tool_calls',
+    'prediction',
+    'presence_penalty',
+    'reasoning_effort',
+    'response_format',
+    'seed',
+    'service_tier',
+    'stop',
+    'store',
+    'stream',
+    'stream_options',
+    'temperature',
+    'top_logprobs',
+    'top_p',
+    'user',
+    'web_search_options',
   ]
   for (const key of modelOptionKeys) {
     if (key in openaiRequest && (openaiRequest as any)[key] !== undefined) {
@@ -131,7 +152,7 @@ export function convertOpenAIRequestToVSCodeRequest(
     options.modelOptions = modelOptions
   }
 
-  // ログ表示
+  // 変換結果ログ
   logger.info('Converted OpenAI request to VSCode request', {
     messages,
     options,
@@ -141,51 +162,53 @@ export function convertOpenAIRequestToVSCodeRequest(
 }
 
 /**
- * VSCodeのLanguageModelTextPart型ガード
- * @param part 判定対象
- * @returns {boolean} partがLanguageModelTextPart型ならtrue
+ * VSCodeのLanguageModelChatResponseをOpenAIのChatCompletionまたはChatCompletionChunk形式に変換します。
+ * ストリーミングの場合はChatCompletionChunkのAsyncIterableを返し、
+ * 非ストリーミングの場合は全文をChatCompletion形式で返します。
+ * @param vscodeResponse VSCodeのLanguageModelChatResponse
+ * @param modelId モデルID
+ * @param isStreaming ストリーミングかどうか
+ * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
  */
-function isTextPart(part: any): part is vscode.LanguageModelTextPart {
-  return part instanceof vscode.LanguageModelTextPart
-}
-function isToolCallPart(part: any): part is vscode.LanguageModelToolCallPart {
-  return part instanceof vscode.LanguageModelToolCallPart
-}
-
-// VSCode ToolCall → OpenAI tool_call 変換
-function convertToolCall(
-  part: vscode.LanguageModelToolCallPart,
-  index: number,
-): OpenAI.ChatCompletionChunk.Choice.Delta.ToolCall {
-  return {
-    index,
-    id: part.callId,
-    type: 'function',
-    function: {
-      name: part.name,
-      arguments: JSON.stringify(part.input),
-    },
+export function convertVSCodeResponseToOpenAIResponse(
+  vscodeResponse: vscode.LanguageModelChatResponse,
+  modelId: string,
+  isStreaming: boolean,
+): Promise<ChatCompletion> | AsyncIterable<ChatCompletionChunk> {
+  // ストリーミングの場合
+  if (isStreaming) {
+    // ChatCompletionChunkのAsyncIterableを返す
+    return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, modelId)
   }
+  // 非ストリーミングの場合
+  // 全文をOpenAI ChatCompletionに変換
+  return convertVSCodeTextToOpenAICompletion(vscodeResponse, modelId)
 }
 
-// ストリーミング: VSCode stream → OpenAI ChatCompletionChunk[]
+/**
+ * VSCodeのストリームをOpenAIのChatCompletionChunkのAsyncIterableに変換します。
+ * @param stream VSCodeのストリーム
+ * @param model モデル名
+ * @returns AsyncIterable<ChatCompletionChunk>
+ */
 async function* convertVSCodeStreamToOpenAIChunks(
   stream: AsyncIterable<
     vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
   >,
   model: string,
-): AsyncIterable<OpenAI.ChatCompletionChunk> {
+): AsyncIterable<ChatCompletionChunk> {
+  // チャンクIDとタイムスタンプ生成
   const randomId = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
-  let roleSent = false
+
+  let isRoleSent = false
   let toolCallIndex = 0
-  let toolCallSeen = false // tool_callが出現したかどうか
+  let isToolCalled = false // tool_callが出現したかどうか
+
+  // ストリーミングチャンクを生成
   for await (const part of stream) {
-    const chunk: OpenAI.ChatCompletionChunk = {
-      id: randomId,
-      created,
-      model,
-      object: 'chat.completion.chunk',
+    // チャンクの初期化
+    const chunk: ChatCompletionChunk = {
       choices: [
         {
           index: 0,
@@ -193,71 +216,132 @@ async function* convertVSCodeStreamToOpenAIChunks(
           finish_reason: null,
         },
       ],
+      created,
+      id: randomId,
+      model,
+      object: 'chat.completion.chunk',
+      service_tier: undefined,
+      system_fingerprint: undefined,
+      usage: {
+        completion_tokens: 0,
+        prompt_tokens: 0,
+        total_tokens: 0,
+        completion_tokens_details: {
+          accepted_prediction_tokens: 0,
+          audio_tokens: 0,
+          reasoning_tokens: 0,
+          rejected_prediction_tokens: 0,
+        },
+        prompt_tokens_details: {
+          audio_tokens: 0,
+          cached_tokens: 0,
+        },
+      },
     }
+
+    // テキストパートの場合
     if (isTextPart(part)) {
-      if (!roleSent) {
+      if (!isRoleSent) {
         chunk.choices[0].delta.role = 'assistant'
-        roleSent = true
+        isRoleSent = true
       }
       chunk.choices[0].delta.content = part.value
-    } else if (isToolCallPart(part)) {
+    }
+    // ツールコールパートの場合
+    else if (isToolCallPart(part)) {
       chunk.choices[0].delta.tool_calls = [
-        convertToolCall(part, toolCallIndex++),
+        {
+          index: toolCallIndex++,
+          id: part.callId,
+          type: 'function',
+          function: {
+            name: part.name,
+            arguments: JSON.stringify(part.input),
+          },
+        },
       ]
-      toolCallSeen = true
-    } else {
-      // unknownパートは無視
+      isToolCalled = true
+    }
+    // 未知のパートは無視
+    else {
       continue
     }
 
     yield chunk
   }
-  // 終了チャンク
+
+  // 終了チャンクを生成
   yield {
-    id: randomId,
-    created,
-    model,
-    object: 'chat.completion.chunk',
     choices: [
       {
         index: 0,
         delta: {},
-        finish_reason: toolCallSeen ? 'tool_calls' : 'stop',
+        finish_reason: isToolCalled ? 'tool_calls' : 'stop',
       },
     ],
+    created,
+    id: randomId,
+    model,
+    object: 'chat.completion.chunk',
+    service_tier: undefined,
+    system_fingerprint: undefined,
+    usage: {
+      completion_tokens: 0,
+      prompt_tokens: 0,
+      total_tokens: 0,
+      completion_tokens_details: {
+        accepted_prediction_tokens: 0,
+        audio_tokens: 0,
+        reasoning_tokens: 0,
+        rejected_prediction_tokens: 0,
+      },
+      prompt_tokens_details: {
+        audio_tokens: 0,
+        cached_tokens: 0,
+      },
+    },
   }
 }
 
-// 非ストリーミング: VSCode text → OpenAI ChatCompletion
+/**
+ * 非ストリーミング: VSCodeのLanguageModelChatResponseをOpenAIのChatCompletion形式に変換します。
+ * @param vscodeResponse VSCodeのLanguageModelChatResponse
+ * @param model モデル名
+ * @returns Promise<ChatCompletion>
+ */
 async function convertVSCodeTextToOpenAICompletion(
   vscodeResponse: vscode.LanguageModelChatResponse,
   model: string,
-): Promise<OpenAI.ChatCompletion> {
-  const randomId = `chatcmpl-${generateRandomId()}`
+): Promise<ChatCompletion> {
+  // チャットIDとタイムスタンプ生成
+  const id = `chatcmpl-${generateRandomId()}`
   const created = Math.floor(Date.now() / 1000)
+
+  // contentとtoolCallsの初期化
   let content = ''
-  const toolCalls: any[] = []
-  if (
-    vscodeResponse &&
-    typeof vscodeResponse.text === 'object' &&
-    Symbol.asyncIterator in vscodeResponse.text
-  ) {
-    for await (const part of vscodeResponse.text) {
-      content += part
+  const toolCalls: Chat.Completions.ChatCompletionMessageToolCall[] = []
+
+  // ストリームからパートを順次取得
+  for await (const part of vscodeResponse.stream) {
+    // テキストパートの場合
+    if (isTextPart(part)) {
+      content += part.value
+    }
+    // ツールコールパートの場合
+    else if (isToolCallPart(part)) {
+      toolCalls.push({
+        id: part.callId,
+        type: 'function',
+        function: {
+          name: part.name,
+          arguments: JSON.stringify(part.input),
+        },
+      })
     }
   }
-  if (
-    vscodeResponse &&
-    typeof vscodeResponse.stream === 'object' &&
-    Symbol.asyncIterator in vscodeResponse.stream
-  ) {
-    for await (const part of vscodeResponse.stream) {
-      if (isToolCallPart(part)) {
-        toolCalls.push(convertToolCall(part, 0))
-      }
-    }
-  }
-  const choice: OpenAI.Chat.Completions.ChatCompletion.Choice = {
+
+  // choiceオブジェクトの生成
+  const choice: Chat.Completions.ChatCompletion.Choice = {
     index: 0,
     message: {
       role: 'assistant',
@@ -267,33 +351,35 @@ async function convertVSCodeTextToOpenAICompletion(
     logprobs: null,
     finish_reason: toolCalls.length > 0 ? 'tool_calls' : 'stop',
   }
+
+  // toolCallsが存在する場合はmessageに追加
   if (toolCalls.length > 0) {
     choice.message.tool_calls = toolCalls
   }
+
+  // ChatCompletionオブジェクトを返却
   return {
-    id: randomId,
+    choices: [choice],
     created,
+    id,
     model,
     object: 'chat.completion',
-    choices: [choice],
+    service_tier: undefined,
+    system_fingerprint: undefined,
+    usage: {
+      completion_tokens: 0,
+      prompt_tokens: 0,
+      total_tokens: 0,
+      completion_tokens_details: {
+        accepted_prediction_tokens: 0,
+        audio_tokens: 0,
+        reasoning_tokens: 0,
+        rejected_prediction_tokens: 0,
+      },
+      prompt_tokens_details: {
+        audio_tokens: 0,
+        cached_tokens: 0,
+      },
+    },
   }
-}
-
-/**
- * VSCode LanguageModelChatResponseをOpenAI ChatCompletion/ChatCompletionChunk形式に変換
- * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param opts 追加情報（model名など）
- * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
- */
-export function convertVSCodeResponseToOpenAIResponse(
-  vscodeResponse: vscode.LanguageModelChatResponse,
-  model: string,
-  isStreaming: boolean,
-): Promise<OpenAI.ChatCompletion> | AsyncIterable<OpenAI.ChatCompletionChunk> {
-  if (isStreaming) {
-    // ストリーミング: ChatCompletionChunkのAsyncIterableを返す
-    return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, model)
-  }
-  // 非ストリーミング: 全文をOpenAI ChatCompletionに変換
-  return convertVSCodeTextToOpenAICompletion(vscodeResponse, model)
 }

@@ -15,41 +15,14 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
     async () => {
       try {
         // モデル選択ダイアログを表示
-        const openaiModelId = await modelManager.selectModel()
+        const openaiModelId = await modelManager.selectModel('openAI')
 
         if (openaiModelId) {
-          // サーバーの実行状態を記録
-          const wasRunning = serverManager.isRunning()
+          // モデルIDを設定
           context.globalState.update('openaiModelId', openaiModelId)
           vscode.window.showInformationMessage(
             `OpenAI Model selected: ${openaiModelId}`,
           )
-
-          // ステータスバーを更新（サーバーは元の状態）
-          setTimeout(() => {
-            statusBarManager.updateStatus(wasRunning)
-          }, 10)
-
-          // サーバーが実行中だった場合は再起動
-          // モデル変更後にサーバーを再起動しないとAPIリクエストが新モデルに反映されないため
-          if (wasRunning) {
-            vscode.window.showInformationMessage(
-              'Restarting server with new model...',
-            )
-            await serverManager.stop()
-            // ステータスバーを停止状態に更新 (非同期でタイミングをずらす)
-            setTimeout(() => {
-              statusBarManager.updateStatus(false)
-            }, 10)
-            await serverManager.start()
-            // ステータスバーを実行状態に更新 (非同期でタイミングをずらす)
-            setTimeout(() => {
-              statusBarManager.updateStatus(true)
-            }, 10)
-            vscode.window.showInformationMessage(
-              'Server restarted successfully.',
-            )
-          }
         }
       } catch (error) {
         vscode.window.showErrorMessage(
@@ -59,16 +32,49 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
     },
   )
 
+  // Anthropicモデル選択コマンド
+  const selectAnthropicModelCommand = vscode.commands.registerCommand(
+    'vscode-lm-proxy.selectAnthropicModel',
+    async () => {
+      try {
+        // モデル選択ダイアログを表示
+        const anthropicModelId = await modelManager.selectModel('anthropic')
+
+        if (anthropicModelId) {
+          // モデルIDを設定
+          context.globalState.update('anthropicModelId', anthropicModelId)
+          vscode.window.showInformationMessage(
+            `Anthropic Model selected: ${anthropicModelId}`,
+          )
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Error selecting Anthropic model: ${(error as Error).message}`,
+        )
+      }
+    },
+  )
+
   // コンテキストにコマンドを登録
-  context.subscriptions.push(selectOpenAIModelCommand)
+  context.subscriptions.push(
+    selectOpenAIModelCommand,
+    selectAnthropicModelCommand,
+  )
 
   // 前回選択されたOpenAIモデルを復元
   const previouslySelectedOpenAIModelId =
     context.globalState.get<string>('openaiModelId')
   if (previouslySelectedOpenAIModelId) {
-    // OpenAIモデル選択状態を復元
     modelManager.setOpenAIModelId(previouslySelectedOpenAIModelId)
-    // ステータスバーも更新
-    statusBarManager.updateStatus(serverManager.isRunning())
   }
+
+  // 前回選択されたAnthropicモデルを復元
+  const previouslySelectedAnthropicModelId =
+    context.globalState.get<string>('anthropicModelId')
+  if (previouslySelectedAnthropicModelId) {
+    modelManager.setAnthropicModelId(previouslySelectedAnthropicModelId)
+  }
+
+  // ステータスバーを更新
+  statusBarManager.updateStatus(serverManager.isRunning())
 }
