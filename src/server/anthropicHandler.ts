@@ -185,7 +185,6 @@ async function handleStreamingResponse(
     }
 
     // 正常終了
-    res.write('data: [DONE]\n\n')
     logger.info('Streaming ended', {
       stream: 'end',
       path: reqPath,
@@ -199,7 +198,6 @@ async function handleStreamingResponse(
     res.write(
       `data: ${JSON.stringify({ type: 'error', error: errorObject })}\n\n`,
     )
-    res.write('data: [DONE]\n\n')
     logger.error('Streaming error', { error, path: reqPath })
   } finally {
     // ストリーム終了
