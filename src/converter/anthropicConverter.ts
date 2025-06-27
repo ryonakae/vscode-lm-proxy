@@ -310,7 +310,7 @@ async function* convertVSCodeStreamToAnthropicStream(
           type: 'tool_use',
           id: part.callId,
           name: part.name,
-          input: part.input,
+          input: {},
         },
       }
 
