@@ -24,7 +24,7 @@ export function createServer(): express.Express {
   const app = express()
 
   // JSONのパース設定
-  app.use(express.json())
+  app.use(express.json({ limit: '100mb' }))
 
   // リクエスト・レスポンスのロギングミドルウェア
   app.use((req, res, next) => {
