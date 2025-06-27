@@ -61,6 +61,7 @@ async function handleOpenAIChatCompletions(
 ) {
   try {
     const body = req.body as ChatCompletionCreateParams
+    logger.info('Received request', { body })
 
     // 必須フィールドのバリデーション
     validateChatCompletionRequest(body)

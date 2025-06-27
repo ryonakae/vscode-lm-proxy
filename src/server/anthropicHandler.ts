@@ -60,10 +60,11 @@ export function setupAnthropicModelsEndpoints(app: express.Express): void {
 export async function handleAnthropicMessages(
   req: express.Request,
   res: express.Response,
-  provider: 'anthropic' | 'claude-code',
+  provider: 'anthropic' | 'claude',
 ) {
   try {
     const body = req.body as MessageCreateParams
+    logger.info('Received request', { body })
 
     // 必須フィールドのバリデーション
     validateMessagesRequest(body)
