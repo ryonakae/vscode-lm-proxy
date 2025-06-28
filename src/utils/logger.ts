@@ -160,28 +160,22 @@ export class Logger {
   /**
    * JSONデータをログ用に整形
    * @param data 表示するJSONデータ
-   * @param maxLength 最大表示長（デフォルト: 2000文字）
    * @param indent インデントを付けるかどうか
    * @returns 整形されたJSON文字列
    */
-  private formatJSONForLog(data: any, maxLength = 2000, indent = true): string {
+  private formatJSONForLog(data: any, indent = true): string {
     try {
       // 編集可能なコピーを作成
       const dataCopy = this.sanitizeForLog(JSON.parse(JSON.stringify(data)))
 
       // インデントを付けて整形（読みやすさ向上）
-      let jsonStr = indent
+      const jsonStr = indent
         ? JSON.stringify(dataCopy, null, 2)
         : JSON.stringify(dataCopy)
 
-      // 文字列が長すぎる場合は切り詰める
-      if (jsonStr.length > maxLength) {
-        jsonStr = `${jsonStr.substring(0, maxLength)}...(truncated)`
-      }
-
       return jsonStr
     } catch (e) {
-      return String(data).substring(0, maxLength)
+      return String(data)
     }
   }
 

@@ -64,8 +64,8 @@ export async function handleAnthropicMessages(
 ) {
   try {
     const body = req.body as MessageCreateParams
-    // logger.info('Received request', { body })
-    logger.info('Received request')
+    logger.info('Received request', { body })
+    // logger.info('Received request')
 
     // 必須フィールドのバリデーション
     validateMessagesRequest(body)
@@ -75,10 +75,10 @@ export async function handleAnthropicMessages(
       body.model,
       provider,
     )
-    logger.info('Used VSCode model', {
-      modelId: vsCodeModelId,
-      modelName: vsCodeModel.name,
-    })
+    // logger.info('Used VSCode model', {
+    //   modelId: vsCodeModelId,
+    //   modelName: vsCodeModel.name,
+    // })
 
     // ストリーミングモード判定
     const isStreaming = body.stream === true
@@ -98,8 +98,7 @@ export async function handleAnthropicMessages(
       options,
       cancellationToken,
     )
-    // logger.info('Received response from LM API', response)
-    logger.info('Received response from LM API')
+    logger.info('Received response from LM API', { isStreaming })
 
     // レスポンスをAnthropic形式に変換
     const anthropicResponse = convertVSCodeResponseToAnthropicResponse(
@@ -107,6 +106,7 @@ export async function handleAnthropicMessages(
       vsCodeModelId,
       isStreaming,
     )
+    logger.info('anthropicResponse', { anthropicResponse })
 
     // ストリーミングレスポンス処理
     if (isStreaming) {
@@ -120,6 +120,7 @@ export async function handleAnthropicMessages(
 
     // 非ストリーミングレスポンス処理
     const message = await (anthropicResponse as Promise<Message>)
+    logger.info('message', { message })
     res.json(message)
   } catch (error) {
     const { statusCode, errorObject } = handleMessageError(
@@ -184,9 +185,8 @@ async function handleStreamingResponse(
     for await (const chunk of stream) {
       const data = JSON.stringify(chunk)
       res.write(`data: ${data}\n\n`)
-      logger.info(
-        `Streaming chunk: ${JSON.stringify({ chunk, index: chunkIndex++ })}`,
-      )
+      logger.info(`Streaming chunk: ${data}`)
+      chunkIndex++
     }
 
     // 正常終了

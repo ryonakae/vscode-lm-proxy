@@ -38,10 +38,11 @@ export function convertAnthropicRequestToVSCodeRequest(
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
 } {
-  logger.info(
-    'Converting Anthropic request to VSCode request',
-    anthropicRequest,
-  )
+  // logger.info(
+  //   'Converting Anthropic request to VSCode request',
+  //   anthropicRequest,
+  // )
+  logger.info('Converting Anthropic request to VSCode request')
 
   // --- messages変換 ---
   const messages: vscode.LanguageModelChatMessage[] = []
@@ -54,6 +55,7 @@ export function convertAnthropicRequestToVSCodeRequest(
         new vscode.LanguageModelChatMessage(
           vscode.LanguageModelChatMessageRole.Assistant,
           `[SYSTEM] ${anthropicRequest.system}`,
+          'System',
         ),
       )
     } else if (Array.isArray(anthropicRequest.system)) {
@@ -64,6 +66,7 @@ export function convertAnthropicRequestToVSCodeRequest(
             new vscode.LanguageModelChatMessage(
               vscode.LanguageModelChatMessageRole.Assistant,
               `[SYSTEM] ${block.text}`,
+              'System',
             ),
           )
         }
@@ -75,7 +78,13 @@ export function convertAnthropicRequestToVSCodeRequest(
   messages.push(
     ...anthropicRequest.messages.map(msg => {
       let role: vscode.LanguageModelChatMessageRole
-      let content = ''
+      let content:
+        | string
+        | Array<
+            | vscode.LanguageModelTextPart
+            | vscode.LanguageModelToolResultPart
+            | vscode.LanguageModelToolCallPart
+          > = ''
 
       // ロール変換
       switch (msg.role) {
@@ -91,11 +100,62 @@ export function convertAnthropicRequestToVSCodeRequest(
       if (typeof msg.content === 'string') {
         content = msg.content
       } else if (Array.isArray(msg.content)) {
-        // textのみ連結
-        content = msg.content
-          .filter(c => c.type === 'text')
-          .map(c => c.text)
-          .join('\n')
+        content = msg.content.map(c => {
+          switch (c.type) {
+            case 'text':
+              return new vscode.LanguageModelTextPart(c.text)
+            case 'image':
+              return new vscode.LanguageModelTextPart(
+                `[Image] ${JSON.stringify(c)}`,
+              )
+            // TODO: 不具合ありそうなので一旦コメントアウト、あとで修正
+            // case 'tool_use':
+            //   return new vscode.LanguageModelToolCallPart(
+            //     c.id,
+            //     c.name,
+            //     c.input ?? {},
+            //   )
+            // case 'tool_result':
+            //   if (Array.isArray(c.content)) {
+            //     return new vscode.LanguageModelToolResultPart(
+            //       c.tool_use_id,
+            //       c.content.map(c => {
+            //         switch (c.type) {
+            //           case 'text':
+            //             return new vscode.LanguageModelTextPart(c.text)
+            //           case 'image':
+            //             return new vscode.LanguageModelTextPart(
+            //               `[image] ${JSON.stringify(c)}`,
+            //             )
+            //         }
+            //       }),
+            //     )
+            //   }
+            //   return new vscode.LanguageModelTextPart(c.content ?? 'undefined')
+            // case 'document':
+            //   return new vscode.LanguageModelTextPart(
+            //     `[Document] ${JSON.stringify(c)}`,
+            //   )
+            // case 'thinking':
+            //   return new vscode.LanguageModelTextPart(
+            //     `[Thinking] ${JSON.stringify(c)}`,
+            //   )
+            // case 'redacted_thinking':
+            //   return new vscode.LanguageModelTextPart(
+            //     `[Redacted Thinking] ${JSON.stringify(c)}`,
+            //   )
+            // case 'server_tool_use':
+            //   return new vscode.LanguageModelTextPart('[Server Tool Use]')
+            // case 'web_search_tool_result':
+            //   return new vscode.LanguageModelTextPart(
+            //     '[Web Search Tool Result]',
+            //   )
+            default:
+              return new vscode.LanguageModelTextPart(
+                `[Unknown Type] ${JSON.stringify(c)}`,
+              )
+          }
+        })
       }
 
       return new vscode.LanguageModelChatMessage(role, content)
@@ -242,6 +302,7 @@ export function convertAnthropicRequestToVSCodeRequest(
     messages,
     options,
   })
+  // logger.info('Converted Anthropic request to VSCode request')
 
   return { messages, options }
 }
@@ -371,6 +432,7 @@ async function* convertVSCodeStreamToAnthropicStream(
   // --- 最後のテキストブロックが未終了なら閉じる ---
   if (isInsideTextBlock) {
     yield { type: 'content_block_stop', index: contentIndex }
+    contentIndex++
   }
 
   // --- message_deltaイベント送信 ---
