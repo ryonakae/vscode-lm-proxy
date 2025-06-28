@@ -33,6 +33,7 @@ import { logger } from '../utils/logger'
  */
 export function convertAnthropicRequestToVSCodeRequest(
   anthropicRequest: MessageCreateParams,
+  vsCodeModel: vscode.LanguageModelChat,
 ): {
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
@@ -43,8 +44,36 @@ export function convertAnthropicRequestToVSCodeRequest(
   )
 
   // --- messages変換 ---
-  const messages: vscode.LanguageModelChatMessage[] =
-    anthropicRequest.messages.map(msg => {
+  const messages: vscode.LanguageModelChatMessage[] = []
+
+  // systemプロンプトがあればassistant roleで先頭に追加
+  if ('system' in anthropicRequest && anthropicRequest.system) {
+    if (typeof anthropicRequest.system === 'string') {
+      // stringの場合
+      messages.push(
+        new vscode.LanguageModelChatMessage(
+          vscode.LanguageModelChatMessageRole.Assistant,
+          `[SYSTEM] ${anthropicRequest.system}`,
+        ),
+      )
+    } else if (Array.isArray(anthropicRequest.system)) {
+      // TextBlockParam[] の場合
+      for (const block of anthropicRequest.system) {
+        if (block.type === 'text' && typeof block.text === 'string') {
+          messages.push(
+            new vscode.LanguageModelChatMessage(
+              vscode.LanguageModelChatMessageRole.Assistant,
+              `[SYSTEM] ${block.text}`,
+            ),
+          )
+        }
+      }
+    }
+  }
+
+  // 通常のmessagesを追加
+  messages.push(
+    ...anthropicRequest.messages.map(msg => {
       let role: vscode.LanguageModelChatMessageRole
       let content = ''
 
@@ -70,7 +99,8 @@ export function convertAnthropicRequestToVSCodeRequest(
       }
 
       return new vscode.LanguageModelChatMessage(role, content)
-    })
+    }),
+  )
 
   // --- options生成 ---
   const options: vscode.LanguageModelChatRequestOptions = {}
@@ -171,14 +201,13 @@ export function convertAnthropicRequestToVSCodeRequest(
 
   // --- その他パラメータはmodelOptionsに集約 ---
   const modelOptionKeys = [
-    'max_tokens',
+    // 'max_tokens',
     'container',
     'mcp_servers',
     'metadata',
     'service_tier',
     'stop_sequences',
     'stream',
-    'system',
     'temperature',
     'thinking',
     'top_k',
@@ -186,6 +215,15 @@ export function convertAnthropicRequestToVSCodeRequest(
   ]
   const modelOptions: { [name: string]: any } = {}
 
+  // --- max_tokensはvsCodeModel.maxInputTokensを利用 ---
+  if (
+    'max_tokens' in anthropicRequest &&
+    vsCodeModel?.maxInputTokens !== undefined
+  ) {
+    modelOptions.max_tokens = vsCodeModel.maxInputTokens
+  }
+
+  // --- その他のオプションをmodelOptionsに追加 ---
   for (const key of modelOptionKeys) {
     if (
       key in anthropicRequest &&
