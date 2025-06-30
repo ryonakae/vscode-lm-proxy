@@ -80,7 +80,10 @@ async function handleOpenAIChatCompletions(
     const isStreaming = body.stream === true
 
     // OpenAIリクエスト→VSCode LM API形式変換
-    const { messages, options } = convertOpenAIRequestToVSCodeRequest(body)
+    const { messages, options } = convertOpenAIRequestToVSCodeRequest(
+      body,
+      vsCodeModel,
+    )
 
     // キャンセラレーショントークン作成
     const cancellationToken = new vscode.CancellationTokenSource().token
@@ -91,7 +94,7 @@ async function handleOpenAIChatCompletions(
       options,
       cancellationToken,
     )
-    logger.info('Received response from LM API', response)
+    logger.info('Received response from LM API')
 
     // レスポンスをOpenAI形式に変換
     const openAIResponse = convertVSCodeResponseToOpenAIResponse(
@@ -99,6 +102,11 @@ async function handleOpenAIChatCompletions(
       vsCodeModelId,
       isStreaming,
     )
+    logger.info('openAIResponse', {
+      openAIResponse,
+      vsCodeModelId,
+      isStreaming,
+    })
 
     // ストリーミングレスポンス処理
     if (isStreaming) {
@@ -112,6 +120,7 @@ async function handleOpenAIChatCompletions(
 
     // 非ストリーミングレスポンス処理
     const completion = await (openAIResponse as Promise<ChatCompletion>)
+    logger.info('completion', { completion })
     res.json(completion)
   } catch (error) {
     const { statusCode, apiError } = handleChatCompletionError(
