@@ -119,7 +119,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
                         return new vscode.LanguageModelTextPart(c.text)
                       case 'image':
                         return new vscode.LanguageModelTextPart(
-                          `[image] ${JSON.stringify(c)}`,
+                          `[Image] ${JSON.stringify(c)}`,
                         )
                     }
                   }),
@@ -128,7 +128,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
 
               // c.contentがstringの場合
               return new vscode.LanguageModelToolResultPart(c.tool_use_id, [
-                c.content ?? 'undefined',
+                new vscode.LanguageModelTextPart(c.content ?? 'undefined'),
               ])
             case 'document':
               return new vscode.LanguageModelTextPart(
