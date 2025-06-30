@@ -65,7 +65,6 @@ export async function handleAnthropicMessages(
   try {
     const body = req.body as MessageCreateParams
     logger.info('Received request', { body })
-    // logger.info('Received request')
 
     // 必須フィールドのバリデーション
     validateMessagesRequest(body)
@@ -98,7 +97,7 @@ export async function handleAnthropicMessages(
       options,
       cancellationToken,
     )
-    logger.info('Received response from LM API', { isStreaming })
+    logger.info('Received response from LM API')
 
     // レスポンスをAnthropic形式に変換
     const anthropicResponse = convertVSCodeResponseToAnthropicResponse(
@@ -106,7 +105,11 @@ export async function handleAnthropicMessages(
       vsCodeModelId,
       isStreaming,
     )
-    logger.info('anthropicResponse', { anthropicResponse })
+    logger.info('anthropicResponse', {
+      anthropicResponse,
+      vsCodeModelId,
+      isStreaming,
+    })
 
     // ストリーミングレスポンス処理
     if (isStreaming) {
