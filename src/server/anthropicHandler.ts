@@ -76,10 +76,8 @@ export async function handleAnthropicMessages(
     const isStreaming = body.stream === true
 
     //Anthropicリクエスト→VSCode LM API形式変換
-    const { messages, options } = convertAnthropicRequestToVSCodeRequest(
-      body,
-      vsCodeModel,
-    )
+    const { messages, options, inputTokens } =
+      await convertAnthropicRequestToVSCodeRequest(body, vsCodeModel)
 
     // キャンセラレーショントークン作成
     const cancellationToken = new vscode.CancellationTokenSource().token
@@ -97,6 +95,7 @@ export async function handleAnthropicMessages(
       response,
       vsCodeModel,
       isStreaming,
+      inputTokens,
     )
     logger.info('anthropicResponse', {
       anthropicResponse,
@@ -214,7 +213,7 @@ function handleMessageError(error: vscode.LanguageModelError): {
   statusCode: number
   errorObject: ErrorObject
 } {
-  logger.error('VSCode LM API error', {
+  logger.error('VSCode LM API error', error, {
     cause: error.cause,
     code: error.code,
     message: error.message,
@@ -225,6 +224,7 @@ function handleMessageError(error: vscode.LanguageModelError): {
   // 変数を定義
   let statusCode = 500
   let type: ErrorObject['type'] = 'api_error'
+  let message = error.message || 'An unknown error has occurred'
 
   // LanguageModelError.name に応じてマッピング
   switch (error.name) {
@@ -249,6 +249,24 @@ function handleMessageError(error: vscode.LanguageModelError): {
       statusCode = 429
       type = 'rate_limit_error'
       break
+    case 'Error': {
+      // エラーコード（数値）とJSON部分を抽出し、変数に格納
+      const match = error.message.match(/Request Failed: (\d+)\s+({.*})/)
+
+      if (match) {
+        const status = Number(match[1])
+        const jsonString = match[2]
+        const errorJson = JSON.parse(jsonString)
+        console.log(status)
+        console.log(errorJson)
+
+        statusCode = status
+        type = errorJson.error.type
+        message = errorJson.error.message
+      }
+
+      break
+    }
     case 'Unknown':
       statusCode = 500
       type = 'api_error'
@@ -258,7 +276,7 @@ function handleMessageError(error: vscode.LanguageModelError): {
   // Anthropic互換エラー形式で返却
   const errorObject: ErrorObject = {
     type,
-    message: error.message || 'An unknown error has occurred',
+    message,
   }
 
   return { statusCode, errorObject }
