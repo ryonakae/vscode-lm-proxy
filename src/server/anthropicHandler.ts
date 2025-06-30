@@ -70,14 +70,7 @@ export async function handleAnthropicMessages(
     validateMessagesRequest(body)
 
     // モデル取得
-    const { vsCodeModel, vsCodeModelId } = await getVSCodeModel(
-      body.model,
-      provider,
-    )
-    // logger.info('Used VSCode model', {
-    //   modelId: vsCodeModelId,
-    //   modelName: vsCodeModel.name,
-    // })
+    const { vsCodeModel } = await getVSCodeModel(body.model, provider)
 
     // ストリーミングモード判定
     const isStreaming = body.stream === true
@@ -102,12 +95,12 @@ export async function handleAnthropicMessages(
     // レスポンスをAnthropic形式に変換
     const anthropicResponse = convertVSCodeResponseToAnthropicResponse(
       response,
-      vsCodeModelId,
+      vsCodeModel,
       isStreaming,
     )
     logger.info('anthropicResponse', {
       anthropicResponse,
-      vsCodeModelId,
+      vsCodeModel,
       isStreaming,
     })
 

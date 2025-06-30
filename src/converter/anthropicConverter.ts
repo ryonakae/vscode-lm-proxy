@@ -299,22 +299,25 @@ export function convertAnthropicRequestToVSCodeRequest(
  * ストリーミングの場合はRawMessageStreamEventのAsyncIterableを返し、
  * 非ストリーミングの場合は全文をMessage形式で返します。
  * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param modelId モデルID
+ * @param vsCodeModel VSCodeのLanguageModelChatインスタンス
  * @param isStreaming ストリーミングかどうか
  * @returns Message または AsyncIterable<RawMessageStreamEvent>
  */
 export function convertVSCodeResponseToAnthropicResponse(
   vscodeResponse: vscode.LanguageModelChatResponse,
-  modelId: string,
+  vsCodeModel: vscode.LanguageModelChat,
   isStreaming: boolean,
 ): Promise<Message> | AsyncIterable<RawMessageStreamEvent> {
   if (isStreaming) {
     // ストリーミング: VSCode stream → Anthropic RawMessageStreamEvent列に変換
-    return convertVSCodeStreamToAnthropicStream(vscodeResponse.stream, modelId)
+    return convertVSCodeStreamToAnthropicStream(
+      vscodeResponse.stream,
+      vsCodeModel,
+    )
   }
 
   // 非ストリーミング: VSCode text → Anthropic Message
-  return convertVSCodeTextToAnthropicMessage(vscodeResponse, modelId)
+  return convertVSCodeTextToAnthropicMessage(vscodeResponse, vsCodeModel)
 }
 
 /**
@@ -323,14 +326,14 @@ export function convertVSCodeResponseToAnthropicResponse(
  * - ツールコールパートはtool_useブロックとして表現
  * - 最後にmessage_delta, message_stopを送信
  * @param stream VSCodeのストリーム
- * @param modelId モデルID
+ * @param vsCodeModel VSCodeのLanguageModelChatインスタンス
  * @returns Anthropic RawMessageStreamEventのAsyncIterable
  */
 async function* convertVSCodeStreamToAnthropicStream(
   stream: AsyncIterable<
     vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
   >,
-  modelId: string,
+  vsCodeModel: vscode.LanguageModelChat,
 ): AsyncIterable<RawMessageStreamEvent> {
   const messageId = `msg_${generateRandomId()}`
   let stopReason: StopReason = 'end_turn'
@@ -343,7 +346,7 @@ async function* convertVSCodeStreamToAnthropicStream(
       type: 'message',
       role: 'assistant',
       content: [],
-      model: modelId,
+      model: vsCodeModel.id,
       stop_reason: null,
       stop_sequence: null,
       usage: {
@@ -448,12 +451,12 @@ async function* convertVSCodeStreamToAnthropicStream(
  * - テキストパートはtextブロックとして連結
  * - ツールコールパートはtool_useブロックとして追加
  * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param modelId モデルID
+ * @param vsCodeModel VSCodeのLanguageModelChatインスタンス
  * @returns Anthropic Message
  */
 async function convertVSCodeTextToAnthropicMessage(
   vscodeResponse: vscode.LanguageModelChatResponse,
-  modelId: string,
+  vsCodeModel: vscode.LanguageModelChat,
 ): Promise<Message> {
   const id = `msg_${generateRandomId()}`
 
@@ -494,7 +497,7 @@ async function convertVSCodeTextToAnthropicMessage(
     type: 'message',
     role: 'assistant',
     content,
-    model: modelId,
+    model: vsCodeModel.id,
     stop_reason: isToolCalled ? 'tool_use' : 'end_turn',
     stop_sequence: null,
     usage: {
