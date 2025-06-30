@@ -20,86 +20,118 @@ import { logger } from '../utils/logger'
  */
 export function convertOpenAIRequestToVSCodeRequest(
   openaiRequest: ChatCompletionCreateParams,
+  vsCodeModel: vscode.LanguageModelChat,
 ): {
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
 } {
-  // 変換開始ログ
-  logger.info('Converting OpenAI request to VSCode request', openaiRequest)
+  logger.info('Converting OpenAI request to VSCode request')
 
   // OpenAIのmessagesをVSCodeのLanguageModelChatMessage[]に変換
   const messages: vscode.LanguageModelChatMessage[] =
     openaiRequest.messages.map(msg => {
       let role: vscode.LanguageModelChatMessageRole
-      let content = ''
+      let content:
+        | string
+        | Array<
+            | vscode.LanguageModelTextPart
+            | vscode.LanguageModelToolResultPart
+            | vscode.LanguageModelToolCallPart
+          > = ''
       let prefix = ''
+      let name = 'Assistant'
 
       // ロール変換
       switch (msg.role) {
         case 'user':
           role = vscode.LanguageModelChatMessageRole.User
+          name = 'User'
           break
         case 'assistant':
           role = vscode.LanguageModelChatMessageRole.Assistant
+          name = 'Assistant'
           break
-        default:
-          // user/assistant以外はAssistant扱い、prefixで区別
+        case 'developer':
           role = vscode.LanguageModelChatMessageRole.Assistant
-          prefix = `[${msg.role?.toUpperCase()}] `
+          prefix = '[DEVELOPER] '
+          name = 'Developer'
+          break
+        case 'system':
+          role = vscode.LanguageModelChatMessageRole.Assistant
+          prefix = '[SYSTEM] '
+          name = 'System'
+          break
+        case 'tool':
+          role = vscode.LanguageModelChatMessageRole.Assistant
+          prefix = '[TOOL] '
+          name = 'Tool'
+          break
+        case 'function':
+          role = vscode.LanguageModelChatMessageRole.Assistant
+          prefix = '[FUNCTION] '
+          name = 'Function'
+          break
       }
 
-      // contentの変換
+      // contentの変換（string or array）
       if (typeof msg.content === 'string') {
         content = prefix + msg.content
       } else if (Array.isArray(msg.content)) {
-        // textのみ連結
-        content =
-          prefix +
-          msg.content
-            .filter((c: any) => c.type === 'text')
-            .map((c: any) => c.text)
-            .join('\n')
-      }
-
-      // nameプロパティの取得
-      let name: string | undefined
-      if ('name' in msg) {
-        name = msg.name
+        content = msg.content.map(c => {
+          switch (c.type) {
+            case 'text':
+              return new vscode.LanguageModelTextPart(c.text)
+            case 'image_url':
+              return new vscode.LanguageModelTextPart(
+                `[Image URL]: ${JSON.stringify(c.image_url)}`,
+              )
+            case 'input_audio':
+              return new vscode.LanguageModelTextPart(
+                `[Input Audio]: ${JSON.stringify(c.input_audio)}`,
+              )
+            case 'file':
+              return new vscode.LanguageModelTextPart(
+                `[File]: ${JSON.stringify(c.file)}`,
+              )
+            case 'refusal':
+              return new vscode.LanguageModelTextPart(`[Refusal]: ${c.refusal}`)
+          }
+        })
       }
 
       return new vscode.LanguageModelChatMessage(role, content, name)
     })
 
-  // options生成
+  // --- options生成 ---
   const options: vscode.LanguageModelChatRequestOptions = {}
 
-  // tool_choice: OpenAIのtool_choiceをVSCodeのtoolModeに変換
+  // tool_choice変換
   if (
     'tool_choice' in openaiRequest &&
     openaiRequest.tool_choice !== undefined
   ) {
-    // OpenAI: 'none'|'auto'|'required'|{type:'function', function:{name}}
-    // VSCode: LanguageModelChatToolMode.None|Auto|Required
     const tc = openaiRequest.tool_choice
     if (typeof tc === 'string') {
+      // 'auto' | 'required' | 'none' の場合
       switch (tc) {
-        case 'none':
-          // VSCode APIにOff/Noneは存在しないためAutoにフォールバック
-          options.toolMode = vscode.LanguageModelChatToolMode.Auto
-          break
         case 'auto':
           options.toolMode = vscode.LanguageModelChatToolMode.Auto
           break
         case 'required':
           options.toolMode = vscode.LanguageModelChatToolMode.Required
           break
-        // それ以外は無視
+        case 'none':
+          // VSCode APIにOff/Noneは存在しないためAutoにフォールバック
+          options.toolMode = vscode.LanguageModelChatToolMode.Auto
+          break
       }
+    } else {
+      // 'function' の場合
+      options.toolMode = vscode.LanguageModelChatToolMode.Auto
     }
-    // function.name指定は現状サポート外
   }
 
-  // tools: OpenAIのtools配列をVSCodeのLanguageModelChatTool[]に変換
+  // tools変換
   if ('tools' in openaiRequest && Array.isArray(openaiRequest.tools)) {
     options.tools = openaiRequest.tools.map(tool => {
       const base = {
@@ -121,8 +153,8 @@ export function convertOpenAIRequestToVSCodeRequest(
     'functions',
     'logit_bias',
     'logprobs',
-    'max_completion_tokens',
-    'max_tokens',
+    // 'max_completion_tokens',
+    // 'max_tokens',
     'metadata',
     'modalities',
     'n',
@@ -143,6 +175,16 @@ export function convertOpenAIRequestToVSCodeRequest(
     'user',
     'web_search_options',
   ]
+
+  // --- max_completion_tokensはvsCodeModel.maxInputTokensを利用 ---
+  if (
+    'max_completion_tokens' in openaiRequest &&
+    vsCodeModel?.maxInputTokens !== undefined
+  ) {
+    modelOptions.max_completion_tokens = vsCodeModel.maxInputTokens
+  }
+
+  // --- その他のオプションをmodelOptionsに追加 ---
   for (const key of modelOptionKeys) {
     if (key in openaiRequest && (openaiRequest as any)[key] !== undefined) {
       modelOptions[key] = (openaiRequest as any)[key]
@@ -152,7 +194,7 @@ export function convertOpenAIRequestToVSCodeRequest(
     options.modelOptions = modelOptions
   }
 
-  // 変換結果ログ
+  // --- 変換結果をログ出力 ---
   logger.info('Converted OpenAI request to VSCode request', {
     messages,
     options,

@@ -13,23 +13,17 @@ import { generateRandomId } from '../utils'
 import { logger } from '../utils/logger'
 
 /**
- * Anthropic APIのChatCompletionCreateParamsリクエストをVSCode拡張APIのチャットリクエスト形式に変換します。
- * Anthropicのmessages, tools, tool_choice等をVSCodeの型にマッピングし、
- * VSCode APIがサポートしないパラメータはmodelOptionsに集約して将来の拡張性を確保します。
- * Anthropic独自のroleやtool指定など、API間の仕様差異を吸収するための変換ロジックを含みます。
- * @param {MessageCreateParams} anthropicRequest Anthropicのチャットリクエストパラメータ
- * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
- *   VSCode拡張API用のチャットメッセージ配列とオプション
- */
-/**
- * Anthropic APIのChatCompletionCreateParamsリクエストを
+ * Anthropic APIのMessageCreateParamsリクエストを
  * VSCode拡張APIのチャットリクエスト形式に変換する。
- * - messages, tools, tool_choice等を型変換
+ *
+ * - systemプロンプトやmessagesをVSCodeのメッセージ配列に変換
+ * - tools, tool_choice等をVSCode APIのオプション形式に変換
  * - VSCode APIが未対応のパラメータはmodelOptionsに集約
  * - 仕様差異を吸収するための変換ロジックを含む
- * @param {MessageCreateParams} anthropicRequest Anthropicのチャットリクエストパラメータ
- * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
- *   VSCode拡張API用のチャットメッセージ配列とオプション
+ *
+ * @param anthropicRequest Anthropicのチャットリクエストパラメータ
+ * @param vsCodeModel VSCodeのLanguageModelChatインスタンス
+ * @returns VSCode拡張API用のチャットメッセージ配列とオプション
  */
 export function convertAnthropicRequestToVSCodeRequest(
   anthropicRequest: MessageCreateParams,
@@ -38,10 +32,6 @@ export function convertAnthropicRequestToVSCodeRequest(
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
 } {
-  // logger.info(
-  //   'Converting Anthropic request to VSCode request',
-  //   anthropicRequest,
-  // )
   logger.info('Converting Anthropic request to VSCode request')
 
   // --- messages変換 ---
@@ -85,7 +75,7 @@ export function convertAnthropicRequestToVSCodeRequest(
             | vscode.LanguageModelToolResultPart
             | vscode.LanguageModelToolCallPart
           > = ''
-      let name = 'User'
+      let name = 'Assistant'
 
       // ロール変換
       switch (msg.role) {
@@ -267,6 +257,7 @@ export function convertAnthropicRequestToVSCodeRequest(
   }
 
   // --- その他パラメータはmodelOptionsに集約 ---
+  const modelOptions: { [name: string]: any } = {}
   const modelOptionKeys = [
     // 'max_tokens',
     'container',
@@ -280,7 +271,6 @@ export function convertAnthropicRequestToVSCodeRequest(
     'top_k',
     'top_p',
   ]
-  const modelOptions: { [name: string]: any } = {}
 
   // --- max_tokensはvsCodeModel.maxInputTokensを利用 ---
   if (
@@ -299,7 +289,6 @@ export function convertAnthropicRequestToVSCodeRequest(
       modelOptions[key] = (anthropicRequest as any)[key]
     }
   }
-
   if (Object.keys(modelOptions).length > 0) {
     options.modelOptions = modelOptions
   }
