@@ -40,7 +40,7 @@ export async function getVSCodeModel(
   provider: 'openai' | 'anthropic' | 'claude',
 ): Promise<{ vsCodeModel: vscode.LanguageModelChat; vsCodeModelId: string }> {
   try {
-    let selectedModelId: string | null = ''
+    let selectedModelId: string | null = modelId
 
     // modelIdが'vscode-lm-proxy'の場合は選択中のモデルIDに変換（providerごとに分岐）
     if (modelId === 'vscode-lm-proxy') {
@@ -49,7 +49,6 @@ export async function getVSCodeModel(
       } else if (provider === 'anthropic') {
         selectedModelId = modelManager.getAnthropicModelId()
       }
-      logger.info('Selected model ID:', selectedModelId)
 
       if (!selectedModelId) {
         throw new Error(`No valid ${provider} model selected`)
@@ -65,10 +64,13 @@ export async function getVSCodeModel(
       }
     }
 
+    logger.info('Selected model ID:', selectedModelId)
+
     // モデル取得
     const [vsCodeModel] = await vscode.lm.selectChatModels({
       id: selectedModelId as string,
     })
+    logger.info('Retrieved VSCode model:', { vsCodeModel })
 
     if (!vsCodeModel) {
       throw new Error(`Model ${selectedModelId} not found`)

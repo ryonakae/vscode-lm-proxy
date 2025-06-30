@@ -15,16 +15,18 @@ import { logger } from '../utils/logger'
  * VSCode APIがサポートしないパラメータはmodelOptionsに集約して将来の拡張性を確保します。
  * OpenAI独自のroleやtool指定など、API間の仕様差異を吸収するための変換ロジックを含みます。
  * @param {ChatCompletionCreateParams} openaiRequest OpenAIのチャットリクエストパラメータ
+ * @param {vscode.LanguageModelChat} vsCodeModel VSCodeのLanguageModelChatインスタンス
  * @returns {{ messages: vscode.LanguageModelChatMessage[], options: vscode.LanguageModelChatRequestOptions }}
  *   VSCode拡張API用のチャットメッセージ配列とオプション
  */
-export function convertOpenAIRequestToVSCodeRequest(
+export async function convertOpenAIRequestToVSCodeRequest(
   openaiRequest: ChatCompletionCreateParams,
-  _vsCodeModel: vscode.LanguageModelChat,
-): {
+  vsCodeModel: vscode.LanguageModelChat,
+): Promise<{
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
-} {
+  inputTokens: number
+}> {
   logger.info('Converting OpenAI request to VSCode request')
 
   // OpenAIのmessagesをVSCodeのLanguageModelChatMessage[]に変換
@@ -101,6 +103,12 @@ export function convertOpenAIRequestToVSCodeRequest(
 
       return new vscode.LanguageModelChatMessage(role, content, name)
     })
+
+  // --- input tokens計算 ---
+  let inputTokens = 0
+  for (const msg of messages) {
+    inputTokens += await vsCodeModel.countTokens(msg)
+  }
 
   // --- options生成 ---
   const options: vscode.LanguageModelChatRequestOptions = {}
@@ -190,9 +198,10 @@ export function convertOpenAIRequestToVSCodeRequest(
   logger.info('Converted OpenAI request to VSCode request', {
     messages,
     options,
+    inputTokens,
   })
 
-  return { messages, options }
+  return { messages, options, inputTokens }
 }
 
 /**
@@ -200,36 +209,48 @@ export function convertOpenAIRequestToVSCodeRequest(
  * ストリーミングの場合はChatCompletionChunkのAsyncIterableを返し、
  * 非ストリーミングの場合は全文をChatCompletion形式で返します。
  * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param modelId モデルID
+ * @param vsCodeModel VSCodeのLanguageModelChatインスタンス
  * @param isStreaming ストリーミングかどうか
+ * @param inputTokens 入力トークン数
  * @returns ChatCompletion または AsyncIterable<ChatCompletionChunk>
  */
 export function convertVSCodeResponseToOpenAIResponse(
   vscodeResponse: vscode.LanguageModelChatResponse,
-  modelId: string,
+  vsCodeModel: vscode.LanguageModelChat,
   isStreaming: boolean,
+  inputTokens: number,
 ): Promise<ChatCompletion> | AsyncIterable<ChatCompletionChunk> {
   // ストリーミングの場合
   if (isStreaming) {
     // ChatCompletionChunkのAsyncIterableを返す
-    return convertVSCodeStreamToOpenAIChunks(vscodeResponse.stream, modelId)
+    return convertVSCodeStreamToOpenAIChunks(
+      vscodeResponse.stream,
+      vsCodeModel,
+      inputTokens,
+    )
   }
   // 非ストリーミングの場合
   // 全文をOpenAI ChatCompletionに変換
-  return convertVSCodeTextToOpenAICompletion(vscodeResponse, modelId)
+  return convertVSCodeTextToOpenAICompletion(
+    vscodeResponse,
+    vsCodeModel,
+    inputTokens,
+  )
 }
 
 /**
  * VSCodeのストリームをOpenAIのChatCompletionChunkのAsyncIterableに変換します。
  * @param stream VSCodeのストリーム
- * @param model モデル名
+ * @param vsCodeModel VSCodeのLanguageModelChatインスタンス
+ * @param inputTokens 入力トークン数
  * @returns AsyncIterable<ChatCompletionChunk>
  */
 async function* convertVSCodeStreamToOpenAIChunks(
   stream: AsyncIterable<
     vscode.LanguageModelTextPart | vscode.LanguageModelToolCallPart | unknown
   >,
-  model: string,
+  vsCodeModel: vscode.LanguageModelChat,
+  inputTokens: number,
 ): AsyncIterable<ChatCompletionChunk> {
   // チャンクIDとタイムスタンプ生成
   const randomId = `chatcmpl-${generateRandomId()}`
@@ -238,6 +259,8 @@ async function* convertVSCodeStreamToOpenAIChunks(
   let isRoleSent = false
   let toolCallIndex = 0
   let isToolCalled = false // tool_callが出現したかどうか
+
+  let outputTokens = 0 // 出力トークン数
 
   // ストリーミングチャンクを生成
   for await (const part of stream) {
@@ -252,7 +275,7 @@ async function* convertVSCodeStreamToOpenAIChunks(
       ],
       created,
       id: randomId,
-      model,
+      model: vsCodeModel.id,
       object: 'chat.completion.chunk',
       service_tier: undefined,
       system_fingerprint: undefined,
@@ -280,6 +303,9 @@ async function* convertVSCodeStreamToOpenAIChunks(
         isRoleSent = true
       }
       chunk.choices[0].delta.content = part.value
+
+      // 出力トークン数を加算
+      outputTokens += await vsCodeModel.countTokens(part.value)
     }
     // ツールコールパートの場合
     else if (isToolCallPart(part)) {
@@ -294,11 +320,11 @@ async function* convertVSCodeStreamToOpenAIChunks(
           },
         },
       ]
+
+      // ツールコールもトークン数に加算
+      outputTokens += await vsCodeModel.countTokens(JSON.stringify(part))
+
       isToolCalled = true
-    }
-    // 未知のパートは無視
-    else {
-      continue
     }
 
     yield chunk
@@ -315,24 +341,24 @@ async function* convertVSCodeStreamToOpenAIChunks(
     ],
     created,
     id: randomId,
-    model,
+    model: vsCodeModel.id,
     object: 'chat.completion.chunk',
     service_tier: undefined,
     system_fingerprint: undefined,
     usage: {
-      completion_tokens: 0,
-      prompt_tokens: 0,
-      total_tokens: 0,
-      completion_tokens_details: {
-        accepted_prediction_tokens: 0,
-        audio_tokens: 0,
-        reasoning_tokens: 0,
-        rejected_prediction_tokens: 0,
-      },
-      prompt_tokens_details: {
-        audio_tokens: 0,
-        cached_tokens: 0,
-      },
+      completion_tokens: outputTokens,
+      prompt_tokens: inputTokens,
+      total_tokens: inputTokens + outputTokens,
+      // completion_tokens_details: {
+      //   accepted_prediction_tokens: 0,
+      //   audio_tokens: 0,
+      //   reasoning_tokens: 0,
+      //   rejected_prediction_tokens: 0,
+      // },
+      // prompt_tokens_details: {
+      //   audio_tokens: 0,
+      //   cached_tokens: 0,
+      // },
     },
   }
 }
@@ -340,12 +366,14 @@ async function* convertVSCodeStreamToOpenAIChunks(
 /**
  * 非ストリーミング: VSCodeのLanguageModelChatResponseをOpenAIのChatCompletion形式に変換します。
  * @param vscodeResponse VSCodeのLanguageModelChatResponse
- * @param model モデル名
+ * @param vsCodeModel VSCodeのLanguageModelChatインスタンス
+ * @param inputTokens 入力トークン数
  * @returns Promise<ChatCompletion>
  */
 async function convertVSCodeTextToOpenAICompletion(
   vscodeResponse: vscode.LanguageModelChatResponse,
-  model: string,
+  vsCodeModel: vscode.LanguageModelChat,
+  inputTokens: number,
 ): Promise<ChatCompletion> {
   // チャットIDとタイムスタンプ生成
   const id = `chatcmpl-${generateRandomId()}`
@@ -356,11 +384,16 @@ async function convertVSCodeTextToOpenAICompletion(
   const toolCalls: Chat.Completions.ChatCompletionMessageToolCall[] = []
   let isToolCalled = false
 
+  let outputTokens = 0 // 出力トークン数
+
   // ストリームからパートを順次取得
   for await (const part of vscodeResponse.stream) {
     if (isTextPart(part)) {
       // テキストはバッファに連結
       textBuffer += part.value
+
+      // 出力トークン数を加算
+      outputTokens += await vsCodeModel.countTokens(part.value)
     } else if (isToolCallPart(part)) {
       // ツールはtoolCallsに追加
       toolCalls.push({
@@ -371,6 +404,10 @@ async function convertVSCodeTextToOpenAICompletion(
           arguments: JSON.stringify(part.input),
         },
       })
+
+      // ツールコールもトークン数に加算
+      outputTokens += await vsCodeModel.countTokens(JSON.stringify(part))
+
       isToolCalled = true
     }
   }
@@ -393,24 +430,24 @@ async function convertVSCodeTextToOpenAICompletion(
     choices: [choice],
     created,
     id,
-    model,
+    model: vsCodeModel.id,
     object: 'chat.completion',
     service_tier: undefined,
     system_fingerprint: undefined,
     usage: {
-      completion_tokens: 0,
-      prompt_tokens: 0,
-      total_tokens: 0,
-      completion_tokens_details: {
-        accepted_prediction_tokens: 0,
-        audio_tokens: 0,
-        reasoning_tokens: 0,
-        rejected_prediction_tokens: 0,
-      },
-      prompt_tokens_details: {
-        audio_tokens: 0,
-        cached_tokens: 0,
-      },
+      completion_tokens: outputTokens,
+      prompt_tokens: inputTokens,
+      total_tokens: inputTokens + outputTokens,
+      // completion_tokens_details: {
+      //   accepted_prediction_tokens: 0,
+      //   audio_tokens: 0,
+      //   reasoning_tokens: 0,
+      //   rejected_prediction_tokens: 0,
+      // },
+      // prompt_tokens_details: {
+      //   audio_tokens: 0,
+      //   cached_tokens: 0,
+      // },
     },
   }
 }

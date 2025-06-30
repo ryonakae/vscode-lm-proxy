@@ -67,23 +67,14 @@ async function handleOpenAIChatCompletions(
     validateChatCompletionRequest(body)
 
     // モデル取得
-    const { vsCodeModel, vsCodeModelId } = await getVSCodeModel(
-      body.model,
-      'openai',
-    )
-    logger.info('Used VSCode model', {
-      modelId: vsCodeModelId,
-      modelName: vsCodeModel.name,
-    })
+    const { vsCodeModel } = await getVSCodeModel(body.model, 'openai')
 
     // ストリーミングモード判定
     const isStreaming = body.stream === true
 
     // OpenAIリクエスト→VSCode LM API形式変換
-    const { messages, options } = convertOpenAIRequestToVSCodeRequest(
-      body,
-      vsCodeModel,
-    )
+    const { messages, options, inputTokens } =
+      await convertOpenAIRequestToVSCodeRequest(body, vsCodeModel)
 
     // キャンセラレーショントークン作成
     const cancellationToken = new vscode.CancellationTokenSource().token
@@ -99,12 +90,13 @@ async function handleOpenAIChatCompletions(
     // レスポンスをOpenAI形式に変換
     const openAIResponse = convertVSCodeResponseToOpenAIResponse(
       response,
-      vsCodeModelId,
+      vsCodeModel,
       isStreaming,
+      inputTokens,
     )
     logger.info('openAIResponse', {
       openAIResponse,
-      vsCodeModelId,
+      vsCodeModel,
       isStreaming,
     })
 
