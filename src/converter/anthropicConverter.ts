@@ -27,7 +27,7 @@ import { logger } from '../utils/logger'
  */
 export function convertAnthropicRequestToVSCodeRequest(
   anthropicRequest: MessageCreateParams,
-  vsCodeModel: vscode.LanguageModelChat,
+  _vsCodeModel: vscode.LanguageModelChat,
 ): {
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
@@ -259,7 +259,7 @@ export function convertAnthropicRequestToVSCodeRequest(
   // --- その他パラメータはmodelOptionsに集約 ---
   const modelOptions: { [name: string]: any } = {}
   const modelOptionKeys = [
-    // 'max_tokens',
+    'max_tokens',
     'container',
     'mcp_servers',
     'metadata',
@@ -271,14 +271,6 @@ export function convertAnthropicRequestToVSCodeRequest(
     'top_k',
     'top_p',
   ]
-
-  // --- max_tokensはvsCodeModel.maxInputTokensを利用 ---
-  if (
-    'max_tokens' in anthropicRequest &&
-    vsCodeModel?.maxInputTokens !== undefined
-  ) {
-    modelOptions.max_tokens = vsCodeModel.maxInputTokens
-  }
 
   // --- その他のオプションをmodelOptionsに追加 ---
   for (const key of modelOptionKeys) {

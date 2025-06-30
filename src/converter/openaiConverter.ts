@@ -20,7 +20,7 @@ import { logger } from '../utils/logger'
  */
 export function convertOpenAIRequestToVSCodeRequest(
   openaiRequest: ChatCompletionCreateParams,
-  vsCodeModel: vscode.LanguageModelChat,
+  _vsCodeModel: vscode.LanguageModelChat,
 ): {
   messages: vscode.LanguageModelChatMessage[]
   options: vscode.LanguageModelChatRequestOptions
@@ -153,8 +153,8 @@ export function convertOpenAIRequestToVSCodeRequest(
     'functions',
     'logit_bias',
     'logprobs',
-    // 'max_completion_tokens',
-    // 'max_tokens',
+    'max_completion_tokens',
+    'max_tokens',
     'metadata',
     'modalities',
     'n',
@@ -175,14 +175,6 @@ export function convertOpenAIRequestToVSCodeRequest(
     'user',
     'web_search_options',
   ]
-
-  // --- max_completion_tokensはvsCodeModel.maxInputTokensを利用 ---
-  if (
-    'max_completion_tokens' in openaiRequest &&
-    vsCodeModel?.maxInputTokens !== undefined
-  ) {
-    modelOptions.max_completion_tokens = vsCodeModel.maxInputTokens
-  }
 
   // --- その他のオプションをmodelOptionsに追加 ---
   for (const key of modelOptionKeys) {
