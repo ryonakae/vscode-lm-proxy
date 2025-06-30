@@ -47,14 +47,15 @@ The proxy server exposes the following endpoints:
 
 ### OpenAI Compatible API
 
-- **Chat Completions**: `POST /openai/v1/chat/completions`
+- **Chat Completions**: `POST /openai/v1/chat/completions` (supports streaming via the `stream` parameter)
 
 ```bash
 curl -X POST http://localhost:4000/openai/v1/chat/completions \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "gpt-4.1",
-    "messages": [{"role":"user","content":"Hello!"}]
+    "model": "vscode-lm-proxy",
+    "messages": [{"role":"user","content":"Hello!"}],
+    "stream": true
   }'
 ```
 - **List Models**: `GET /openai/v1/models`
@@ -70,14 +71,15 @@ curl http://localhost:4000/openai/v1/models/gpt-4.1
 
 ### Anthropic Compatible API
 
-- **Messages**: `POST /anthropic/v1/messages`
+- **Messages**: `POST /anthropic/v1/messages` (supports streaming via the `stream` parameter)
 
 ```bash
 curl -X POST http://localhost:4000/anthropic/v1/messages \
   -H 'Content-Type: application/json' \
   -d '{
-    "model": "claude-3-sonnet-20240229",
-    "messages": [{"role":"user","content":"Hello!"}]
+    "model": "vscode-lm-proxy",
+    "messages": [{"role":"user","content":"Hello!"}],
+    "stream": true
   }'
 ```
 - **List Models**: `GET /anthropic/v1/models`
