@@ -360,17 +360,17 @@ async function convertVSCodeTextToOpenAICompletion(
   const created = Math.floor(Date.now() / 1000)
 
   // contentとtoolCallsの初期化
-  let content = ''
+  let textBuffer = ''
   const toolCalls: Chat.Completions.ChatCompletionMessageToolCall[] = []
+  let isToolCalled = false
 
   // ストリームからパートを順次取得
   for await (const part of vscodeResponse.stream) {
-    // テキストパートの場合
     if (isTextPart(part)) {
-      content += part.value
-    }
-    // ツールコールパートの場合
-    else if (isToolCallPart(part)) {
+      // テキストはバッファに連結
+      textBuffer += part.value
+    } else if (isToolCallPart(part)) {
+      // ツールはtoolCallsに追加
       toolCalls.push({
         id: part.callId,
         type: 'function',
@@ -379,6 +379,7 @@ async function convertVSCodeTextToOpenAICompletion(
           arguments: JSON.stringify(part.input),
         },
       })
+      isToolCalled = true
     }
   }
 
@@ -387,16 +388,12 @@ async function convertVSCodeTextToOpenAICompletion(
     index: 0,
     message: {
       role: 'assistant',
-      content,
+      content: textBuffer,
       refusal: null,
+      tool_calls: isToolCalled ? toolCalls : undefined,
     },
     logprobs: null,
-    finish_reason: toolCalls.length > 0 ? 'tool_calls' : 'stop',
-  }
-
-  // toolCallsが存在する場合はmessageに追加
-  if (toolCalls.length > 0) {
-    choice.message.tool_calls = toolCalls
+    finish_reason: isToolCalled ? 'tool_calls' : 'stop',
   }
 
   // ChatCompletionオブジェクトを返却

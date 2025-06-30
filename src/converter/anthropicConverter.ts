@@ -466,8 +466,8 @@ async function convertVSCodeTextToAnthropicMessage(
   const id = `msg_${generateRandomId()}`
 
   const content: ContentBlock[] = []
-  let isToolCalled = false
   let textBuffer = ''
+  let isToolCalled = false
 
   // --- ストリームを順次処理 ---
   for await (const part of vscodeResponse.stream) {
@@ -475,11 +475,6 @@ async function convertVSCodeTextToAnthropicMessage(
       // テキストはバッファに連結
       textBuffer += part.value
     } else if (isToolCallPart(part)) {
-      // テキストバッファがあればtextブロックとして追加
-      if (textBuffer) {
-        content.push({ type: 'text', text: textBuffer, citations: [] })
-        textBuffer = ''
-      }
       // tool_useブロック追加
       content.push({
         type: 'tool_use',
