@@ -1,36 +1,36 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは、このリポジトリのコードを扱う際にClaude Code（claude.ai/code）に指針を提供します。
 
-## Commands
+## コマンド
 
 ```bash
-# Build
-npm run compile          # Compile TypeScript
-npm run watch           # Watch mode compilation
+# ビルド
+npm run compile          # TypeScriptをコンパイル
+npm run watch           # 監視モードでコンパイル
 
-# Lint
-npm run check           # Run Biome linter
-biome check --write     # Auto-fix linting issues
+# リント
+npm run check           # Biomeリンターを実行
+biome check --write     # リントの問題を自動修正
 ```
 
-## Architecture
+## アーキテクチャ
 
-This VS Code extension creates a proxy server that exposes VS Code's Language Model API as OpenAI/Anthropic-compatible REST APIs.
+このVS Code拡張機能は、VS CodeのLanguage Model APIをOpenAI/Anthropic互換のREST APIとして公開するプロキシサーバーを作成します。
 
-Key components:
-- Server: Express-based REST API server (/src/server)
-- Converters: Transform between OpenAI/Anthropic and VS Code formats (/src/converter)
-- Model Management: Handles VS Code language model selection (/src/model)
-- Command Handlers: VS Code command implementation (/src/commands)
-- UI Components: Status bar integration (/src/ui)
+主要コンポーネント:
+- サーバー: ExpressベースのREST APIサーバー（/src/server）
+- コンバーター: OpenAI/AnthropicとVS Code形式間の変換（/src/converter）
+- モデル管理: VS Code言語モデルの選択を処理（/src/model）
+- コマンドハンドラー: VS Codeコマンドの実装（/src/commands）
+- UIコンポーネント: ステータスバーの統合（/src/ui）
 
-API Endpoints:
-- OpenAI chat completions API (/openai/v1/chat/completions)  
-- Anthropic messages API (/anthropic/v1/messages)
-- Full streaming support for both providers
+APIエンドポイント:
+- OpenAIチャット完了API（/openai/v1/chat/completions）
+- AnthropicメッセージAPI（/anthropic/v1/messages）
+- 両プロバイダーの完全なストリーミングサポート
 
-Technical Requirements:
-- VS Code 1.93.0+
-- Not supported in virtual/untrusted workspaces 
-- Local environment required (no remote workspace support)
+技術要件:
+- VS Code 1.93.0以上
+- 仮想/信頼されていないワークスペースではサポートされていない
+- ローカル環境が必要（リモートワークスペースのサポートなし）
