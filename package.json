@@ -1,0 +1,202 @@
+{
+  "name": "vscode-lm-proxy",
+  "displayName": "LM Proxy",
+  "version": "0.0.1",
+  "description": "VSCode Language Model API Proxy with OpenAI API compatibility",
+  "categories": [
+    "Other",
+    "Machine Learning",
+    "Snippets"
+  ],
+  "keywords": [
+    "language model",
+    "ai",
+    "llm",
+    "openai",
+    "proxy"
+  ],
+  "homepage": "https://github.com/ryo-nakae/vscode-lm-proxy",
+  "bugs": {
+    "url": "https://github.com/ryo-nakae/vscode-lm-proxy/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ryo-nakae/vscode-lm-proxy.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Ryo Nakae"
+  },
+  "publisher": "ryonakae",
+  "main": "./out/extension.js",
+  "scripts": {
+    "check": "biome check",
+    "compile": "tsc -p ./",
+    "prepare": "husky",
+    "vscode:prepublish": "npm run compile",
+    "watch": "tsc -watch -p ./"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-lm-proxy.startServer",
+        "title": "Start LM Proxy Server",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.stopServer",
+        "title": "Stop LM Proxy Server",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.selectOpenAIModel",
+        "title": "Select OpenAI API Model",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.showOutput",
+        "title": "Show Output Panel",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.clearOutput",
+        "title": "Clear Output Panel",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.setDebugLogLevel",
+        "title": "Set Debug Log Level (Show Detailed Logs)",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.setInfoLogLevel",
+        "title": "Set Info Log Level (Show Basic Logs)",
+        "category": "LM Proxy"
+      }
+    ],
+    "configuration": {
+      "title": "LM Proxy",
+      "properties": {
+        "vscode-lm-proxy.port": {
+          "type": "number",
+          "default": 4000,
+          "minimum": 1024,
+          "maximum": 65535,
+          "description": "Port number used by the LM Proxy server"
+        },
+        "vscode-lm-proxy.logLevel": {
+          "type": "number",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "enumDescriptions": [
+            "DEBUG: Output all logs including detailed information (default)",
+            "INFO: Output information, warnings, and errors only",
+            "WARN: Output warnings and errors only",
+            "ERROR: Output errors only"
+          ],
+          "default": 1,
+          "description": "Log level (0:DEBUG, 1:INFO, 2:WARN, 3:ERROR)"
+        },
+        "vscode-lm-proxy.showOutputOnStartup": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to display the output panel when the extension starts"
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "vscode-lm-proxy.startServer",
+        "key": "ctrl+shift+l s",
+        "mac": "cmd+shift+l s",
+        "when": "!vscode-lm-proxy.serverRunning"
+      },
+      {
+        "command": "vscode-lm-proxy.stopServer",
+        "key": "ctrl+shift+l x",
+        "mac": "cmd+shift+l x",
+        "when": "vscode-lm-proxy.serverRunning"
+      },
+      {
+        "command": "vscode-lm-proxy.selectOpenAIModel",
+        "key": "ctrl+shift+l m",
+        "mac": "cmd+shift+l m"
+      }
+    ],
+    "menus": {
+      "commandPalette": [
+        {
+          "command": "vscode-lm-proxy.startServer",
+          "when": "!vscode-lm-proxy.serverRunning"
+        },
+        {
+          "command": "vscode-lm-proxy.stopServer",
+          "when": "vscode-lm-proxy.serverRunning"
+        }
+      ],
+      "statusBar/remoteIndicator": [
+        {
+          "command": "vscode-lm-proxy.startServer",
+          "when": "!vscode-lm-proxy.serverRunning"
+        },
+        {
+          "command": "vscode-lm-proxy.stopServer",
+          "when": "vscode-lm-proxy.serverRunning"
+        },
+        {
+          "command": "vscode-lm-proxy.selectOpenAIModel",
+          "group": "1_model"
+        }
+      ]
+    }
+  },
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx,cjs,mjs,json}": [
+      "biome check --write"
+    ]
+  },
+  "dependencies": {
+    "express": "4.21.2"
+  },
+  "devDependencies": {
+    "@anthropic-ai/sdk": "0.55.0",
+    "@biomejs/biome": "2.0.5",
+    "@types/express": "4.17.23",
+    "@types/node": "20.x",
+    "@types/vscode": "1.101.0",
+    "concurrently": "9.2.0",
+    "husky": "9.1.7",
+    "lint-staged": "16.1.2",
+    "openai": "5.7.0",
+    "typescript": "5.8.3"
+  },
+  "extensionDependencies": [],
+  "engines": {
+    "vscode": "^1.101.0"
+  },
+  "icon": "icon.png",
+  "galleryBanner": {
+    "color": "#1E1E1E",
+    "theme": "dark"
+  },
+  "capabilities": {
+    "virtualWorkspaces": {
+      "supported": false,
+      "description": "This extension requires a local environment as it uses VSCode's Language Model API"
+    },
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "This extension requires a trusted workspace as it uses VSCode's Language Model API"
+    }
+  },
+  "extensionKind": [
+    "ui"
+  ]
+}

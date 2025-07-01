@@ -1,0 +1,43 @@
+# VS Code拡張機能向け.gitignore
+
+# ビルドアウトプット
+out
+dist
+
+# 依存関係
+node_modules
+
+# VSCode拡張機能の開発用ファイル
+.vscode-test/
+*.vsix
+
+# TypeScriptコンパイルキャッシュ
+*.tsbuildinfo
+
+# ログファイル
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS固有のファイル
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# エディタ固有のファイル
+.idea/
+*.swp
+*.swo
+*~
+
+# 環境変数ファイル
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# カバレッジディレクトリ
+coverage/

@@ -1,1 +1,121 @@
-# vscode-litellm
+# LM Proxy
+
+An extension that exposes the VSCode Language Model API as OpenAI and Anthropic compatible REST APIs, allowing external applications to easily utilize VSCode's language capabilities via industry-standard API formats.
+
+## Features
+
+- **OpenAI & Anthropic Compatible APIs**: Exposes VSCode's Language Model API through REST APIs that are compatible with OpenAI's and Anthropic's formats.
+- **Multiple Model Support**: Seamlessly switch between different language models available in VSCode.
+- **Server Management**: Easily start and stop the proxy server through the VSCode command palette or status bar.
+- **Streaming Support**: Full support for streaming responses for real-time applications.
+- **Flexible Configuration**: Customize the server port and log levels to fit your needs.
+
+## Installation
+
+1. Open the **Extensions** view in VSCode.
+2. Search for "LM Proxy".
+3. Click **Install**.
+
+Alternatively, you can download the `.vsix` file from the [releases page](https://github.com/ryo-nakae/vscode-lm-proxy/releases) and install it manually using the "Install from VSIX..." command.
+
+## Usage
+
+### Starting the Server
+
+1. Open the Command Palette (`Ctrl+Shift+P` or `Cmd+Shift+P`).
+2. Run the `LM Proxy: Start LM Proxy Server` command.
+3. The server status will be displayed in the status bar.
+
+### Stopping the Server
+
+1. Open the Command Palette.
+2. Run the `LM Proxy: Stop LM Proxy Server` command.
+
+### Selecting a Language Model
+
+1. Open the Command Palette.
+2. Run the `LM Proxy: Select OpenAI API Model` or `LM Proxy: Select Anthropic API Model` command.
+3. Choose your desired model from the list.
+
+#### How Model Selection Works
+- If you specify the model name as `vscode-lm-proxy`, the model selected in the extension settings will be used.
+- If you specify a model name directly (e.g. `gpt-4.1`), that model will be used for the request.
+
+## API Reference
+
+The proxy server exposes the following endpoints:
+
+### OpenAI Compatible API
+
+- **Chat Completions**: `POST /openai/v1/chat/completions` (supports streaming via the `stream` parameter)
+
+```bash
+curl -X POST http://localhost:4000/openai/v1/chat/completions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "vscode-lm-proxy",
+    "messages": [{"role":"user","content":"Hello!"}],
+    "stream": true
+  }'
+```
+- **List Models**: `GET /openai/v1/models`
+
+```bash
+curl http://localhost:4000/openai/v1/models
+```
+- **Retrieve Model**: `GET /openai/v1/models/{model}`
+
+```bash
+curl http://localhost:4000/openai/v1/models/gpt-4.1
+```
+
+### Anthropic Compatible API
+
+- **Messages**: `POST /anthropic/v1/messages` (supports streaming via the `stream` parameter)
+
+```bash
+curl -X POST http://localhost:4000/anthropic/v1/messages \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "vscode-lm-proxy",
+    "messages": [{"role":"user","content":"Hello!"}],
+    "stream": true
+  }'
+```
+- **List Models**: `GET /anthropic/v1/models`
+
+```bash
+curl http://localhost:4000/anthropic/v1/models
+```
+- **Retrieve Model**: `GET /anthropic/v1/models/{model}`
+
+```bash
+curl http://localhost:4000/anthropic/v1/models/claude-3-sonnet-20240229
+```
+
+For detailed information about the request and response formats, please refer to the official [OpenAI API documentation](https://platform.openai.com/docs/api-reference) and [Anthropic API documentation](https://docs.anthropic.com/claude/reference/getting-started-with-the-api).
+
+## Configuration
+
+You can configure the extension settings in the VSCode settings UI or by editing your `settings.json` file.
+
+- `vscode-lm-proxy.port`: The port number for the proxy server. (Default: `4000`)
+- `vscode-lm-proxy.logLevel`: The log level for the extension. (Default: `0` for DEBUG)
+- `vscode-lm-proxy.showOutputOnStartup`: Whether to show the output panel on startup. (Default: `true`)
+
+## Commands
+
+The following commands are available in the Command Palette:
+
+- `LM Proxy: Start LM Proxy Server`: Starts the proxy server.
+- `LM Proxy: Stop LM Proxy Server`: Stops the proxy server.
+- `LM Proxy: Select OpenAI API Model`: Selects the OpenAI model to use.
+- `LM Proxy: Select Anthropic API Model`: Selects the Anthropic model to use.
+- `LM Proxy: Show Output Panel`: Shows the extension's output panel.
+- `LM Proxy: Clear Output Panel`: Clears the extension's output panel.
+- `LM Proxy: Set Debug Log Level`: Sets the log level to DEBUG.
+- `LM Proxy: Set Info Log Level`: Sets the log level to INFO.
+
+## License
+
+This extension is licensed under the [MIT License](LICENSE).
