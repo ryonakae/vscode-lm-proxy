@@ -68,7 +68,9 @@ class StatusBarManager {
     } else if (isRunning) {
       // 実行中
       this.statusBarItem.text = '$(server) LM Proxy'
-      this.statusBarItem.backgroundColor = undefined
+      this.statusBarItem.backgroundColor = new vscode.ThemeColor(
+        'statusBarItem.warningBackground',
+      )
       const url = serverManager.getServerUrl()
       this.statusBarItem.tooltip = `Server: Running (${url})`
     } else {
