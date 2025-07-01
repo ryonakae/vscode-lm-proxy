@@ -34,12 +34,17 @@ Alternatively, you can download the `.vsix` file from the [releases page](https:
 ### Selecting a Language Model
 
 1. Open the Command Palette.
-2. Run the `LM Proxy: Select OpenAI API Model` or `LM Proxy: Select Anthropic API Model` command.
+2. Run one of the following commands:
+   - `LM Proxy: Select OpenAI API Model`
+   - `LM Proxy: Select Anthropic API Model` 
+   - `LM Proxy: Select Claude Code API Model`
+   - `LM Proxy: Select Claude Code Background Model`
+   - `LM Proxy: Select Claude Code Thinking Model`
 3. Choose your desired model from the list.
 
 #### How Model Selection Works
 - If you specify the model name as `vscode-lm-proxy`, the model selected in the extension settings will be used.
-- If you specify a model name directly (e.g. `gpt-4.1`), that model will be used for the request.
+- If you specify a model name directly (e.g. `gpt-4.1`, `claude-3.5-sonnet`, or `vscode-lm-proxy`), that model will be used for the request.
 
 ## API Reference
 
@@ -83,15 +88,23 @@ curl -X POST http://localhost:4000/anthropic/v1/messages \
   }'
 ```
 - **List Models**: `GET /anthropic/v1/models`
-
-```bash
-curl http://localhost:4000/anthropic/v1/models
-```
 - **Retrieve Model**: `GET /anthropic/v1/models/{model}`
 
+### Claude Code Compatible API
+
+- **Messages**: `POST /anthropic/claude/v1/messages` (supports streaming via the `stream` parameter)
+
 ```bash
-curl http://localhost:4000/anthropic/v1/models/claude-3-sonnet-20240229
+curl -X POST http://localhost:4000/anthropic/claude/v1/messages \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "vscode-lm-proxy",
+    "messages": [{"role":"user","content":"Hello!"}],
+    "stream": true
+  }'
 ```
+- **List Models**: `GET /anthropic/claude/v1/models`
+- **Retrieve Model**: `GET /anthropic/claude/v1/models/{model}`
 
 For detailed information about the request and response formats, please refer to the official [OpenAI API documentation](https://platform.openai.com/docs/api-reference) and [Anthropic API documentation](https://docs.anthropic.com/claude/reference/getting-started-with-the-api).
 
@@ -111,6 +124,9 @@ The following commands are available in the Command Palette:
 - `LM Proxy: Stop LM Proxy Server`: Stops the proxy server.
 - `LM Proxy: Select OpenAI API Model`: Selects the OpenAI model to use.
 - `LM Proxy: Select Anthropic API Model`: Selects the Anthropic model to use.
+- `LM Proxy: Select Claude Code API Model`: Selects the Claude Code model to use.
+- `LM Proxy: Select Claude Code Background Model`: Selects the Claude Code background model to use.
+- `LM Proxy: Select Claude Code Thinking Model`: Selects the Claude Code thinking model to use.
 - `LM Proxy: Show Output Panel`: Shows the extension's output panel.
 - `LM Proxy: Clear Output Panel`: Clears the extension's output panel.
 - `LM Proxy: Set Debug Log Level`: Sets the log level to DEBUG.
