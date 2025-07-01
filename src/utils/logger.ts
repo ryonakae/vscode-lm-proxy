@@ -47,7 +47,13 @@ export class Logger {
       if (e.affectsConfiguration('vscode-lm-proxy.logLevel')) {
         const config = vscode.workspace.getConfiguration('vscode-lm-proxy')
         this.currentLogLevel = config.get<LogLevel>('logLevel') ?? LogLevel.INFO
-        this.info(`Log level changed to ${LogLevel[this.currentLogLevel]}`)
+
+        this.outputChannel.appendLine(
+          this.formatMessage(
+            'INFO',
+            `Log level changed to ${LogLevel[this.currentLogLevel]}`,
+          ),
+        )
       }
     })
   }
