@@ -1,27 +1,33 @@
 {
   "name": "vscode-lm-proxy",
   "displayName": "LM Proxy",
-  "version": "0.0.1",
-  "description": "VSCode Language Model API Proxy with OpenAI API compatibility",
+  "version": "1.0.1",
+  "description": "Expose VSCode's Language Model API as OpenAI, Anthropic, and Claude Code compatible REST APIs. Easily connect external apps to VSCode's LLMs with streaming, model selection, and full API compatibility.",
   "categories": [
-    "Other",
-    "Machine Learning",
-    "Snippets"
+    "AI",
+    "Chat"
   ],
   "keywords": [
+    "vscode",
     "language model",
-    "ai",
     "llm",
     "openai",
-    "proxy"
+    "anthropic",
+    "claude",
+    "proxy",
+    "rest api",
+    "ai",
+    "chat",
+    "streaming",
+    "extension"
   ],
-  "homepage": "https://github.com/ryo-nakae/vscode-lm-proxy",
+  "homepage": "https://github.com/ryonakae/vscode-lm-proxy",
   "bugs": {
-    "url": "https://github.com/ryo-nakae/vscode-lm-proxy/issues"
+    "url": "https://github.com/ryonakae/vscode-lm-proxy/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/ryo-nakae/vscode-lm-proxy.git"
+    "url": "https://github.com/ryonakae/vscode-lm-proxy.git"
   },
   "license": "MIT",
   "author": {
@@ -54,6 +60,21 @@
         "category": "LM Proxy"
       },
       {
+        "command": "vscode-lm-proxy.selectAnthropicModel",
+        "title": "Select Anthropic API Model",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.selectClaudeCodeBackgroundModel",
+        "title": "Select Claude Code Background Model",
+        "category": "LM Proxy"
+      },
+      {
+        "command": "vscode-lm-proxy.selectClaudeCodeThinkingModel",
+        "title": "Select Claude Code Thinking Model",
+        "category": "LM Proxy"
+      },
+      {
         "command": "vscode-lm-proxy.showOutput",
         "title": "Show Output Panel",
         "category": "LM Proxy"
@@ -64,13 +85,8 @@
         "category": "LM Proxy"
       },
       {
-        "command": "vscode-lm-proxy.setDebugLogLevel",
-        "title": "Set Debug Log Level (Show Detailed Logs)",
-        "category": "LM Proxy"
-      },
-      {
-        "command": "vscode-lm-proxy.setInfoLogLevel",
-        "title": "Set Info Log Level (Show Basic Logs)",
+        "command": "vscode-lm-proxy.setLogLevel",
+        "title": "Set Log Level",
         "category": "LM Proxy"
       }
     ],
@@ -93,7 +109,7 @@
             3
           ],
           "enumDescriptions": [
-            "DEBUG: Output all logs including detailed information (default)",
+            "DEBUG: Output all logs including detailed information",
             "INFO: Output information, warnings, and errors only",
             "WARN: Output warnings and errors only",
             "ERROR: Output errors only"
@@ -103,30 +119,11 @@
         },
         "vscode-lm-proxy.showOutputOnStartup": {
           "type": "boolean",
-          "default": true,
+          "default": false,
           "description": "Whether to display the output panel when the extension starts"
         }
       }
     },
-    "keybindings": [
-      {
-        "command": "vscode-lm-proxy.startServer",
-        "key": "ctrl+shift+l s",
-        "mac": "cmd+shift+l s",
-        "when": "!vscode-lm-proxy.serverRunning"
-      },
-      {
-        "command": "vscode-lm-proxy.stopServer",
-        "key": "ctrl+shift+l x",
-        "mac": "cmd+shift+l x",
-        "when": "vscode-lm-proxy.serverRunning"
-      },
-      {
-        "command": "vscode-lm-proxy.selectOpenAIModel",
-        "key": "ctrl+shift+l m",
-        "mac": "cmd+shift+l m"
-      }
-    ],
     "menus": {
       "commandPalette": [
         {

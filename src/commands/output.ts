@@ -25,29 +25,40 @@ export function registerOutputCommands(context: vscode.ExtensionContext): void {
     },
   )
 
-  // DEBUGレベルに設定するコマンド
-  const setDebugLevelCommand = vscode.commands.registerCommand(
-    'vscode-lm-proxy.setDebugLogLevel',
+  // ログレベルをQuickPickで選択して設定するコマンド
+  const setLogLevelCommand = vscode.commands.registerCommand(
+    'vscode-lm-proxy.setLogLevel',
     async () => {
       const config = vscode.workspace.getConfiguration('vscode-lm-proxy')
-      await config.update('logLevel', 0, vscode.ConfigurationTarget.Global)
-      logger.info(
-        'Log level set to DEBUG. Detailed request/response logs will be shown.',
-      )
-      logger.show(false)
-    },
-  )
-
-  // INFOレベルに設定するコマンド
-  const setInfoLevelCommand = vscode.commands.registerCommand(
-    'vscode-lm-proxy.setInfoLogLevel',
-    async () => {
-      const config = vscode.workspace.getConfiguration('vscode-lm-proxy')
-      await config.update('logLevel', 1, vscode.ConfigurationTarget.Global)
-      logger.info(
-        'Log level set to INFO. Basic request/response logs will be shown.',
-      )
-      logger.show(false)
+      const logLevels = [
+        {
+          label: 'DEBUG',
+          description: 'Show detailed request/response logs',
+          value: 0,
+        },
+        {
+          label: 'INFO',
+          description: 'Show basic request/response logs',
+          value: 1,
+        },
+        {
+          label: 'WARN',
+          description: 'Show only warnings and errors',
+          value: 2,
+        },
+        { label: 'ERROR', description: 'Show only errors', value: 3 },
+      ]
+      const selected = await vscode.window.showQuickPick(logLevels, {
+        placeHolder: 'Select log level',
+      })
+      if (selected) {
+        await config.update(
+          'logLevel',
+          selected.value,
+          vscode.ConfigurationTarget.Global,
+        )
+        logger.show(false)
+      }
     },
   )
 
@@ -55,7 +66,6 @@ export function registerOutputCommands(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     showOutputCommand,
     clearOutputCommand,
-    setDebugLevelCommand,
-    setInfoLevelCommand,
+    setLogLevelCommand,
   )
 }
