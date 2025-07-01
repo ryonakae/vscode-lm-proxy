@@ -33,7 +33,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
   options: vscode.LanguageModelChatRequestOptions
   inputTokens: number
 }> {
-  logger.info('Converting Anthropic request to VSCode request')
+  logger.debug('Converting Anthropic request to VSCode request')
 
   // --- messages変換 ---
   const messages: vscode.LanguageModelChatMessage[] = []
@@ -293,7 +293,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
   }
 
   // --- 変換結果をログ出力 ---
-  logger.info('Converted Anthropic request to VSCode request', {
+  logger.debug('Converted Anthropic request to VSCode request', {
     messages,
     options,
     inputTokens,

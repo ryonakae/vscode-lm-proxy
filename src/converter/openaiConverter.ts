@@ -27,7 +27,7 @@ export async function convertOpenAIRequestToVSCodeRequest(
   options: vscode.LanguageModelChatRequestOptions
   inputTokens: number
 }> {
-  logger.info('Converting OpenAI request to VSCode request')
+  logger.debug('Converting OpenAI request to VSCode request')
 
   // OpenAIのmessagesをVSCodeのLanguageModelChatMessage[]に変換
   const messages: vscode.LanguageModelChatMessage[] =
@@ -195,7 +195,7 @@ export async function convertOpenAIRequestToVSCodeRequest(
   }
 
   // --- 変換結果をログ出力 ---
-  logger.info('Converted OpenAI request to VSCode request', {
+  logger.debug('Converted OpenAI request to VSCode request', {
     messages,
     options,
     inputTokens,

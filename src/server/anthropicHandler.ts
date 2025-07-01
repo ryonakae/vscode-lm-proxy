@@ -64,7 +64,7 @@ export async function handleAnthropicMessages(
 ) {
   try {
     const body = req.body as MessageCreateParams
-    logger.info('Received request', { body })
+    logger.debug('Received request', { body })
 
     // 必須フィールドのバリデーション
     validateMessagesRequest(body)
@@ -88,7 +88,7 @@ export async function handleAnthropicMessages(
       options,
       cancellationToken,
     )
-    logger.info('Received response from LM API')
+    logger.debug('Received response from LM API')
 
     // レスポンスをAnthropic形式に変換
     const anthropicResponse = convertVSCodeResponseToAnthropicResponse(
@@ -97,7 +97,7 @@ export async function handleAnthropicMessages(
       isStreaming,
       inputTokens,
     )
-    logger.info('anthropicResponse', {
+    logger.debug('anthropicResponse', {
       anthropicResponse,
       vsCodeModel,
       isStreaming,
@@ -115,7 +115,7 @@ export async function handleAnthropicMessages(
 
     // 非ストリーミングレスポンス処理
     const message = await (anthropicResponse as Promise<Message>)
-    logger.info('message', { message })
+    logger.debug('message', { message })
     res.json(message)
   } catch (error) {
     const { statusCode, errorObject } = handleMessageError(
@@ -172,7 +172,7 @@ async function handleStreamingResponse(
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
 
-  logger.info('Streaming started', { path: reqPath })
+  logger.debug('Streaming started', { path: reqPath })
   let chunkIndex = 0
 
   try {
@@ -180,12 +180,12 @@ async function handleStreamingResponse(
     for await (const chunk of stream) {
       const data = JSON.stringify(chunk)
       res.write(`data: ${data}\n\n`)
-      logger.info(`Streaming chunk: ${data}`)
+      logger.debug(`Streaming chunk: ${data}`)
       chunkIndex++
     }
 
     // 正常終了
-    logger.info('Streaming ended', {
+    logger.debug('Streaming ended', {
       path: reqPath,
       chunkCount: chunkIndex,
     })

@@ -61,7 +61,7 @@ async function handleOpenAIChatCompletions(
 ) {
   try {
     const body = req.body as ChatCompletionCreateParams
-    logger.info('Received request', { body })
+    logger.debug('Received request', { body })
 
     // 必須フィールドのバリデーション
     validateChatCompletionRequest(body)
@@ -85,7 +85,7 @@ async function handleOpenAIChatCompletions(
       options,
       cancellationToken,
     )
-    logger.info('Received response from LM API')
+    logger.debug('Received response from LM API')
 
     // レスポンスをOpenAI形式に変換
     const openAIResponse = convertVSCodeResponseToOpenAIResponse(
@@ -94,7 +94,7 @@ async function handleOpenAIChatCompletions(
       isStreaming,
       inputTokens,
     )
-    logger.info('openAIResponse', {
+    logger.debug('openAIResponse', {
       openAIResponse,
       vsCodeModel,
       isStreaming,
@@ -112,7 +112,7 @@ async function handleOpenAIChatCompletions(
 
     // 非ストリーミングレスポンス処理
     const completion = await (openAIResponse as Promise<ChatCompletion>)
-    logger.info('completion', { completion })
+    logger.debug('completion', { completion })
     res.json(completion)
   } catch (error) {
     const { statusCode, apiError } = handleChatCompletionError(
@@ -169,7 +169,7 @@ async function handleStreamingResponse(
   res.setHeader('Cache-Control', 'no-cache')
   res.setHeader('Connection', 'keep-alive')
 
-  logger.info('Streaming started', { stream: 'start', path: reqPath })
+  logger.debug('Streaming started', { stream: 'start', path: reqPath })
   let chunkIndex = 0
 
   try {
@@ -177,14 +177,14 @@ async function handleStreamingResponse(
     for await (const chunk of stream) {
       const data = JSON.stringify(chunk)
       res.write(`data: ${data}\n\n`)
-      logger.info(
+      logger.debug(
         `Streaming chunk: ${JSON.stringify({ stream: 'chunk', chunk, index: chunkIndex++ })}`,
       )
     }
 
     // 正常終了
     res.write('data: [DONE]\n\n')
-    logger.info('Streaming ended', {
+    logger.debug('Streaming ended', {
       stream: 'end',
       path: reqPath,
       chunkCount: chunkIndex,

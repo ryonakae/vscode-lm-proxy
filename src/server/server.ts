@@ -34,7 +34,7 @@ export function createServer(): express.Express {
     res.on('finish', () => {
       const responseTime = Date.now() - startTime
       // 必要に応じてbodyは省略（Express標準ではbodyはここで取得できません）
-      logger.info('Response sent', {
+      logger.debug('Response sent', {
         status: res.statusCode,
         path,
         responseTime,

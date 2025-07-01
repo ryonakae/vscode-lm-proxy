@@ -98,7 +98,7 @@
             "WARN: Output warnings and errors only",
             "ERROR: Output errors only"
           ],
-          "default": 0,
+          "default": 1,
           "description": "Log level (0:DEBUG, 1:INFO, 2:WARN, 3:ERROR)"
         },
         "vscode-lm-proxy.showOutputOnStartup": {

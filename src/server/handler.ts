@@ -64,13 +64,13 @@ export async function getVSCodeModel(
       }
     }
 
-    logger.info('Selected model ID:', selectedModelId)
+    logger.debug('Selected model ID:', selectedModelId)
 
     // モデル取得
     const [vsCodeModel] = await vscode.lm.selectChatModels({
       id: selectedModelId as string,
     })
-    logger.info('Retrieved VSCode model:', { vsCodeModel })
+    logger.debug('Retrieved VSCode model:', { vsCodeModel })
 
     if (!vsCodeModel) {
       throw new Error(`Model ${selectedModelId} not found`)
