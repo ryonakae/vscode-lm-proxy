@@ -3,6 +3,7 @@ import type {
   ErrorObject,
   Message,
   MessageCreateParams,
+  MessageTokensCount,
   ModelInfo,
   RawMessageStreamEvent,
 } from '@anthropic-ai/sdk/resources'
@@ -28,6 +29,9 @@ export function setupAnthropicMessagesEndpoints(app: express.Express): void {
   )
   app.post('/anthropic/v1/messages', (req, res) =>
     handleAnthropicMessages(req, res, 'anthropic'),
+  )
+  app.post('/anthropic/v1/messages/count_tokens', (req, res) =>
+    handleAnthropicCountTokens(req, res, 'anthropic'),
   )
 }
 
@@ -335,6 +339,86 @@ export async function handleAnthropicModels(
     }
 
     res.status(statusCode).json(errorResponse)
+  }
+}
+
+/**
+ * Anthropic互換のトークン数カウントAPIリクエストを処理する
+ * @param {express.Request} req リクエスト
+ * @param {express.Response} res レスポンス
+ * @param {string} provider プロバイダー ('anthropic' | 'claude')
+ * @returns {Promise<void>}
+ */
+export async function handleAnthropicCountTokens(
+  req: express.Request,
+  res: express.Response,
+  provider: 'anthropic' | 'claude',
+) {
+  try {
+    const body = req.body as MessageCreateParams
+    logger.debug('Received count_tokens request', { body })
+
+    // VSCodeモデル取得
+    const { vsCodeModel } = await getVSCodeModel(body.model, provider)
+
+    // 対象テキストを定義
+    let targetText = ''
+
+    // messages
+    for (const message of body.messages) {
+      // role
+      targetText += message.role
+
+      // content
+      if (typeof message.content === 'string') {
+        targetText += message.content
+      } else {
+        targetText += message.content.map(part => JSON.stringify(part)).join('')
+      }
+    }
+
+    // system
+    if (body.system) {
+      if (typeof body.system === 'string') {
+        targetText += body.system
+      } else {
+        targetText += body.system.map(part => part.text).join('')
+      }
+    }
+
+    // tools
+    if (body.tools) {
+      for (const tool of body.tools) {
+        // name
+        targetText += tool.name
+
+        // description
+        if ('description' in tool && tool.description) {
+          targetText += tool.description
+        }
+
+        // input_schema
+        if ('input_schema' in tool) {
+          targetText += JSON.stringify(tool.input_schema)
+        }
+      }
+    }
+
+    // トークン数をカウント
+    const tokens = await vsCodeModel.countTokens(targetText)
+    const messageTokenCount: MessageTokensCount = {
+      input_tokens: tokens,
+    }
+
+    logger.debug('messageTokenCount', { messageTokenCount })
+
+    // レスポンス返却
+    res.json(messageTokenCount)
+  } catch (error) {
+    const { statusCode, errorObject } = handleMessageError(
+      error as vscode.LanguageModelError,
+    )
+    res.status(statusCode).json({ type: 'error', error: errorObject })
   }
 }
 
