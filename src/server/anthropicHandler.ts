@@ -362,27 +362,31 @@ export async function handleAnthropicCountTokens(
     const { vsCodeModel } = await getVSCodeModel(body.model, provider)
 
     // 対象テキストを定義
-    let targetText = ''
+    let inputTokens = 0
 
     // messages
     for (const message of body.messages) {
       // role
-      targetText += message.role
+      inputTokens += await vsCodeModel.countTokens(message.role)
 
       // content
       if (typeof message.content === 'string') {
-        targetText += message.content
+        inputTokens += await vsCodeModel.countTokens(message.content)
       } else {
-        targetText += message.content.map(part => JSON.stringify(part)).join('')
+        const content = message.content
+          .map(part => JSON.stringify(part))
+          .join(' ')
+        inputTokens += await vsCodeModel.countTokens(content)
       }
     }
 
     // system
     if (body.system) {
       if (typeof body.system === 'string') {
-        targetText += body.system
+        inputTokens += await vsCodeModel.countTokens(body.system)
       } else {
-        targetText += body.system.map(part => part.text).join('')
+        const text = body.system.map(part => part.text).join(' ')
+        inputTokens += await vsCodeModel.countTokens(text)
       }
     }
 
@@ -390,28 +394,25 @@ export async function handleAnthropicCountTokens(
     if (body.tools) {
       for (const tool of body.tools) {
         // name
-        targetText += tool.name
+        inputTokens += await vsCodeModel.countTokens(tool.name)
 
         // description
         if ('description' in tool && tool.description) {
-          targetText += tool.description
+          inputTokens += await vsCodeModel.countTokens(tool.description)
         }
 
         // input_schema
         if ('input_schema' in tool) {
-          targetText += JSON.stringify(tool.input_schema)
+          const inputSchema = JSON.stringify(tool.input_schema)
+          inputTokens += await vsCodeModel.countTokens(inputSchema)
         }
       }
     }
 
-    logger.debug({ targetText })
-
-    // トークン数をカウント
-    const tokens = await vsCodeModel.countTokens(targetText)
+    // レスポンスオブジェクトを作成
     const messageTokenCount: MessageTokensCount = {
-      input_tokens: tokens,
+      input_tokens: inputTokens,
     }
-
     logger.debug({ messageTokenCount })
 
     // レスポンス返却
