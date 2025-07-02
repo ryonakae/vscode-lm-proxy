@@ -180,7 +180,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
         options.toolMode = vscode.LanguageModelChatToolMode.Auto
         break
       case 'any':
-        options.toolMode = vscode.LanguageModelChatToolMode.Auto
+        options.toolMode = vscode.LanguageModelChatToolMode.Required
         break
       case 'tool':
         options.toolMode = vscode.LanguageModelChatToolMode.Required
@@ -199,14 +199,14 @@ export async function convertAnthropicRequestToVSCodeRequest(
         case 'bash':
           return {
             name: tool.name,
-            description: `Bash shell execution. type: ${tool.type}`,
+            description: `Bash shell execution. Type: ${tool.type}`,
             inputSchema: undefined,
           }
         // code execution
         case 'code_execution':
           return {
             name: tool.name,
-            description: `Code execution. type: ${tool.type}`,
+            description: `Code execution. Type: ${tool.type}`,
             inputSchema: undefined,
           }
         // computer use
@@ -214,7 +214,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
           const computerTool = tool as any
           return {
             name: computerTool.name,
-            description: `Computer use tool. type: ${tool.type}`,
+            description: `Computer use tool. Type: ${tool.type}`,
             inputSchema: {
               display_height_px: computerTool.display_height_px,
               display_width_px: computerTool.display_width_px,
@@ -226,14 +226,14 @@ export async function convertAnthropicRequestToVSCodeRequest(
         case 'str_replace_editor': {
           return {
             name: tool.name,
-            description: `Text editor tool. type: ${tool.type}`,
+            description: `Text editor tool. Type: ${tool.type}`,
           }
         }
         // text editor (str_replace_based_edit_tool)
         case 'str_replace_based_edit_tool': {
           return {
             name: tool.name,
-            description: `Text editor tool. type: ${tool.type}`,
+            description: `Text editor tool. Type: ${tool.type}`,
           }
         }
         // web search
@@ -241,7 +241,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
           const webSearchTool = tool as WebSearchTool20250305
           return {
             name: tool.name,
-            description: `Web search tool. type: ${tool.type}`,
+            description: `Web search tool. Type: ${tool.type}`,
             inputSchema: {
               allowed_domains: webSearchTool.allowed_domains,
               blocked_domains: webSearchTool.blocked_domains,
@@ -255,7 +255,8 @@ export async function convertAnthropicRequestToVSCodeRequest(
           const customTool = tool as Tool
           return {
             name: customTool.name,
-            description: customTool.description ?? '',
+            description:
+              customTool.description ?? `Custom tool. Name: ${customTool.name}`,
             inputSchema: customTool.input_schema,
           }
         }
@@ -266,7 +267,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
   // --- その他パラメータはmodelOptionsに集約 ---
   const modelOptions: { [name: string]: any } = {}
   const modelOptionKeys = [
-    'max_tokens',
+    // 'max_tokens',
     'container',
     'mcp_servers',
     'metadata',
@@ -279,7 +280,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
     'top_p',
   ]
 
-  // --- その他のオプションをmodelOptionsに追加 ---
+  // オプションをmodelOptions
   for (const key of modelOptionKeys) {
     if (
       key in anthropicRequest &&
@@ -288,6 +289,13 @@ export async function convertAnthropicRequestToVSCodeRequest(
       modelOptions[key] = (anthropicRequest as any)[key]
     }
   }
+
+  // max_tokensを変換
+  // max_tokensが1の場合は少し大きい数字に変換、それ以外の場合はそのまま使用
+  modelOptions.max_tokens =
+    anthropicRequest.max_tokens === 1 ? 16 : anthropicRequest.max_tokens
+
+  // modelOptionsが空でなければoptionsに追加
   if (Object.keys(modelOptions).length > 0) {
     options.modelOptions = modelOptions
   }
