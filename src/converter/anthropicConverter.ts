@@ -267,7 +267,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
   // --- その他パラメータはmodelOptionsに集約 ---
   const modelOptions: { [name: string]: any } = {}
   const modelOptionKeys = [
-    'max_tokens',
+    // 'max_tokens',
     'container',
     'mcp_servers',
     'metadata',
@@ -280,7 +280,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
     'top_p',
   ]
 
-  // --- その他のオプションをmodelOptionsに追加 ---
+  // オプションをmodelOptions
   for (const key of modelOptionKeys) {
     if (
       key in anthropicRequest &&
@@ -289,6 +289,13 @@ export async function convertAnthropicRequestToVSCodeRequest(
       modelOptions[key] = (anthropicRequest as any)[key]
     }
   }
+
+  // max_tokensを変換
+  // max_tokensが1の場合は少し大きい数字に変換、それ以外の場合はそのまま使用
+  modelOptions.max_tokens =
+    anthropicRequest.max_tokens === 1 ? 16 : anthropicRequest.max_tokens
+
+  // modelOptionsが空でなければoptionsに追加
   if (Object.keys(modelOptions).length > 0) {
     options.modelOptions = modelOptions
   }
