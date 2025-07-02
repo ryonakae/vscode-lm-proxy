@@ -404,13 +404,15 @@ export async function handleAnthropicCountTokens(
       }
     }
 
+    logger.debug({ targetText })
+
     // トークン数をカウント
     const tokens = await vsCodeModel.countTokens(targetText)
     const messageTokenCount: MessageTokensCount = {
       input_tokens: tokens,
     }
 
-    logger.debug('messageTokenCount', { messageTokenCount })
+    logger.debug({ messageTokenCount })
 
     // レスポンス返却
     res.json(messageTokenCount)
