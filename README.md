@@ -95,6 +95,16 @@ curl -X POST http://localhost:4000/anthropic/v1/messages \
     "stream": true
   }'
 ```
+- **Count Tokens**: `POST /anthropic/v1/messages/count_tokens` (counts the number of tokens in a message)
+
+```bash
+curl -X POST http://localhost:4000/anthropic/v1/messages/count_tokens \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "model": "vscode-lm-proxy",
+    "messages": [{"role":"user","content":"Hello, Claude"}]
+  }'
+```
 - **List Models**: `GET /anthropic/v1/models`
 - **Retrieve Model**: `GET /anthropic/v1/models/{model}`
 
@@ -111,6 +121,7 @@ curl -X POST http://localhost:4000/anthropic/claude/v1/messages \
     "stream": true
   }'
 ```
+- **Count Tokens**: `POST /anthropic/claude/v1/messages/count_tokens`
 - **List Models**: `GET /anthropic/claude/v1/models`
 - **Retrieve Model**: `GET /anthropic/claude/v1/models/{model}`
 

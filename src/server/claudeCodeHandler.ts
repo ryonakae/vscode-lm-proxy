@@ -1,5 +1,6 @@
 import type express from 'express'
 import {
+  handleAnthropicCountTokens,
   handleAnthropicMessages,
   handleAnthropicModelInfo,
   handleAnthropicModels,
@@ -11,12 +12,18 @@ import {
  * @returns {void}
  */
 export function setupClaudeCodeMessagesEndpoints(app: express.Express): void {
-  // Anthropic API互換エンドポイントを登録
   app.post('/anthropic/claude/messages', (req, res) =>
     handleAnthropicMessages(req, res, 'claude'),
   )
   app.post('/anthropic/claude/v1/messages', (req, res) =>
     handleAnthropicMessages(req, res, 'claude'),
+  )
+
+  app.post('/anthropic/claude/messages/count_tokens', (req, res) =>
+    handleAnthropicCountTokens(req, res, 'claude'),
+  )
+  app.post('/anthropic/claude/v1/messages/count_tokens', (req, res) =>
+    handleAnthropicCountTokens(req, res, 'claude'),
   )
 }
 
