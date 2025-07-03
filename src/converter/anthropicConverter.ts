@@ -73,8 +73,8 @@ export async function convertAnthropicRequestToVSCodeRequest(
         | string
         | Array<
             | vscode.LanguageModelTextPart
-            | vscode.LanguageModelToolResultPart
             | vscode.LanguageModelToolCallPart
+            | vscode.LanguageModelToolResultPart
           > = ''
       let name = 'Assistant'
 
@@ -279,8 +279,6 @@ export async function convertAnthropicRequestToVSCodeRequest(
     'top_k',
     'top_p',
   ]
-
-  // オプションをmodelOptions
   for (const key of modelOptionKeys) {
     if (
       key in anthropicRequest &&

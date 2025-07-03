@@ -9,6 +9,10 @@ import {
   setupClaudeCodeMessagesEndpoints,
   setupClaudeCodeModelsEndpoints,
 } from './claudeCodeHandler'
+import {
+  setupGeminiGenerateContentEndpoints,
+  setupGeminiModelsEndpoints,
+} from './geminiHandler'
 import { setupStatusEndpoint } from './handler'
 import {
   setupOpenAIChatCompletionsEndpoints,
@@ -58,6 +62,10 @@ export function createServer(): express.Express {
   // ClaudeCode互換APIエンドポイントのセットアップ
   setupClaudeCodeMessagesEndpoints(app)
   setupClaudeCodeModelsEndpoints(app)
+
+  // Gemini互換APIエンドポイントのセットアップ
+  setupGeminiGenerateContentEndpoints(app)
+  setupGeminiModelsEndpoints(app)
 
   // エラーハンドラーの設定
   app.use(

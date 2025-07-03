@@ -165,6 +165,7 @@
   "devDependencies": {
     "@anthropic-ai/sdk": "0.55.0",
     "@biomejs/biome": "2.0.5",
+    "@google/genai": "1.8.0",
     "@types/express": "4.17.23",
     "@types/node": "20.x",
     "@types/vscode": "1.101.0",
