@@ -68,7 +68,7 @@ export async function handleAnthropicMessages(
 ) {
   try {
     const body = req.body as MessageCreateParams
-    logger.debug('Received request', { body })
+    logger.debug('Received anthropic request', { body })
 
     // 必須フィールドのバリデーション
     validateMessagesRequest(body)

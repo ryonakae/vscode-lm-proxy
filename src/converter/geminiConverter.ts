@@ -101,6 +101,7 @@ export async function convertGeminiRequestToVSCodeRequest(
     }
   }
 
+  // contentsを変換
   if (Array.isArray(geminiRequest.contents)) {
     // Content[] | PartUnion[] の場合
     messages.push(
@@ -446,6 +447,9 @@ function convertPart(
     return new vscode.LanguageModelTextPart(
       `[Code Execution Result] ${JSON.stringify(part.codeExecutionResult)}`,
     )
+  }
+  if (part.text) {
+    return new vscode.LanguageModelTextPart(part.text)
   }
   return new vscode.LanguageModelTextPart(
     `[Unknown Part] ${JSON.stringify(part)}`,

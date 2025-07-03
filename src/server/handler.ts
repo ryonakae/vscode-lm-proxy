@@ -37,7 +37,7 @@ export function setupStatusEndpoint(app: express.Express): void {
  */
 export async function getVSCodeModel(
   modelId: string,
-  provider: 'openai' | 'anthropic' | 'claude',
+  provider: 'openai' | 'anthropic' | 'claude' | 'gemini',
 ): Promise<{ vsCodeModel: vscode.LanguageModelChat; vsCodeModelId: string }> {
   try {
     let selectedModelId: string | null = modelId

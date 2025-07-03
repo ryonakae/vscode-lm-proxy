@@ -23,33 +23,20 @@ export function setupGeminiGenerateContentEndpoints(
     '/gemini/v1beta/:model\\:generateContent',
     handleGeminiGenerateContent,
   )
-  app.post('/gemini/v1/:model\\:generateContent', handleGeminiGenerateContent)
   app.post(
     '/gemini/v1beta/models/:model\\:generateContent',
     handleGeminiGenerateContent,
   )
-  app.post(
-    '/gemini/v1/models/:model\\:generateContent',
-    handleGeminiGenerateContent,
-  )
 
-  // ストリーミングバージョン
-  app.post(
-    '/gemini/v1beta/:model\\:streamGenerateContent',
-    handleGeminiStreamGenerateContent,
-  )
-  app.post(
-    '/gemini/v1/:model\\:streamGenerateContent',
-    handleGeminiStreamGenerateContent,
-  )
-  app.post(
-    '/gemini/v1beta/models/:model\\:streamGenerateContent',
-    handleGeminiStreamGenerateContent,
-  )
-  app.post(
-    '/gemini/v1/models/:model\\:streamGenerateContent',
-    handleGeminiStreamGenerateContent,
-  )
+  // // ストリーミングバージョン
+  // app.post(
+  //   '/gemini/v1beta/:model\\:streamGenerateContent',
+  //   handleGeminiStreamGenerateContent,
+  // )
+  // app.post(
+  //   '/gemini/v1beta/models/:model\\:streamGenerateContent',
+  //   handleGeminiStreamGenerateContent,
+  // )
 }
 
 /**
@@ -61,12 +48,10 @@ export function setupGeminiModelsEndpoints(app: express.Express): void {
   // モデル一覧エンドポイント
   // 公式形式: https://generativelanguage.googleapis.com/v1beta/models
   app.get('/gemini/v1beta/models', handleGeminiModels)
-  app.get('/gemini/v1/models', handleGeminiModels)
 
   // 特定モデル情報エンドポイント
   // 公式形式: https://generativelanguage.googleapis.com/v1beta/{name=models/*}
   app.get('/gemini/v1beta/models/:model', handleGeminiModelInfo)
-  app.get('/gemini/v1/models/:model', handleGeminiModelInfo)
 }
 
 /**
@@ -86,25 +71,22 @@ async function handleGeminiGenerateContent(
 ) {
   try {
     const body = req.body
-    logger.debug('Received request', { body })
+    logger.debug('Received gemini request', { body })
 
-    // 必須フィールドのバリデーション
-    validateGenerateContentRequest(body)
+    // // 必須フィールドのバリデーション
+    // validateGenerateContentRequest(body)
 
     // モデル取得
-    const { vsCodeModel } = await getVSCodeModel(body.model, 'gemini')
+    const { vsCodeModel } = await getVSCodeModel(body.model, 'anthropic')
 
-    // ストリーミングモード判定
-    const isStreaming = body.stream === true
+    // // ストリーミングモード判定
+    // const isStreaming = body.stream === true
 
-    // この部分はまだ未実装
-    // TODO: 実際の処理を実装する
+    //Geminiリクエスト→VSCode LM API形式変換
+    const { messages, options, inputTokens } =
+      await convertGeminiRequestToVSCodeRequest(body, vsCodeModel)
 
-    res.status(501).json({
-      error: {
-        message: 'Not implemented yet',
-      },
-    })
+    res.json({})
   } catch (error) {
     // エラー処理
     const statusCode = 500
