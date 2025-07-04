@@ -14,27 +14,36 @@ class ModelManager {
    */
   public setExtensionContext(context: vscode.ExtensionContext) {
     this.extensionContext = context
+
     // 起動時に保存済みモデル情報があれば復元
     const savedOpenAIModelId = context.globalState.get<string>('openaiModelId')
     if (savedOpenAIModelId) {
       this.openaiModelId = savedOpenAIModelId
     }
+
     const savedAnthropicModelId =
       context.globalState.get<string>('anthropicModelId')
     if (savedAnthropicModelId) {
       this.anthropicModelId = savedAnthropicModelId
     }
+
     const savedClaudeCodeBackgroundModelId = context.globalState.get<string>(
       'claudeCodeBackgroundModelId',
     )
     if (savedClaudeCodeBackgroundModelId) {
       this.claudeCodeBackgroundModelId = savedClaudeCodeBackgroundModelId
     }
+
     const savedClaudeCodeThinkingModelId = context.globalState.get<string>(
       'claudeCodeThinkingModelId',
     )
     if (savedClaudeCodeThinkingModelId) {
       this.claudeCodeThinkingModelId = savedClaudeCodeThinkingModelId
+    }
+
+    const savedGeminiModelId = context.globalState.get<string>('geminiModelId')
+    if (savedGeminiModelId) {
+      this.geminiModelId = savedGeminiModelId
     }
   }
   // 選択中のOpenAIモデルID
@@ -48,6 +57,9 @@ class ModelManager {
 
   // Claude Code Thinking Model
   private claudeCodeThinkingModelId: string | null = null
+
+  // 選択中のGeminiモデルID
+  private geminiModelId: string | null = null
 
   // サポートするモデルファミリー
   private supportedFamilies = [
@@ -81,6 +93,11 @@ class ModelManager {
   public readonly onDidChangeClaudeCodeThinkingModelId =
     this._onDidChangeClaudeCodeThinkingModelId.event
 
+  // Geminiモデル変更時のイベントエミッター
+  private readonly _onDidChangeGeminiModelId = new vscode.EventEmitter<void>()
+  public readonly onDidChangeGeminiModelId =
+    this._onDidChangeGeminiModelId.event
+
   /**
    * 利用可能なモデルからモデルを選択する
    * @param provider APIプロバイダー（'openAI' または 'anthropic'）
@@ -91,7 +108,8 @@ class ModelManager {
       | 'openAI'
       | 'anthropic'
       | 'claudeCodeBackground'
-      | 'claudeCodeThinking',
+      | 'claudeCodeThinking'
+      | 'gemini',
   ): Promise<string | undefined> {
     try {
       // サポートされているモデルが見つかるまで順番に試す
@@ -173,6 +191,9 @@ class ModelManager {
               logger.info(
                 `Selected Claude Code Thinking model: ${this.claudeCodeThinkingModelId}`,
               )
+            } else if (provider === 'gemini') {
+              this.setGeminiModelId(selectedItem.model.id)
+              logger.info(`Selected Gemini model: ${this.geminiModelId}`)
             }
 
             // QuickPickを閉じて選択結果を返す
@@ -220,6 +241,10 @@ class ModelManager {
 
   public getClaudeCodeThinkingModelId(): string | null {
     return this.claudeCodeThinkingModelId
+  }
+
+  public getGeminiModelId(): string | null {
+    return this.geminiModelId
   }
 
   /**
@@ -281,6 +306,22 @@ class ModelManager {
       )
     }
     this._onDidChangeClaudeCodeThinkingModelId.fire()
+  }
+
+  /**
+   * 選択中のGeminiモデルIDをセット・保存
+   */
+  public setGeminiModelId(modelId: string): void {
+    this.geminiModelId = modelId
+    // 永続化
+    if (this.extensionContext) {
+      this.extensionContext.globalState.update(
+        'geminiModelId',
+        this.geminiModelId,
+      )
+    }
+    // 必要ならイベント発火
+    this._onDidChangeGeminiModelId.fire()
   }
 
   /**

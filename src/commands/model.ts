@@ -105,12 +105,36 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
     },
   )
 
+  // Geminiモデル選択コマンド
+  const selectGeminiModelCommand = vscode.commands.registerCommand(
+    'vscode-lm-proxy.selectGeminiModel',
+    async () => {
+      try {
+        // モデル選択ダイアログを表示
+        const geminiModelId = await modelManager.selectModel('gemini')
+
+        if (geminiModelId) {
+          // モデルIDを設定
+          context.globalState.update('geminiModelId', geminiModelId)
+          vscode.window.showInformationMessage(
+            `Gemini Model selected: ${geminiModelId}`,
+          )
+        }
+      } catch (error) {
+        vscode.window.showErrorMessage(
+          `Error selecting Gemini model: ${(error as Error).message}`,
+        )
+      }
+    },
+  )
+
   // コンテキストにコマンドを登録
   context.subscriptions.push(
     selectOpenAIModelCommand,
     selectAnthropicModelCommand,
     selectClaudeCodeBackgroundModelCommand,
     selectClaudeCodeThinkingModelCommand,
+    selectGeminiModelCommand,
   )
 
   // 前回選択されたOpenAIモデルを復元
@@ -143,6 +167,13 @@ export function registerModelCommands(context: vscode.ExtensionContext): void {
     modelManager.setClaudeCodeThinkingModelId(
       previouslySelectedClaudeCodeThinkingModelId,
     )
+  }
+
+  // 前回選択されたGeminiモデルを復元
+  const previouslySelectedGeminiModelId =
+    context.globalState.get<string>('geminiModelId')
+  if (previouslySelectedGeminiModelId) {
+    modelManager.setGeminiModelId(previouslySelectedGeminiModelId)
   }
 
   // ステータスバーを更新

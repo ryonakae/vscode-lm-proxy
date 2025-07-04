@@ -103,12 +103,14 @@ export async function activate(context: vscode.ExtensionContext) {
     modelManager.getClaudeCodeBackgroundModelId() || 'Not selected'
   const claudeCodeThinkingModel =
     modelManager.getClaudeCodeThinkingModelId() || 'Not selected'
+  const geminiModel = modelManager.getGeminiModelId() || 'Not selected'
   const serverStatus = serverManager.isRunning() ? 'Running' : 'Stopped'
   logger.info('LM Proxy extension activated', {
     openaiModel,
     anthropicModel,
     claudeCodeBackgroundModel,
     claudeCodeThinkingModel,
+    geminiModel,
     serverStatus,
   })
 }
@@ -121,14 +123,15 @@ export async function activate(context: vscode.ExtensionContext) {
 export function deactivate(): Promise<void> | undefined {
   logger.info('LM Proxy extension deactivated')
 
-  // OpenAIモデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
+  // モデル情報を保存（グローバル変数に格納されているモデルマネージャーを使用）
   const openaiModelId = modelManager.getOpenAIModelId()
   const anthropicModelId = modelManager.getAnthropicModelId()
   const claudeCodeBackgroundModelId =
     modelManager.getClaudeCodeBackgroundModelId()
   const claudeCodeThinkingModelId = modelManager.getClaudeCodeThinkingModelId()
+  const geminiModelId = modelManager.getGeminiModelId()
 
-  // グローバル状態へモデル情報と実行状態を保存
+  // globalStateへモデル情報と実行状態を保存
   globalExtensionContext.globalState.update('openaiModelId', openaiModelId)
   globalExtensionContext.globalState.update(
     'anthropicModelId',
@@ -142,6 +145,7 @@ export function deactivate(): Promise<void> | undefined {
     'claudeCodeThinkingModelId',
     claudeCodeThinkingModelId,
   )
+  globalExtensionContext.globalState.update('geminiModelId', geminiModelId)
   globalExtensionContext.globalState.update(
     'serverRunning',
     serverManager.isRunning(),

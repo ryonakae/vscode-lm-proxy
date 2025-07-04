@@ -147,6 +147,15 @@ class StatusBarManager {
       command: 'vscode-lm-proxy.selectClaudeCodeThinkingModel',
     })
 
+    const currentGeminiModelId = modelManager.getGeminiModelId()
+    items.push({
+      label: '$(gear) Gemini API Model',
+      description: currentGeminiModelId
+        ? `${currentGeminiModelId}`
+        : 'No model selected',
+      command: 'vscode-lm-proxy.selectGeminiModel',
+    })
+
     // メニューを表示
     const selected = await vscode.window.showQuickPick(items, {
       placeHolder: 'Select LM Proxy Operation',
