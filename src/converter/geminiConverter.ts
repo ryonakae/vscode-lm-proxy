@@ -1,23 +1,12 @@
-import {
-  type CallableTool,
-  type Content,
-  type GenerateContentParameters,
-  GoogleGenAI,
-  type Part,
-  type Tool,
+import type {
+  CallableTool,
+  Content,
+  GenerateContentParameters,
+  Part,
+  Tool,
 } from '@google/genai'
 import * as vscode from 'vscode'
 import { logger } from '../utils/logger'
-
-// sample
-const ai = new GoogleGenAI({})
-async function main() {
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: 'Explain how AI works in a few words',
-  })
-  console.log(response.text)
-}
 
 /**
  * Gemini APIのGenerateContentリクエストを

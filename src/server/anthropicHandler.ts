@@ -18,34 +18,29 @@ import { logger } from '../utils/logger'
 import { getVSCodeModel } from './handler'
 
 /**
- * Anthropic互換のMessages APIエンドポイントを設定する
+ * Anthropic互換のAPIエンドポイントを設定する
  * @param {express.Express} app Express.jsアプリケーション
  * @returns {void}
  */
-export function setupAnthropicMessagesEndpoints(app: express.Express): void {
-  // Anthropic API互換エンドポイントを登録
+export function setupAnthropicEndpoints(app: express.Express): void {
+  // messages
   app.post('/anthropic/messages', (req, res) =>
     handleAnthropicMessages(req, res, 'anthropic'),
   )
   app.post('/anthropic/v1/messages', (req, res) =>
     handleAnthropicMessages(req, res, 'anthropic'),
   )
+
+  // count_tokens
   app.post('/anthropic/v1/messages/count_tokens', (req, res) =>
     handleAnthropicCountTokens(req, res, 'anthropic'),
   )
-}
 
-/**
- * Anthropic互換のModels APIエンドポイントを設定する
- * @param {express.Express} app Express.jsアプリケーション
- * @returns {void}
- */
-export function setupAnthropicModelsEndpoints(app: express.Express): void {
-  // モデル一覧エンドポイント
+  // モデル一覧
   app.get('/anthropic/models', handleAnthropicModels)
   app.get('/anthropic/v1/models', handleAnthropicModels)
 
-  // 特定モデル情報エンドポイント
+  // 特定モデル情報
   app.get('/anthropic/models/:model', handleAnthropicModelInfo)
   app.get('/anthropic/v1/models/:model', handleAnthropicModelInfo)
 }

@@ -1,23 +1,11 @@
 // Express.jsサーバーの設定とAPIエンドポイントの実装
 import express from 'express'
 import { logger } from '../utils/logger'
-import {
-  setupAnthropicMessagesEndpoints,
-  setupAnthropicModelsEndpoints,
-} from './anthropicHandler'
-import {
-  setupClaudeCodeMessagesEndpoints,
-  setupClaudeCodeModelsEndpoints,
-} from './claudeCodeHandler'
-import {
-  setupGeminiGenerateContentEndpoints,
-  setupGeminiModelsEndpoints,
-} from './geminiHandler'
+import { setupAnthropicEndpoints } from './anthropicHandler'
+import { setupClaudeCodeEndpoints } from './claudeCodeHandler'
+import { setupGeminiEndpoints } from './geminiHandler'
 import { setupStatusEndpoint } from './handler'
-import {
-  setupOpenAIChatCompletionsEndpoints,
-  setupOpenAIModelsEndpoints,
-} from './openaiHandler'
+import { setupOpenAIEndpoints } from './openaiHandler'
 
 /**
  * Express.jsサーバーのインスタンスを作成します。
@@ -52,20 +40,16 @@ export function createServer(): express.Express {
   setupStatusEndpoint(app)
 
   // OpenAI互換エンドポイントのセットアップ
-  setupOpenAIChatCompletionsEndpoints(app)
-  setupOpenAIModelsEndpoints(app)
+  setupOpenAIEndpoints(app)
 
   // Anthropic互換APIエンドポイントのセットアップ
-  setupAnthropicMessagesEndpoints(app)
-  setupAnthropicModelsEndpoints(app)
+  setupAnthropicEndpoints(app)
 
   // ClaudeCode互換APIエンドポイントのセットアップ
-  setupClaudeCodeMessagesEndpoints(app)
-  setupClaudeCodeModelsEndpoints(app)
+  setupClaudeCodeEndpoints(app)
 
   // Gemini互換APIエンドポイントのセットアップ
-  setupGeminiGenerateContentEndpoints(app)
-  setupGeminiModelsEndpoints(app)
+  setupGeminiEndpoints(app)
 
   // エラーハンドラーの設定
   app.use(
