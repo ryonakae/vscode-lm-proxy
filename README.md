@@ -1,14 +1,15 @@
 # LM Proxy
 
-An extension that exposes the VSCode Language Model API as OpenAI and Anthropic compatible REST APIs, allowing external applications to easily utilize VSCode's language capabilities via industry-standard API formats.
+An extension that enables external applications to access VSCode's GitHub Copilot capabilities through OpenAI and Anthropic compatible REST APIs, allowing you to leverage the power of GitHub Copilot outside of the VSCode environment.
 
 ---
 
 ## Features
 
-- **OpenAI & Anthropic Compatible APIs**: Exposes VSCode's Language Model API through REST APIs that are compatible with OpenAI's and Anthropic's formats.
-- **Claude Code Support**: Provides endpoints compatible with Claude Code.
-- **Multiple Model Support**: Seamlessly switch between different language models available in VSCode.
+- **External GitHub Copilot Access**: Use GitHub Copilot's powerful AI capabilities from any application, not just within VSCode.
+- **OpenAI & Anthropic Compatible APIs**: Access GitHub Copilot through industry-standard API formats that are compatible with OpenAI's and Anthropic's interfaces.
+- **Claude Code Support**: Provides endpoints compatible with Claude Code for advanced AI assistance.
+- **Multiple Model Support**: Seamlessly switch between different language models available in VSCode, including GitHub Copilot's models.
 - **Server Management**: Easily start and stop the proxy server through the VSCode command palette or status bar.
 - **Streaming Support**: Full support for streaming responses for real-time applications.
 - **Flexible Configuration**: Customize the server port and log levels to fit your needs.
