@@ -356,7 +356,7 @@ export async function handleAnthropicCountTokens(
     // VSCodeモデル取得
     const { vsCodeModel } = await getVSCodeModel(body.model, provider)
 
-    // 対象テキストを定義
+    // トークンを定義
     let inputTokens = 0
 
     // messages

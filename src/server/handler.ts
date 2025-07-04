@@ -30,10 +30,16 @@ export function setupStatusEndpoint(app: express.Express): void {
 }
 
 /**
- * VSCode LM APIのモデルを取得する（'vscode-lm-proxy'時は選択中のOpenAIモデルに変換）
- * @param {OpenAI.ChatCompletionCreateParams} body
- * @returns {Promise<{ model: any, modelId: string }>}
- * @throws エラー時は例外をスロー
+ * VSCode LM APIのモデルを取得する
+ *
+ * - modelIdが'vscode-lm-proxy'の場合、providerごとに選択中のモデルIDへ変換する
+ * - providerが'claude'の場合、modelIdに含まれる文字列（haiku/sonnet/opus）に応じて内部モデルIDを切り替える
+ * - 指定IDのモデルが見つからない場合はVSCodeのLanguageModelError形式で例外をスローする
+ *
+ * @param {string} modelId モデルID（'vscode-lm-proxy'の場合は選択中のモデルIDに変換）
+ * @param {'openai' | 'anthropic' | 'claude' | 'gemini'} provider モデルプロバイダー種別
+ * @returns {Promise<{ vsCodeModel: vscode.LanguageModelChat; vsCodeModelId: string }>} VSCodeのチャットモデルとそのID
+ * @throws {vscode.LanguageModelError} モデルが見つからない場合や選択中モデルが未設定の場合
  */
 export async function getVSCodeModel(
   modelId: string,
@@ -48,6 +54,8 @@ export async function getVSCodeModel(
         selectedModelId = modelManager.getOpenAIModelId()
       } else if (provider === 'anthropic') {
         selectedModelId = modelManager.getAnthropicModelId()
+      } else if (provider === 'gemini') {
+        selectedModelId = modelManager.getGeminiModelId()
       }
 
       if (!selectedModelId) {

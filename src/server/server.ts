@@ -23,6 +23,13 @@ export function createServer(): express.Express {
     const startTime = Date.now()
     const path = req.originalUrl || req.url
 
+    // リクエスト受信時にログ出力
+    logger.debug('Request received', {
+      method: req.method,
+      path,
+      // requestBody: req.body,
+    })
+
     res.on('finish', () => {
       const responseTime = Date.now() - startTime
       // 必要に応じてbodyは省略（Express標準ではbodyはここで取得できません）

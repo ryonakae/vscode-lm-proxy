@@ -1,6 +1,13 @@
 // Gemini互換のAPIエンドポイントを実装
 
-import { ApiError, type ListModelsResponse, type Model } from '@google/genai'
+import {
+  ApiError,
+  type CountTokensParameters,
+  type CountTokensResponse,
+  type GenerateContentParameters,
+  type ListModelsResponse,
+  type Model,
+} from '@google/genai'
 import type express from 'express'
 import * as vscode from 'vscode'
 import {
@@ -19,15 +26,21 @@ import { getVSCodeModel } from './handler'
 export function setupGeminiEndpoints(app: express.Express): void {
   // コンテンツ生成
   app.post(
-    '/gemini/v1beta/:model\\:generateContent',
+    '/gemini/v1beta/models/:model\\:generateContent',
     handleGeminiGenerateContent,
   )
 
   // // コンテンツ生成 (ストリーミング)
   // app.post(
-  //   '/gemini/v1beta/:model\\:streamGenerateContent',
+  //   '/gemini/v1beta/models/:model\\:streamGenerateContent',
   //   handleGeminiStreamGenerateContent,
   // )
+
+  // トークンカウント
+  app.post(
+    '/gemini/v1beta/models/:model\\:countTokens',
+    handleGeminiCountTokens,
+  )
 
   // モデル一覧
   app.get('/gemini/v1beta/models', handleGeminiModels)
@@ -52,14 +65,15 @@ async function handleGeminiGenerateContent(
   res: express.Response,
 ) {
   try {
-    const body = req.body
-    logger.debug('Received gemini request', { body })
+    const body = req.body as GenerateContentParameters
+    logger.debug('Received generateContent request', { body })
 
     // // 必須フィールドのバリデーション
     // validateGenerateContentRequest(body)
 
     // モデル取得
-    const { vsCodeModel } = await getVSCodeModel(body.model, 'anthropic')
+    // const { vsCodeModel } = await getVSCodeModel(body.model, 'gemini')
+    const { vsCodeModel } = await getVSCodeModel('vscode-lm-proxy', 'gemini')
 
     // // ストリーミングモード判定
     // const isStreaming = body.stream === true
@@ -68,7 +82,7 @@ async function handleGeminiGenerateContent(
     const { messages, options, inputTokens } =
       await convertGeminiRequestToVSCodeRequest(body, vsCodeModel)
 
-    res.json({})
+    res.send()
   } catch (error) {
     // エラー処理
     const statusCode = 500
@@ -93,6 +107,35 @@ function validateGenerateContentRequest(body: any) {
   if (!body.model) {
     throw new Error('The model field is required')
   }
+}
+
+/**
+ * Gemini互換のトークン数カウントAPIリクエストを処理する
+ * @param {express.Request} req リクエスト
+ * @param {express.Response} res レスポンス
+ * @returns {Promise<void>}
+ */
+async function handleGeminiCountTokens(
+  req: express.Request,
+  res: express.Response,
+) {
+  try {
+    const body = req.body as CountTokensParameters
+    logger.debug('Received countTokens request', { body })
+
+    // トークンを定義
+    const totalTokens = 0
+
+    // レスポンスオブジェクトを作成
+    const countTokensResponse: CountTokensResponse = {
+      totalTokens,
+    }
+
+    logger.debug({ countTokensResponse })
+
+    // レスポンス返却
+    res.json(countTokensResponse)
+  } catch (error: any) {}
 }
 
 /**
