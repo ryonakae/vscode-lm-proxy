@@ -1,25 +1,32 @@
 {
   "name": "vscode-lm-proxy",
   "displayName": "LM Proxy",
-  "version": "1.0.2",
-  "description": "Expose VSCode's Language Model API as OpenAI, Anthropic, and Claude Code compatible REST APIs. Easily connect external apps to VSCode's LLMs with streaming, model selection, and full API compatibility.",
+  "version": "1.0.3",
+  "description": "Expose VSCode's GitHub Copilot capabilities through OpenAI, Anthropic, and Claude Code compatible REST APIs. Access GitHub Copilot from external applications using the VSCode Language Model API.",
   "categories": [
     "AI",
     "Chat"
   ],
   "keywords": [
-    "vscode",
+    "github-copilot",
+    "copilot",
     "language model",
+    "language-model-api",
+    "lm-api",
     "llm",
+    "ai-assistant",
+    "code-assistant",
     "openai",
     "anthropic",
     "claude",
+    "claude-code",
     "proxy",
-    "rest api",
+    "api-proxy",
+    "external-api",
+    "rest-api",
     "ai",
     "chat",
-    "streaming",
-    "extension"
+    "streaming"
   ],
   "homepage": "https://github.com/ryonakae/vscode-lm-proxy",
   "bugs": {
