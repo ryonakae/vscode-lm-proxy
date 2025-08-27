@@ -53,6 +53,10 @@ Alternatively, you can download the `.vsix` file from the [releases page](https:
 - If you specify the model name as `vscode-lm-proxy`, the model selected in the extension settings will be used.
 - If you specify a model name directly (e.g. `gpt-4.1` or `claude-3.5-sonnet`), that model will be used for the request.
 
+### Use with Claude Code
+You may also need to set the `ANTHROPIC_BASE_URL` environment variable to use Claude Code. Set `ANTHROPIC_BASE_URL` to `http://localhost:4000/anthropic/claude` (replace `4000` with your configured port if different).  
+This allows you to use Claude Code via the endpoints provided by LM Proxy—in other words, you can access the LLMs offered by GitHub Copilot through Claude Code.
+
 ---
 
 ## API Reference
