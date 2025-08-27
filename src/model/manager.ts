@@ -157,23 +157,33 @@ class ModelManager {
           const selectedItem = quickPick.selectedItems[0] as any
           if (selectedItem) {
             // providerによって保存先を分岐
+            let providerLabel = ''
             if (provider === 'openAI') {
               this.setOpenAIModelId(selectedItem.model.id)
               logger.info(`Selected OpenAI model: ${this.openaiModelId}`)
+              providerLabel = 'OpenAI'
             } else if (provider === 'anthropic') {
               this.setAnthropicModelId(selectedItem.model.id)
               logger.info(`Selected Anthropic model: ${this.anthropicModelId}`)
+              providerLabel = 'Anthropic'
             } else if (provider === 'claudeCodeBackground') {
               this.setClaudeCodeBackgroundModelId(selectedItem.model.id)
               logger.info(
                 `Selected Claude Code Background model: ${this.claudeCodeBackgroundModelId}`,
               )
+              providerLabel = 'Claude Code Background'
             } else if (provider === 'claudeCodeThinking') {
               this.setClaudeCodeThinkingModelId(selectedItem.model.id)
               logger.info(
                 `Selected Claude Code Thinking model: ${this.claudeCodeThinkingModelId}`,
               )
+              providerLabel = 'Claude Code Thinking'
             }
+
+            // モデル変更を通知（英語表記）
+            vscode.window.showInformationMessage(
+              `${providerLabel} model has been changed to "${selectedItem.model.name}".`,
+            )
 
             // QuickPickを閉じて選択結果を返す
             quickPick.dispose()
