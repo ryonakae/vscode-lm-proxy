@@ -8,7 +8,7 @@ An extension that enables external applications to access VSCode's GitHub Copilo
 
 - **External GitHub Copilot Access**: Use GitHub Copilot's powerful AI capabilities from any application, not just within VSCode.
 - **OpenAI & Anthropic Compatible APIs**: Access GitHub Copilot through industry-standard API formats that are compatible with OpenAI's and Anthropic's interfaces.
-- **Claude Code Support**: Provides endpoints compatible with Claude Code for advanced AI assistance.
+- **CLI-based Coding Assistant Support**: Compatible with various [CLI-based coding assistants](https://clicodingagents.com/#directory) including [Claude Code](https://docs.anthropic.com/en/docs/claude-code/overview), [OpenAI Codex CLI](https://developers.openai.com/codex/cli/), and other tools that support OpenAI or Anthropic API formats.
 - **Multiple Model Support**: Seamlessly switch between different language models available in VSCode, including GitHub Copilot's models.
 - **Server Management**: Easily start and stop the proxy server through the VSCode command palette or status bar.
 - **Streaming Support**: Full support for streaming responses for real-time applications.
@@ -49,13 +49,33 @@ Alternatively, you can download the `.vsix` file from the [releases page](https:
    - `LM Proxy: Select Claude Code Thinking Model`
 3. Choose your desired model from the list.
 
+### Use with CLI-based Coding Assistants
+
+This extension is compatible with various [CLI-based coding assistants](https://clicodingagents.com/#directory) that support OpenAI or Anthropic API formats:
+
+#### Claude Code
+You may need to set the `ANTHROPIC_BASE_URL` environment variable to use Claude Code. Set `ANTHROPIC_BASE_URL` to `http://localhost:4000/anthropic/claude` (replace `4000` with your configured port if different).  
+This allows you to use Claude Code via the endpoints provided by LM Proxy—in other words, you can access the LLMs offered by GitHub Copilot through Claude Code.
+
+#### OpenAI Codex CLI
+1. Set the `OPENAI_API_KEY` environment variable to a dummy value (e.g., `'xxx'`)
+2. Add the following configuration to `~/.codex/config.toml`:
+
+```toml
+model = "vscode-lm-proxy"
+model_provider = "vscode-lm-proxy"
+
+[model_providers.vscode-lm-proxy]
+name = "VSCode LM Proxy"
+base_url = "http://localhost:4000/openai"
+```
+
+#### Other CLI-based Coding Assistants
+Any other CLI-based coding assistants that are compatible with OpenAI API or Anthropic API and allow configuration of base URL and model names should be able to utilize LM Proxy as well. Simply configure the base URL to point to your LM Proxy server and set the appropriate model name.
+
 #### How Model Selection Works
 - If you specify the model name as `vscode-lm-proxy`, the model selected in the extension settings will be used.
 - If you specify a model name directly (e.g. `gpt-4.1` or `claude-3.5-sonnet`), that model will be used for the request.
-
-### Use with Claude Code
-You may also need to set the `ANTHROPIC_BASE_URL` environment variable to use Claude Code. Set `ANTHROPIC_BASE_URL` to `http://localhost:4000/anthropic/claude` (replace `4000` with your configured port if different).  
-This allows you to use Claude Code via the endpoints provided by LM Proxy—in other words, you can access the LLMs offered by GitHub Copilot through Claude Code.
 
 ---
 
