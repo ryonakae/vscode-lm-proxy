@@ -1,0 +1,12 @@
+# Ignore everything by default
+**/*
+
+# Include only essential files for the extension
+!node_modules/**
+!.vscode/**
+!out/**
+!package.json
+!icon.png
+!README.md
+!CHANGELOG.md
+!LICENSE

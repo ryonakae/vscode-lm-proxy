@@ -1,7 +1,7 @@
 {
   "name": "vscode-lm-proxy",
   "displayName": "LM Proxy",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Expose VSCode's GitHub Copilot capabilities through OpenAI, Anthropic, and Claude Code compatible REST APIs. Access GitHub Copilot from external applications using the VSCode Language Model API.",
   "categories": [
     "AI",
@@ -47,10 +47,11 @@
   "main": "./out/extension.js",
   "scripts": {
     "check": "biome check",
-    "compile": "tsc -p ./",
+    "clean": "rimraf ./out",
+    "compile": "npm run clean && tsc --sourceMap false",
     "prepare": "husky",
     "vscode:prepublish": "npm run compile",
-    "watch": "tsc -watch -p ./"
+    "watch": "npm run clean && tsc --watch"
   },
   "contributes": {
     "commands": [
@@ -182,6 +183,7 @@
     "husky": "9.1.7",
     "lint-staged": "16.1.2",
     "openai": "5.7.0",
+    "rimraf": "6.0.1",
     "typescript": "5.8.3"
   },
   "extensionDependencies": [],
