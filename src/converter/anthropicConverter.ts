@@ -1,5 +1,6 @@
 import type {
   ContentBlock,
+  ImageBlockParam,
   Message,
   MessageCreateParams,
   RawMessageStreamEvent,
@@ -11,6 +12,7 @@ import * as vscode from 'vscode'
 import { isTextPart, isToolCallPart } from '../server/handler'
 import { generateRandomId } from '../utils'
 import { logger } from '../utils/logger'
+import { parseDataUrl } from '../utils/url'
 
 /**
  * Anthropic APIのMessageCreateParamsリクエストを
@@ -73,6 +75,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
         | string
         | Array<
             | vscode.LanguageModelTextPart
+            | vscode.LanguageModelDataPart
             | vscode.LanguageModelToolResultPart
             | vscode.LanguageModelToolCallPart
           > = ''
@@ -99,9 +102,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
             case 'text':
               return new vscode.LanguageModelTextPart(c.text)
             case 'image':
-              return new vscode.LanguageModelTextPart(
-                `[Image] ${JSON.stringify(c)}`,
-              )
+              return convertImageBlockParamToLMPart(c)
             case 'tool_use':
               return new vscode.LanguageModelToolCallPart(
                 c.id,
@@ -118,9 +119,7 @@ export async function convertAnthropicRequestToVSCodeRequest(
                       case 'text':
                         return new vscode.LanguageModelTextPart(c.text)
                       case 'image':
-                        return new vscode.LanguageModelTextPart(
-                          `[Image] ${JSON.stringify(c)}`,
-                        )
+                        return convertImageBlockParamToLMPart(c)
                     }
                   }),
                 )
@@ -557,5 +556,24 @@ async function convertVSCodeTextToAnthropicMessage(
       service_tier: null,
     },
     // container: null
+  }
+}
+
+function convertImageBlockParamToLMPart(
+  c: ImageBlockParam,
+): vscode.LanguageModelDataPart | vscode.LanguageModelTextPart {
+  switch (c.source.type) {
+    case 'base64':
+      return vscode.LanguageModelDataPart.image(
+        Buffer.from(c.source.data, 'base64'),
+        c.source.media_type,
+      )
+    case 'url': {
+      const data = parseDataUrl(c.source.url)
+      if (data) {
+        return vscode.LanguageModelDataPart.image(data.data, data.mimeType)
+      }
+      return new vscode.LanguageModelTextPart(`[Image] ${JSON.stringify(c)}`)
+    }
   }
 }
