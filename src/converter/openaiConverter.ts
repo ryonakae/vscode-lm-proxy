@@ -8,6 +8,7 @@ import * as vscode from 'vscode'
 import { isTextPart, isToolCallPart } from '../server/handler'
 import { generateRandomId } from '../utils'
 import { logger } from '../utils/logger'
+import { parseDataUrl } from '../utils/url'
 
 /**
  * OpenAI APIのChatCompletionCreateParamsリクエストをVSCode拡張APIのチャットリクエスト形式に変換します。
@@ -37,6 +38,7 @@ export async function convertOpenAIRequestToVSCodeRequest(
         | string
         | Array<
             | vscode.LanguageModelTextPart
+            | vscode.LanguageModelDataPart
             | vscode.LanguageModelToolResultPart
             | vscode.LanguageModelToolCallPart
           > = ''
@@ -83,10 +85,18 @@ export async function convertOpenAIRequestToVSCodeRequest(
           switch (c.type) {
             case 'text':
               return new vscode.LanguageModelTextPart(c.text)
-            case 'image_url':
+            case 'image_url': {
+              const data = parseDataUrl(c.image_url.url)
+              if (data) {
+                return vscode.LanguageModelDataPart.image(
+                  data.data,
+                  data.mimeType,
+                )
+              }
               return new vscode.LanguageModelTextPart(
                 `[Image URL]: ${JSON.stringify(c.image_url)}`,
               )
+            }
             case 'input_audio':
               return new vscode.LanguageModelTextPart(
                 `[Input Audio]: ${JSON.stringify(c.input_audio)}`,
