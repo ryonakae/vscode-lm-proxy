@@ -48,6 +48,8 @@ export async function getVSCodeModel(
         selectedModelId = modelManager.getOpenAIModelId()
       } else if (provider === 'anthropic') {
         selectedModelId = modelManager.getAnthropicModelId()
+      } else if (provider === 'claude') {
+        selectedModelId = modelManager.getClaudeCodeBackgroundModelId()
       }
 
       if (!selectedModelId) {
@@ -56,11 +58,17 @@ export async function getVSCodeModel(
     }
 
     // providerが'claude'の場合は、モデルIDに含まれる文字列を元にモデルを分岐
-    if (provider === 'claude') {
+    if (provider === 'claude' && modelId !== 'vscode-lm-proxy') {
       if (modelId.includes('haiku')) {
-        selectedModelId = modelManager.getClaudeCodeBackgroundModelId()
+        const backgroundModel = modelManager.getClaudeCodeBackgroundModelId()
+        if (backgroundModel) {
+          selectedModelId = backgroundModel
+        }
       } else if (modelId.includes('sonnet') || modelId.includes('opus')) {
-        selectedModelId = modelManager.getClaudeCodeThinkingModelId()
+        const thinkingModel = modelManager.getClaudeCodeThinkingModelId()
+        if (thinkingModel) {
+          selectedModelId = thinkingModel
+        }
       }
     }
 
