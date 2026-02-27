@@ -111,6 +111,11 @@
           "maximum": 65535,
           "description": "Port number used by the LM Proxy server"
         },
+        "vscode-lm-proxy.host": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host address for the LM Proxy server. Use '0.0.0.0' to allow access from other devices on the network."
+        },
         "vscode-lm-proxy.logLevel": {
           "type": "number",
           "enum": [

@@ -24,6 +24,15 @@ class ServerManager {
   }
 
   /**
+   * 設定からホストアドレスを取得
+   * @returns 設定されたホストアドレス（デフォルト: 127.0.0.1）
+   */
+  private getHost(): string {
+    const config = vscode.workspace.getConfiguration('vscode-lm-proxy')
+    return config.get<string>('host', '127.0.0.1')
+  }
+
+  /**
    * サーバーを起動する
    * @returns サーバー起動のPromise
    */
@@ -35,16 +44,17 @@ class ServerManager {
     try {
       const app = createServer()
       const port = this.getPort()
+      const host = this.getHost()
 
       return new Promise<void>((resolve, reject) => {
-        this.server = app.listen(port, () => {
+        this.server = app.listen(port, host, () => {
           this._isRunning = true
           vscode.commands.executeCommand(
             'setContext',
             'vscode-lm-proxy.serverRunning',
             true,
           )
-          logger.info(`VSCode LM Proxy server started on port ${port}`)
+          logger.info(`VSCode LM Proxy server started on ${host}:${port}`)
           statusBarManager.updateStatus(true)
           resolve()
         })
@@ -124,7 +134,7 @@ class ServerManager {
     if (!this._isRunning) {
       return null
     }
-    return `http://localhost:${this.getPort()}`
+    return `http://${this.getHost()}:${this.getPort()}`
   }
 }
 
